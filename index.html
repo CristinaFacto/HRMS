@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --primary: #1E3A5F; --accent: #F2C94C; --bg: #FFFFFF; --border: #E5E7EB; --text: #111827; --muted: #6B7280; }
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { margin: 0; background: #F3F4F6; display: flex; justify-content: center; align-items: center; height: 100vh; padding: 20px; }
+    .container { width: 100%; max-width: 420px; padding: 28px; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 8px 20px rgba(16,24,40,0.06); margin: 0 auto; }
+    h1 { text-align: center; color: var(--primary); margin-bottom: 20px; }
+    .input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 3px; background: #FAFAFA; font-size: 14px; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 3px; background: var(--primary); color: white; font-size: 15px; cursor: pointer; margin-top: 6px; }
+    .btn-google { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 3px; background: white; cursor: pointer; margin-top: 10px; }
+    .btn .icon, .btn-google .icon { display: inline-block; width: 18px; height: 18px; margin-right: 10px; vertical-align: middle; }
+    .btn .btn-label, .btn-google .btn-label { vertical-align: middle; }
+    .divider { display: flex; align-items: center; margin: 16px 0; color: var(--muted); font-size: 12px; }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); margin: 0 10px; }
+    .forgot { text-align: right; font-size: 13px; color: var(--muted); margin-bottom: 10px; cursor: pointer; }
+    .switch { text-align: center; margin-top: 18px; font-size: 13px; color: var(--primary); cursor: pointer; }
+    .hidden { display: none; }
+    .error-msg { color: #DC2626; font-size: 13px; margin-bottom: 10px; text-align: center; }
+    .success-msg { color: #16A34A; font-size: 13px; margin-bottom: 10px; text-align: center; }
+    .btn:disabled, .btn-google:disabled { opacity: 0.6; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title">Sign up</h1>
+
+    <div id="message"></div>
+
+    <div id="registerFields">
+      <input id="firstNameInput" class="input" placeholder="First Name" />
+      <input id="lastNameInput" class="input" placeholder="Last Name" />
+      <input id="usernameInput" class="input" placeholder="Username" />
+    </div>
+
+    <input id="emailInput" class="input" placeholder="Email" />
+    <input id="passwordInput" class="input" type="password" placeholder="Password" />
+
+    <div id="loginExtra" class="hidden">
+      <div class="forgot" id="forgotBtn">Forgot Password</div>
+    </div>
+
+    <button class="btn" id="submitBtn">
+      <span class="icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor"/><path d="M3 20c0-3.866 3.582-7 9-7s9 3.134 9 7v1H3v-1z" fill="currentColor"/></svg>
+      </span>
+      <span class="btn-label">Sign up</span>
+    </button>
+
+    <div class="divider">OR</div>
+
+    <button class="btn-google" id="googleBtn">
+      <span class="icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.33 1.53 8.23 2.83l6.03-6.03C34.74 3.2 29.74 1 24 1 14.73 1 6.93 6.85 3.3 14.78l7.01 5.44C12.9 14.07 17.98 9.5 24 9.5z"/><path fill="#34A853" d="M46.5 24c0-1.6-.15-3.13-.43-4.61H24v8.72h12.7c-.55 2.97-2.3 5.48-4.9 7.17l7.52 5.87C44.52 36.15 46.5 30.57 46.5 24z"/><path fill="#4A90E2" d="M10.31 29.83A14.83 14.83 0 0 1 9 24c0-1.9.34-3.73.95-5.42L3 13.14A23.99 23.99 0 0 0 1 24c0 3.72.9 7.24 2.51 10.36l6.8-4.53z"/><path fill="#FBBC05" d="M24 46.5c6.74 0 12.74-2.2 17.26-5.96l-8.56-6.68c-2.24 1.51-5.02 2.39-8.7 2.39-6.02 0-11.1-4.57-12.69-10.8L3.3 33.22C6.93 41.15 14.73 46.5 24 46.5z"/></svg>
+      </span>
+      <span class="btn-label">Register with Google</span>
+    </button>
+
+    <div class="switch" id="switchText" onclick="toggleMode()">Already have an account? Login</div>
+  </div>
+
+  <script>
+  // ── Supabase init ──────────────────────────────────────────────
+  const SUPABASE_URL  = 'https://cuifjbmpgztjwqepfkvf.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWZqYm1wZ3p0andxZXBma3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTA1MjcsImV4cCI6MjA5MDg4NjUyN30.sB7eN054Nt-xvv30jFBjhVoZV5Q6VIW-MiKQyZ1m1fg';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // ── State ──────────────────────────────────────────────────────
+  let isLogin = false;
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function showMessage(text, type = 'error') {
+    const el = document.getElementById('message');
+    el.textContent = text;
+    el.className = type === 'error' ? 'error-msg' : 'success-msg';
+  }
+  function clearMessage() {
+    const el = document.getElementById('message');
+    el.textContent = '';
+    el.className = '';
+  }
+  function setLoading(loading) {
+    document.getElementById('submitBtn').disabled = loading;
+    document.getElementById('googleBtn').disabled = loading;
+    document.getElementById('submitBtn').querySelector('.btn-label').textContent =
+      loading ? 'Please wait…' : (isLogin ? 'Login' : 'Sign up');
+  }
+
+  // ── Toggle sign-up / login ─────────────────────────────────────
+  function toggleMode() {
+    isLogin = !isLogin;
+    clearMessage();
+
+    document.getElementById('title').innerText = isLogin ? 'Login' : 'Sign up';
+    document.getElementById('registerFields').classList.toggle('hidden', isLogin);
+    document.getElementById('loginExtra').classList.toggle('hidden', !isLogin);
+
+    document.getElementById('submitBtn').querySelector('.btn-label').textContent =
+      isLogin ? 'Login' : 'Sign up';
+    document.getElementById('googleBtn').querySelector('.btn-label').textContent =
+      isLogin ? 'Sign in with Google' : 'Register with Google';
+    document.getElementById('switchText').innerText =
+      isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login';
+  }
+
+  // ── Sign up ───────────────────────────────────────────────────
+  async function handleSignup(email, password) {
+    const firstName = document.getElementById('firstNameInput').value.trim();
+    const lastName  = document.getElementById('lastNameInput').value.trim();
+    const username  = document.getElementById('usernameInput').value.trim();
+
+    if (!firstName || !lastName || !username) {
+      showMessage('Please fill in all fields.'); return;
+    }
+
+    setLoading(true);
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { first_name: firstName, last_name: lastName, username }
+      }
+    });
+    setLoading(false);
+
+    if (error) { showMessage(error.message); return; }
+
+    showMessage(
+      data.user && data.user.identities && data.user.identities.length === 0
+        ? 'An account with this email already exists.'
+        : 'Account created! Please check your email to confirm, then log in.',
+      'success'
+    );
+    toggleMode();
+  }
+
+  // ── Login ─────────────────────────────────────────────────────
+async function handleLogin(email, password) {
+  setLoading(true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  if (error) { setLoading(false); showMessage(error.message); return; }
+
+  // ── Fetch role from profiles table ──
+  const { data: profile, error: profileError } = await sb
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .single();
+
+  setLoading(false);
+
+  if (profileError || !profile) { showMessage('Could not load user role.'); return; }
+
+  // ── Redirect based on role ──
+  const role = profile.role?.toLowerCase();
+
+  if (role === 'superadmin') {
+    window.location.href = 'superAdmin.html';
+  } else if (role === 'admin') {
+    window.location.href = 'admin.html';
+  } else {
+    window.location.href = 'user.html';
+  }
+}
+
+  // ── Forgot password ───────────────────────────────────────────
+  document.getElementById('forgotBtn').addEventListener('click', async () => {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email) { showMessage('Enter your email above first.'); return; }
+
+    setLoading(true);
+    const { error } = await sb.auth.resetPasswordForEmail(email);
+    setLoading(false);
+
+    if (error) { showMessage(error.message); return; }
+    showMessage('Password reset email sent!', 'success');
+  });
+
+  // ── Submit button ─────────────────────────────────────────────
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    clearMessage();
+    const email    = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+
+    if (!email || !password) { showMessage('Email and password are required.'); return; }
+
+    if (isLogin) {
+      await handleLogin(email, password);
+    } else {
+      await handleSignup(email, password);
+    }
+  });
+
+  // ── Google OAuth ──────────────────────────────────────────────
+  document.getElementById('googleBtn').addEventListener('click', async () => {
+    clearMessage();
+    setLoading(true);
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/user.html' }
+    });
+    setLoading(false);
+    if (error) showMessage(error.message);
+  });
+</script>
+</body>
+</html>

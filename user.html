@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>User</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#1E3A5F;--primary-dark:#162d4a;--secondary:#F2C94C;--secondary-dark:#d9b132;
+  --white:#FFFFFF;--bg:#F4F5F7;--border:#DDE1E9;--text:#1A2336;--muted:#6B7A99;
+  --sidebar-w:240px;--radius:2px;--green:#1A7A4A;--green-bg:#E6F5EE;--yellow:#A07000;
+  --yellow-bg:#FEF9E7;--red:#B91C1C;--red-bg:#FEE2E2;--blue:#1D4ED8;--blue-bg:#EFF6FF;
+}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:13px}
+.sidebar{width:var(--sidebar-w);background:var(--primary);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:200}
+.sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-logo .lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--secondary);text-transform:uppercase}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:12.5px;color:rgba(255,255,255,0.65);cursor:pointer;border-left:3px solid transparent;transition:all 0.15s;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:var(--white)}
+.nav-item.active{background:rgba(242,201,76,0.1);color:var(--secondary);border-left-color:var(--secondary);font-weight:700}
+.nav-item svg{width:15px;height:15px;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:12px 0;border-top:1px solid rgba(255,255,255,0.1)}
+.nav-item.logout{color:rgba(255,255,255,0.75)}
+.nav-item.logout:hover{background:rgba(185,28,28,0.15);color:#FCA5A5}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.content{padding:28px;flex:1}
+.profile-layout{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:start}
+.left-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.lc-head{background:var(--primary);padding:24px 20px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.avatar-wrap{width:80px;height:80px;border-radius:var(--radius);border:3px solid var(--secondary);overflow:hidden;margin-bottom:12px;background:rgba(242,201,76,0.12);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--secondary)}
+.lc-name{font-size:15px;font-weight:700;color:var(--white);line-height:1.2}
+.lc-title{font-size:11px;color:var(--secondary);margin-top:3px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
+.lc-id{display:inline-block;margin-top:8px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);font-size:10.5px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:var(--radius);border:1px solid rgba(255,255,255,0.12)}
+.lc-body{padding:18px 20px}
+.lc-stat-row{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.lc-stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--radius);border:2px solid}
+.badge.active{color:var(--green);border-color:var(--green);background:var(--green-bg)}
+.badge.inactive{color:var(--red);border-color:var(--red);background:var(--red-bg)}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.meta-list{display:flex;flex-direction:column;gap:10px}
+.meta-item .mi-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.meta-item .mi-val{font-size:12.5px;color:var(--text);font-weight:700}
+.right-panel{display:flex;flex-direction:column;gap:0}
+.tab-content{background:var(--white);border:1px solid var(--border);border-radius:var(--radius)}
+.tab-pane{display:none;padding:24px}
+.tab-pane.active{display:block}
+.sec{margin-bottom:24px}.sec:last-child{margin-bottom:0}
+.sec-header{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.sec-bar{width:4px;height:15px;background:var(--secondary);border-radius:var(--radius);flex-shrink:0}
+.sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--primary)}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+.field-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.field-group{display:flex;flex-direction:column;gap:5px}
+.field-group.full{grid-column:1/-1}
+.f-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.f-val{font-size:13px;color:var(--text);padding:8px 11px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:7px;min-height:36px}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{background:var(--primary);color:var(--white);padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.8px}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:hover{background:rgba(30,58,95,0.025)}
+tbody td{padding:10px 12px;color:var(--text)}
+.att-present{display:inline-flex;align-items:center;gap:5px;color:var(--green);font-weight:700;font-size:11px;background:var(--green-bg);padding:2px 9px;border-radius:var(--radius);border:1.5px solid var(--green)}
+.att-late{display:inline-flex;align-items:center;gap:5px;color:var(--yellow);font-weight:700;font-size:11px;background:var(--yellow-bg);padding:2px 9px;border-radius:var(--radius);border:1.5px solid var(--yellow)}
+.att-absent{display:inline-flex;align-items:center;gap:5px;color:var(--red);font-weight:700;font-size:11px;background:var(--red-bg);padding:2px 9px;border-radius:var(--radius);border:1.5px solid var(--red)}
+.att-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
+.sum-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.sum-card .sc-num{font-size:28px;font-weight:700;color:var(--primary);line-height:1}
+.sum-card .sc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:4px}
+.sum-card.green .sc-num{color:var(--green)}.sum-card.yellow .sc-num{color:var(--yellow)}.sum-card.red .sc-num{color:var(--red)}
+.leave-form{display:flex;flex-direction:column;gap:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.form-group select,.form-group input,.form-group textarea{font-family:Arial,sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius);color:var(--text);background:var(--white);outline:none;transition:border-color 0.15s}
+.form-group select:focus,.form-group input:focus,.form-group textarea:focus{border-color:var(--primary)}
+.form-group textarea{resize:vertical;min-height:80px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;font-family:Arial,sans-serif;font-size:12.5px;font-weight:700;border:2px solid transparent;border-radius:var(--radius);cursor:pointer;transition:all 0.15s}
+.btn-primary{background:var(--primary);color:var(--white);border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-primary:disabled{opacity:0.6;cursor:not-allowed}
+.btn-sm{padding:6px 12px;font-size:11.5px}
+.balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bal-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;justify-content:space-between}
+.bal-info .bi-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.bal-info .bi-val{font-size:26px;font-weight:700;color:var(--primary);line-height:1.1;margin-top:2px}
+.bal-info .bi-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.bal-icon{width:40px;height:40px;background:rgba(30,58,95,0.07);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
+.bal-icon svg{width:20px;height:20px;color:var(--primary)}
+.lv-pending{color:#7C3AED;background:#F5F3FF;border-color:#7C3AED}
+.lv-approved{color:var(--green);background:var(--green-bg);border-color:var(--green)}
+.lv-rejected{color:var(--red);background:var(--red-bg);border-color:var(--red)}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--primary);color:var(--white);padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:700;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+.empty-row td{padding:20px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="lbl">HRM System</div></div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="switchTab('profile',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Profile
+    </div>
+    <div class="nav-item" onclick="switchTab('attendance',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Attendance
+    </div>
+    <div class="nav-item" onclick="switchTab('leave',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Leave
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="nav-item logout" onclick="logout()">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Logout
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="content">
+    <div class="profile-layout">
+      <div class="left-card">
+        <div class="lc-head">
+          <div class="avatar-wrap" id="userAvatar">?</div>
+          <div class="lc-name" id="userName">Loading...</div>
+          <div class="lc-title" id="userPosition">—</div>
+          <div class="lc-id" id="userId">—</div>
+        </div>
+        <div class="lc-body">
+          <div class="lc-stat-row">
+            <span class="lc-stat-lbl">Status</span>
+            <span class="badge active" id="userStatus"><span class="dot"></span>Active</span>
+          </div>
+          <div class="meta-list">
+            <div class="meta-item"><div class="mi-lbl">Department</div><div class="mi-val" id="userDept">—</div></div>
+            <div class="meta-item"><div class="mi-lbl">Date Hired</div><div class="mi-val" id="userHired">—</div></div>
+            <div class="meta-item"><div class="mi-lbl">Employment Type</div><div class="mi-val" id="userEmpType">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-panel">
+        <div class="tab-content">
+
+          <!-- PROFILE TAB -->
+          <div class="tab-pane active" id="tab-profile">
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Basic Information</div></div>
+              <div class="field-grid">
+                <div class="field-group"><div class="f-lbl">Full Name</div><div class="f-val" id="pFullName">—</div></div>
+                <div class="field-group"><div class="f-lbl">Employee ID</div><div class="f-val" id="pEmpId">—</div></div>
+                <div class="field-group"><div class="f-lbl">Email Address</div><div class="f-val" id="pEmail">—</div></div>
+                <div class="field-group"><div class="f-lbl">Phone Number</div><div class="f-val" id="pPhone">—</div></div>
+              </div>
+            </div>
+            <hr class="divider"/>
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Job Information</div></div>
+              <div class="field-grid">
+                <div class="field-group"><div class="f-lbl">Job Title</div><div class="f-val" id="pPosition">—</div></div>
+                <div class="field-group"><div class="f-lbl">Department</div><div class="f-val" id="pDept">—</div></div>
+                <div class="field-group"><div class="f-lbl">Employment Status</div><div class="f-val" id="pStatus">—</div></div>
+                <div class="field-group"><div class="f-lbl">Employment Type</div><div class="f-val" id="pEmpType">—</div></div>
+                <div class="field-group"><div class="f-lbl">Date Hired</div><div class="f-val" id="pHired">—</div></div>
+                <div class="field-group"><div class="f-lbl">Separation Date</div><div class="f-val" style="color:var(--muted)" id="pSep">—</div></div>
+              </div>
+            </div>
+            <hr class="divider"/>
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Personal Information</div></div>
+              <div class="field-grid">
+                <div class="field-group full"><div class="f-lbl">Address</div><div class="f-val" id="pAddress">—</div></div>
+                <div class="field-group"><div class="f-lbl">Birthdate</div><div class="f-val" id="pBirth">—</div></div>
+                <div class="field-group"><div class="f-lbl">Gender</div><div class="f-val" id="pGender">—</div></div>
+              </div>
+            </div>
+            <hr class="divider"/>
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Account Information</div></div>
+              <div class="field-grid cols3">
+                <div class="field-group"><div class="f-lbl">Username</div><div class="f-val" id="pUsername">—</div></div>
+                <div class="field-group"><div class="f-lbl">Role</div><div class="f-val" id="pRole">—</div></div>
+                <div class="field-group"><div class="f-lbl">Account Status</div><div class="f-val" id="pAccStatus">—</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ATTENDANCE TAB -->
+          <div class="tab-pane" id="tab-attendance">
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Attendance Summary</div></div>
+              <div class="summary-grid">
+                <div class="sum-card green"><div class="sc-num" id="attPresent">—</div><div class="sc-lbl">Days Present</div></div>
+                <div class="sum-card yellow"><div class="sc-num" id="attLate">—</div><div class="sc-lbl">Days Late</div></div>
+                <div class="sum-card red"><div class="sc-num" id="attAbsent">—</div><div class="sc-lbl">Absences</div></div>
+              </div>
+            </div>
+            <hr class="divider"/>
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Attendance History</div></div>
+              <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Time In</th><th>Time Out</th><th>Total Hours</th><th>Status</th></tr></thead>
+              <tbody id="attTable"><tr class="empty-row"><td colspan="5">Loading...</td></tr></tbody></table></div>
+            </div>
+          </div>
+
+          <!-- LEAVE TAB -->
+          <div class="tab-pane" id="tab-leave">
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Leave Balance</div></div>
+              <div class="balance-grid" id="leaveBalance"><div style="padding:16px;color:var(--muted)">Loading...</div></div>
+            </div>
+            <hr class="divider"/>
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">File a Leave Request</div></div>
+              <div class="leave-form">
+                <div class="form-row">
+                  <div class="form-group"><label>Leave Type</label>
+                    <select id="leaveType"><option>Vacation Leave</option><option>Sick Leave</option><option>Emergency Leave</option><option>Maternity / Paternity Leave</option></select>
+                  </div>
+                  <div class="form-group"><label>Number of Days</label><input type="number" id="leaveDays" min="1" placeholder="e.g. 2"/></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Start Date</label><input type="date" id="leaveStart"/></div>
+                  <div class="form-group"><label>End Date</label><input type="date" id="leaveEnd"/></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group full"><label>Reason</label><textarea id="leaveReason" placeholder="Briefly describe the reason..."></textarea></div>
+                </div>
+                <div style="display:flex;justify-content:flex-end">
+                  <button class="btn btn-primary" id="leaveSubmitBtn" onclick="submitLeave()">Submit Request</button>
+                </div>
+              </div>
+            </div>
+            <hr class="divider"/>
+            <div class="sec">
+              <div class="sec-header"><div class="sec-bar"></div><div class="sec-title">Leave History</div></div>
+              <div class="tbl-wrap"><table><thead><tr><th>Date Filed</th><th>Type</th><th>Duration</th><th>Dates Covered</th><th>Status</th></tr></thead>
+              <tbody id="leaveTable"><tr class="empty-row"><td colspan="5">Loading...</td></tr></tbody></table></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase ───────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://cuifjbmpgztjwqepfkvf.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWZqYm1wZ3p0andxZXBma3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTA1MjcsImV4cCI6MjA5MDg4NjUyN30.sB7eN054Nt-xvv30jFBjhVoZV5Q6VIW-MiKQyZ1m1fg';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── State ──────────────────────────────────────────────────────
+let currentUser   = null;
+let currentProfile = null;
+
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function initials(name) { return name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?'; }
+function fmt(n)  { return '₱ ' + Number(n).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-PH') : '—'; }
+function fmtShortId(id) { return id ? id.slice(0,8).toUpperCase() : '—'; }
+function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val || '—'; }
+
+// ── Tab switcher ───────────────────────────────────────────────
+function switchTab(id, item) {
+  document.querySelectorAll('.sidebar .nav-item').forEach(n => n.classList.remove('active'));
+  if (item) item.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'attendance') loadAttendance();
+  if (id === 'leave')      loadLeave();
+}
+
+// ── Load Profile ───────────────────────────────────────────────
+function renderProfile(profile, authUser) {
+  const name = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Employee';
+  document.getElementById('userAvatar').textContent  = initials(name);
+  set('userName',    name);
+  set('userPosition', profile.position);
+  set('userId',      fmtShortId(authUser.id));
+  set('userDept',    profile.department);
+  set('userHired',   fmtDate(profile.date_hired));
+  set('userEmpType', profile.employment_type);
+
+  const statusBadge = document.getElementById('userStatus');
+  const st = (profile.status || 'active').toLowerCase();
+  statusBadge.className = `badge ${st === 'active' ? 'active' : 'inactive'}`;
+  statusBadge.innerHTML = `<span class="dot"></span>${st.charAt(0).toUpperCase()+st.slice(1)}`;
+
+  // Right panel
+  set('pFullName',  name);
+  set('pEmpId',     fmtShortId(authUser.id));
+  set('pEmail',     authUser.email);
+  set('pPhone',     profile.phone);
+  set('pPosition',  profile.position);
+  set('pDept',      profile.department);
+  set('pStatus',    profile.status);
+  set('pEmpType',   profile.employment_type);
+  set('pHired',     fmtDate(profile.date_hired));
+  set('pSep',       fmtDate(profile.separation_date));
+  set('pAddress',   profile.address);
+  set('pBirth',     fmtDate(profile.birthdate));
+  set('pGender',    profile.gender);
+  set('pUsername',  profile.username);
+  set('pRole',      profile.role);
+  set('pAccStatus', profile.status);
+}
+
+// ── Load Attendance ────────────────────────────────────────────
+async function loadAttendance() {
+  document.getElementById('attTable').innerHTML = '<tr class="empty-row"><td colspan="5">Loading...</td></tr>';
+  const { data, error } = await sb
+    .from('attendance')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('date', { ascending: false });
+
+  if (error) { toast('Failed to load attendance', 'error'); return; }
+
+  const present = data.filter(a => a.status === 'present').length;
+  const late    = data.filter(a => a.status === 'late').length;
+  const absent  = data.filter(a => a.status === 'absent').length;
+  set('attPresent', present);
+  set('attLate',    late);
+  set('attAbsent',  absent);
+
+  const tbody = document.getElementById('attTable');
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No attendance records yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(a => {
+    const badge =
+      a.status === 'present' ? '<span class="att-present"><span class="att-dot"></span>Present</span>' :
+      a.status === 'late'    ? '<span class="att-late"><span class="att-dot"></span>Late</span>' :
+                               '<span class="att-absent"><span class="att-dot"></span>Absent</span>';
+    return `<tr>
+      <td>${fmtDate(a.date)}</td>
+      <td>${a.time_in || '—'}</td>
+      <td>${a.time_out || '—'}</td>
+      <td>${a.total_hours != null ? a.total_hours + 'h' : '—'}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Load Leave ─────────────────────────────────────────────────
+async function loadLeave() {
+  document.getElementById('leaveBalance').innerHTML = '<div style="padding:16px;color:var(--muted)">Loading...</div>';
+  document.getElementById('leaveTable').innerHTML   = '<tr class="empty-row"><td colspan="5">Loading...</td></tr>';
+
+  const [balRes, histRes] = await Promise.all([
+    sb.from('leave_balances').select('*').eq('user_id', currentUser.id),
+    sb.from('leave_requests').select('*').eq('user_id', currentUser.id).order('filed_at', { ascending: false })
+  ]);
+
+  // Balances
+  const balDiv = document.getElementById('leaveBalance');
+  if (balRes.error || !balRes.data.length) {
+    balDiv.innerHTML = '<div style="padding:16px;color:var(--muted)">No leave balance records found.</div>';
+  } else {
+    balDiv.innerHTML = balRes.data.map(b => `
+      <div class="bal-card">
+        <div class="bal-info">
+          <div class="bi-lbl">${b.leave_type}</div>
+          <div class="bi-val">${b.remaining_days} <span style="font-size:14px;color:var(--muted)">/ ${b.total_days} days</span></div>
+          <div class="bi-sub">${b.used_days} days used</div>
+        </div>
+        <div class="bal-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+      </div>`).join('');
+  }
+
+  // History
+  const tbody = document.getElementById('leaveTable');
+  if (histRes.error || !histRes.data.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No leave requests yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = histRes.data.map(l => {
+    const cls = l.status === 'approved' ? 'lv-approved' : l.status === 'rejected' ? 'lv-rejected' : 'lv-pending';
+    return `<tr>
+      <td>${fmtDate(l.filed_at)}</td>
+      <td>${l.leave_type}</td>
+      <td>${l.num_days} day(s)</td>
+      <td>${l.start_date} – ${l.end_date}</td>
+      <td><span class="badge ${cls}"><span class="dot"></span>${l.status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Submit Leave ───────────────────────────────────────────────
+async function submitLeave() {
+  const type    = document.getElementById('leaveType').value;
+  const days    = parseInt(document.getElementById('leaveDays').value);
+  const start   = document.getElementById('leaveStart').value;
+  const end     = document.getElementById('leaveEnd').value;
+  const reason  = document.getElementById('leaveReason').value.trim();
+
+  if (!days || !start || !end) { toast('Please fill in all required fields.', 'error'); return; }
+  if (new Date(end) < new Date(start)) { toast('End date must be after start date.', 'error'); return; }
+
+  const btn = document.getElementById('leaveSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const { error } = await sb.from('leave_requests').insert({
+    user_id:    currentUser.id,
+    leave_type: type,
+    num_days:   days,
+    start_date: start,
+    end_date:   end,
+    reason:     reason,
+    status:     'pending'
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Submit Request';
+
+  if (error) { toast('Failed to submit request: ' + error.message, 'error'); return; }
+
+  toast('Leave request submitted!', 'success');
+  document.getElementById('leaveDays').value  = '';
+  document.getElementById('leaveStart').value = '';
+  document.getElementById('leaveEnd').value   = '';
+  document.getElementById('leaveReason').value = '';
+  loadLeave();
+}
+
+// ── Logout ─────────────────────────────────────────────────────
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+// ── Init ───────────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (!session) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  currentUser = session.user;
+
+  const { data: profile, error } = await sb
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (error || !profile) {
+    toast('Could not load profile data.', 'error');
+    return;
+  }
+
+  currentProfile = profile;
+  renderProfile(profile, currentUser);
+}
+
+init();
+</script>
+</body>
+</html>

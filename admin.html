@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — HR Management System</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#1E3A5F;--primary-dark:#162d4a;--secondary:#F2C94C;--secondary-dark:#d9b132;
+  --white:#FFFFFF;--bg:#F4F5F7;--border:#DDE1E9;--text:#1A2336;--muted:#6B7A99;
+  --sidebar-w:240px;--radius:2px;--green:#1A7A4A;--green-bg:#E6F5EE;--yellow:#A07000;
+  --yellow-bg:#FEF9E7;--red:#B91C1C;--red-bg:#FEE2E2;--blue:#1D4ED8;--blue-bg:#EFF6FF;
+}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:13px}
+.sidebar{width:var(--sidebar-w);background:var(--primary);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:200}
+.sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-logo .lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--secondary);text-transform:uppercase}
+.sidebar-logo .sub{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:0.5px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
+.nav-section{font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:14px 20px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:12.5px;color:rgba(255,255,255,0.65);cursor:pointer;border-left:3px solid transparent;transition:all 0.15s;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:var(--white)}
+.nav-item.active{background:rgba(242,201,76,0.1);color:var(--secondary);border-left-color:var(--secondary);font-weight:700}
+.nav-item svg{width:15px;height:15px;flex-shrink:0}
+.sidebar-footer{padding:12px 0;border-top:1px solid rgba(255,255,255,0.1)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px 20px}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--secondary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--primary);flex-shrink:0;position:relative}
+.user-avatar::after{content:'';position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--primary)}
+.user-name{font-size:12.5px;font-weight:700;color:var(--white)}
+.user-role{font-size:10px;font-weight:700;color:var(--secondary);letter-spacing:0.5px;text-transform:uppercase}
+.nav-item.logout{color:rgba(255,255,255,0.75)}
+.nav-item.logout:hover{background:rgba(185,28,28,0.15);color:#FCA5A5}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-size:14px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.8px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.icon-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s;position:relative}
+.icon-btn:hover{border-color:var(--primary);color:var(--primary)}
+.notif-dot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid var(--white)}
+.content{padding:24px 28px;flex:1}
+.section{display:none}
+.section.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color,var(--primary))}
+.stat-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.stat-val{font-size:28px;font-weight:700;color:var(--primary);line-height:1}
+.stat-sub{font-size:11.5px;color:var(--muted);margin-top:6px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.panel-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.panel-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--primary)}
+.panel-action{font-size:11.5px;font-weight:700;color:var(--primary);background:rgba(30,58,95,0.06);border:1px solid var(--border);border-radius:var(--radius);padding:5px 11px;cursor:pointer;transition:background .15s;font-family:Arial,sans-serif}
+.panel-action:hover{background:rgba(30,58,95,0.12)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{background:var(--primary);color:var(--white);padding:10px 14px;text-align:left;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:hover{background:rgba(30,58,95,0.025)}
+tbody td{padding:10px 14px;color:var(--text)}
+.avatar-cell{display:flex;align-items:center;gap:8px}
+.mini-avatar{width:28px;height:28px;border-radius:50%;background:rgba(30,58,95,0.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--primary);flex-shrink:0}
+.emp-name{font-weight:700;font-size:12.5px}
+.emp-sub{font-size:10.5px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--radius);border:1.5px solid}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge-success{color:var(--green);border-color:var(--green);background:var(--green-bg)}
+.badge-danger{color:var(--red);border-color:var(--red);background:var(--red-bg)}
+.badge-warning{color:var(--yellow);border-color:var(--yellow);background:var(--yellow-bg)}
+.badge-info{color:var(--blue);border-color:var(--blue);background:var(--blue-bg)}
+.badge-gray{color:var(--muted);border-color:var(--border);background:var(--bg)}
+.btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--border);border-radius:var(--radius);padding:5px 11px;font-family:Arial,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--primary)}
+.leave-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s}
+.leave-item:last-child{border-bottom:none}
+.leave-item:hover{background:var(--bg)}
+.leave-info{flex:1;min-width:0}
+.leave-name{font-weight:700;font-size:12.5px}
+.leave-detail{font-size:11px;color:var(--muted);margin-top:1px}
+.leave-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-approve{padding:5px 12px;border-radius:var(--radius);border:1.5px solid var(--green);background:var(--green-bg);color:var(--green);font-size:11.5px;font-weight:700;cursor:pointer;transition:background .15s;font-family:Arial,sans-serif}
+.btn-approve:hover{background:#c8edd9}
+.btn-reject{padding:5px 12px;border-radius:var(--radius);border:1.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11.5px;font-weight:700;cursor:pointer;transition:background .15s;font-family:Arial,sans-serif}
+.btn-reject:hover{background:#fecaca}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.bar-chart-wrap{display:flex;align-items:flex-end;gap:5px;padding:16px 20px 20px;height:110px}
+.bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;height:100%;justify-content:flex-end}
+.bar{width:100%;border-radius:var(--radius) var(--radius) 0 0;min-height:4px}
+.bar.primary-bar{background:var(--primary)}
+.bar.accent-bar{background:var(--secondary)}
+.bar.dim-bar{background:var(--primary);opacity:0.15}
+.bar-lbl{font-size:9.5px;color:var(--muted);font-weight:700}
+.payroll-banner{background:var(--primary);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.pb-title{font-size:18px;font-weight:700;color:var(--white)}
+.pb-sub{font-size:11.5px;color:rgba(255,255,255,0.5);margin-top:3px}
+.reports-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 20px 20px}
+.report-card{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:all .15s;background:var(--bg)}
+.report-card:hover{border-color:var(--primary);background:rgba(30,58,95,0.03)}
+.report-card.loading{opacity:0.6;pointer-events:none}
+.report-icon{font-size:20px;margin-bottom:6px}
+.report-name{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:2px}
+.report-desc{font-size:11px;color:var(--muted)}
+.report-export{margin-top:8px;font-size:10.5px;font-weight:700;color:var(--secondary-dark)}
+.empty-msg{padding:20px;color:var(--muted);font-size:12px;text-align:center}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--primary);color:var(--white);padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:700;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="lbl">HRM System</div>
+    <div class="sub">Admin Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+    </div>
+    <div class="nav-section">People</div>
+    <div class="nav-item" onclick="navigate('employees',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Employees
+    </div>
+    <div class="nav-item" onclick="navigate('attendance',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Attendance
+    </div>
+    <div class="nav-item" onclick="navigate('leave',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Leave
+    </div>
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" onclick="navigate('payroll',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Payroll
+    </div>
+    <div class="nav-section">Insights</div>
+    <div class="nav-item" onclick="navigate('reports',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>Reports
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar" id="adminAvatar">A</div>
+      <div>
+        <div class="user-name" id="adminName">Admin User</div>
+        <div class="user-role">Administrator</div>
+      </div>
+    </div>
+    <div class="nav-item logout" onclick="logout()">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Logout
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="page-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <div id="datetime-display" style="font-size:12px;font-weight:700;color:var(--primary);text-align:right;line-height:1.4">
+        <div id="dt-date" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)"></div>
+        <div id="dt-time"></div>
+      </div>
+      <div class="icon-btn"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></div>
+    </div>
+  </header>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card" style="--card-color:var(--primary)"><div class="stat-lbl">Total Employees</div><div class="stat-val" id="statTotal">—</div><div class="stat-sub">registered users</div></div>
+        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Present Today</div><div class="stat-val" id="statPresent">—</div><div class="stat-sub">attendance today</div></div>
+        <div class="stat-card" style="--card-color:var(--secondary)"><div class="stat-lbl">Pending Leaves</div><div class="stat-val" id="statLeaves">—</div><div class="stat-sub">awaiting approval</div></div>
+        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Absent Today</div><div class="stat-val" id="statAbsent">—</div><div class="stat-sub">not present today</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Attendance This Week</span><button class="panel-action" onclick="navigateTo('attendance')">View Logs →</button></div>
+          <div class="bar-chart-wrap" id="weekBars">
+            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Mon</div></div>
+            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Tue</div></div>
+            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Wed</div></div>
+            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Thu</div></div>
+            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Fri</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Pending Leave Requests</span><button class="panel-action" onclick="navigateTo('leave')">Manage →</button></div>
+          <div id="dashLeaveList"><div class="empty-msg">Loading...</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Employee Directory</span></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Joined</th></tr></thead>
+        <tbody id="dashEmpTable"><tr><td colspan="4" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES -->
+    <div class="section" id="sec-employees">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Employee Directory</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="text" id="empSearch" placeholder="Search employees…" oninput="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif"/>
+            <select id="empDeptFilter" onchange="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
+              <option value="all">All Departments</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Status</th><th>Joined</th></tr></thead>
+        <tbody id="empTable"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section" id="sec-attendance">
+      <div class="three-col">
+        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Present</div><div class="stat-val" id="attPresent">—</div></div>
+        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Absent</div><div class="stat-val" id="attAbsent">—</div></div>
+        <div class="stat-card" style="--card-color:var(--yellow)"><div class="stat-lbl">Late</div><div class="stat-val" id="attLate">—</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Attendance Logs</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="date" id="attDate" onchange="loadAttendance()" style="border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;font-size:12.5px;font-family:Arial,sans-serif;outline:none"/>
+            <select id="attDeptFilter" onchange="loadAttendance()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
+              <option value="all">All Departments</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Time In</th><th>Time Out</th><th>Hours</th><th>Status</th></tr></thead>
+        <tbody id="attTable"><tr><td colspan="6" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- LEAVE -->
+    <div class="section" id="sec-leave">
+      <div class="three-col">
+        <div class="stat-card" style="--card-color:var(--yellow)"><div class="stat-lbl">Pending</div><div class="stat-val" id="lvPending">—</div></div>
+        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Approved</div><div class="stat-val" id="lvApproved">—</div></div>
+        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Rejected</div><div class="stat-val" id="lvRejected">—</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Leave Requests</span>
+          <input type="text" id="leaveSearch" placeholder="Search leave requests…" oninput="loadLeave()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;margin-left:auto;min-width:220px"/>
+        </div>
+        <div id="leaveList"><div class="empty-msg">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- PAYROLL -->
+    <div class="section" id="sec-payroll">
+      <div class="payroll-banner">
+        <div class="pb-title">Payroll Overview</div>
+        <div class="pb-sub">View-only access — contact Super Admin to make changes</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Payroll Records</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
+            <input type="text" id="payrollSearch" placeholder="Search payroll…" oninput="loadPayroll()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;min-width:220px;margin-left:auto"/>
+            <select id="payrollDeptFilter" onchange="loadPayroll()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;min-width:180px">
+              <option value="all">All Departments</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Basic Pay</th><th>Deductions</th><th>Net Pay</th><th>Status</th></tr></thead>
+        <tbody id="payrollTable"><tr><td colspan="6" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="section" id="sec-reports">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Generate & Export Reports</span></div>
+        <div class="reports-grid">
+          <div class="report-card" id="rc-employee" onclick="exportReport('employee')">
+            <div class="report-icon">👥</div>
+            <div class="report-name">Employee Report</div>
+            <div class="report-desc">Full employee directory</div>
+            <div class="report-export">↓ Export CSV</div>
+          </div>
+          <div class="report-card" id="rc-attendance" onclick="exportReport('attendance')">
+            <div class="report-icon">🕐</div>
+            <div class="report-name">Attendance Report</div>
+            <div class="report-desc">Monthly attendance logs</div>
+            <div class="report-export">↓ Export CSV</div>
+          </div>
+          <div class="report-card" id="rc-leave" onclick="exportReport('leave')">
+            <div class="report-icon">📅</div>
+            <div class="report-name">Leave Report</div>
+            <div class="report-desc">Leave usage per employee</div>
+            <div class="report-export">↓ Export CSV</div>
+          </div>
+          <div class="report-card" id="rc-payroll" onclick="exportReport('payroll')">
+            <div class="report-icon">💰</div>
+            <div class="report-name">Payroll Summary</div>
+            <div class="report-desc">Payroll totals and deductions</div>
+            <div class="report-export">↓ Export CSV</div>
+          </div>
+          <div class="report-card" id="rc-department" onclick="exportReport('department')">
+            <div class="report-icon">📈</div>
+            <div class="report-name">Department Report</div>
+            <div class="report-desc">Headcount per department</div>
+            <div class="report-export">↓ Export CSV</div>
+          </div>
+          <div class="report-card" id="rc-compliance" onclick="exportReport('compliance')">
+            <div class="report-icon">📋</div>
+            <div class="report-name">Compliance Report</div>
+            <div class="report-desc">HR compliance summary</div>
+            <div class="report-export">↓ Export CSV</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase ───────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://cuifjbmpgztjwqepfkvf.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWZqYm1wZ3p0andxZXBma3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTA1MjcsImV4cCI6MjA5MDg4NjUyN30.sB7eN054Nt-xvv30jFBjhVoZV5Q6VIW-MiKQyZ1m1fg';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let allEmployees = [];
+let departmentOptions = [];
+
+function getDepartments(records) {
+  return [...new Set((records || []).map(r => (r.department || '').trim()).filter(Boolean))].sort();
+}
+
+function renderDepartmentFilter(selectId, departments) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  const currentValue = select.value || 'all';
+  select.innerHTML = '';
+  const allOption = document.createElement('option');
+  allOption.value = 'all';
+  allOption.textContent = 'All Departments';
+  select.appendChild(allOption);
+  departments.forEach(dept => {
+    const option = document.createElement('option');
+    option.value = dept;
+    option.textContent = dept;
+    select.appendChild(option);
+  });
+  if ([...select.options].some(o => o.value === currentValue)) {
+    select.value = currentValue;
+  }
+}
+
+function initDepartmentFilters(records) {
+  departmentOptions = getDepartments(records);
+  ['empDeptFilter', 'attDeptFilter', 'payrollDeptFilter'].forEach(id => renderDepartmentFilter(id, departmentOptions));
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function initials(name) { return name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-PH') : '—'; }
+
+function badgeHtml(status) {
+  const map = {
+    active:'badge-success', present:'badge-success', processed:'badge-success', approved:'badge-success',
+    pending:'badge-warning', 'on leave':'badge-warning',
+    late:'badge-warning', absent:'badge-danger', rejected:'badge-danger', inactive:'badge-gray'
+  };
+  const cls = map[status?.toLowerCase()] || 'badge-gray';
+  return `<span class="badge ${cls}"><span class="dot"></span>${status}</span>`;
+}
+
+// ── DateTime ──────────────────────────────────────────────────
+function updateDateTime() {
+  const now = new Date();
+  document.getElementById('dt-date').textContent = now.toLocaleDateString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('dt-time').textContent = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+}
+updateDateTime();
+setInterval(updateDateTime, 1000);
+
+// ── Navigate ──────────────────────────────────────────────────
+function navigateTo(section) {
+  const el = document.querySelector(`.nav-item[onclick*="'${section}'"]`);
+  navigate(section, el);
+}
+
+function navigate(section, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const target = document.getElementById('sec-' + section);
+  if (target) target.classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = {dashboard:'Dashboard',employees:'Employees',attendance:'Attendance',leave:'Leave Management',payroll:'Payroll',reports:'Reports'};
+  document.getElementById('pageTitle').textContent = titles[section] || section;
+  if (section === 'employees') loadEmployees();
+  if (section === 'attendance') loadAttendance();
+  if (section === 'leave') loadLeave();
+  if (section === 'payroll') loadPayroll();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────
+async function loadDashboard() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    const { data: me } = await sb.from('profiles').select('first_name,last_name').eq('id', session.user.id).single();
+    if (me) {
+      const name = `${me.first_name||''} ${me.last_name||''}`.trim();
+      document.getElementById('adminName').textContent = name || 'Admin User';
+      document.getElementById('adminAvatar').textContent = initials(name || 'AU');
+    }
+  }
+
+  const { data: profiles } = await sb.from('profiles').select('*').order('first_name');
+  allEmployees = profiles || [];
+  initDepartmentFilters(allEmployees);
+  const employees = allEmployees.filter(p => p.role === 'user');
+  document.getElementById('statTotal').textContent = employees.length;
+
+  const tbody = document.getElementById('dashEmpTable');
+  if (!employees.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No employees found.</td></tr>';
+  } else {
+    tbody.innerHTML = employees.slice(0, 5).map(e => `
+      <tr>
+        <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
+          <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
+        <td>${e.department||'—'}</td>
+        <td>${badgeHtml(e.status||'active')}</td>
+        <td>${fmtDate(e.date_hired)}</td>
+      </tr>`).join('');
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data: attToday } = await sb.from('attendance').select('status').eq('date', today);
+  const att = attToday || [];
+  document.getElementById('statPresent').textContent = att.filter(a => a.status === 'present').length;
+  document.getElementById('statAbsent').textContent  = att.filter(a => a.status === 'absent').length;
+
+  await loadWeekBars();
+
+  const { data: pendingLeaves } = await sb
+    .from('leave_requests')
+    .select('*, profiles(first_name, last_name)')
+    .eq('status', 'pending')
+    .order('filed_at', { ascending: false });
+
+  const leaves = pendingLeaves || [];
+  document.getElementById('statLeaves').textContent = leaves.length;
+
+  const leaveDiv = document.getElementById('dashLeaveList');
+  if (!leaves.length) {
+    leaveDiv.innerHTML = '<div class="empty-msg">No pending leave requests.</div>';
+  } else {
+    leaveDiv.innerHTML = leaves.map(l => `
+      <div class="leave-item">
+        <div class="mini-avatar">${initials((l.profiles?.first_name||'')+' '+(l.profiles?.last_name||''))}</div>
+        <div class="leave-info">
+          <div class="leave-name">${l.profiles?.first_name||''} ${l.profiles?.last_name||''}</div>
+          <div class="leave-detail">${l.leave_type} · ${l.start_date} – ${l.end_date}</div>
+        </div>
+        <div class="leave-actions" id="dla-${l.id}">
+          <button class="btn-approve" onclick="approveLeave('${l.id}')">✓</button>
+          <button class="btn-reject" onclick="rejectLeave('${l.id}')">✗</button>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ── Week Attendance Bars ──────────────────────────────────────
+async function loadWeekBars() {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+
+  const days = ['Mon','Tue','Wed','Thu','Fri'];
+  const counts = [];
+
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const { data } = await sb.from('attendance').select('status').eq('date', dateStr).eq('status', 'present');
+    counts.push((data || []).length);
+  }
+
+  const max = Math.max(...counts, 1);
+  const bars = document.getElementById('weekBars');
+  bars.innerHTML = counts.map((c, i) => `
+    <div class="bar-col">
+      <div class="bar ${i === dayOfWeek - 1 ? 'accent-bar' : 'primary-bar'}" style="height:${Math.round((c/max)*100)}%"></div>
+      <div class="bar-lbl">${days[i]}</div>
+    </div>`).join('');
+}
+
+// ── Employees ─────────────────────────────────────────────────
+async function loadEmployees() {
+  document.getElementById('empTable').innerHTML = '<tr><td colspan="5" class="empty-msg">Loading...</td></tr>';
+  const { data, error } = await sb.from('profiles').select('*').order('first_name');
+  if (error) { toast('Failed to load employees', 'error'); return; }
+  allEmployees = data || [];
+  initDepartmentFilters(allEmployees);
+  renderEmployeeTable(allEmployees);
+}
+
+function renderEmployeeTable(emps) {
+  const tbody = document.getElementById('empTable');
+  if (!emps.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">No employees found.</td></tr>'; return; }
+  tbody.innerHTML = emps.map(e => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
+        <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
+      <td>${e.department||'—'}</td>
+      <td>${e.position||'—'}</td>
+      <td>${badgeHtml(e.status||'active')}</td>
+      <td>${fmtDate(e.date_hired)}</td>
+    </tr>`).join('');
+}
+
+function filterEmployees() {
+  const q = document.getElementById('empSearch').value.toLowerCase();
+  const selectedDept = document.getElementById('empDeptFilter')?.value || 'all';
+  renderEmployeeTable(allEmployees.filter(e => {
+    const matchesSearch = `${e.first_name} ${e.last_name} ${e.email} ${e.department}`.toLowerCase().includes(q);
+    const matchesDept = selectedDept === 'all' || (e.department || '').toLowerCase() === selectedDept.toLowerCase();
+    return matchesSearch && matchesDept;
+  }));
+}
+
+// ── Attendance ────────────────────────────────────────────────
+async function loadAttendance() {
+  const dateInput = document.getElementById('attDate');
+  if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  const date = dateInput.value;
+
+  document.getElementById('attTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
+
+  const { data, error } = await sb
+    .from('attendance')
+    .select('*, profiles(first_name, last_name, department)')
+    .eq('date', date);
+
+  if (error) { toast('Failed to load attendance', 'error'); return; }
+  let att = data || [];
+  const selectedDept = document.getElementById('attDeptFilter')?.value || 'all';
+  if (selectedDept !== 'all') {
+    att = att.filter(a => (a.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
+  }
+
+  document.getElementById('attPresent').textContent = att.filter(a => a.status === 'present').length;
+  document.getElementById('attAbsent').textContent  = att.filter(a => a.status === 'absent').length;
+  document.getElementById('attLate').textContent    = att.filter(a => a.status === 'late').length;
+
+  const tbody = document.getElementById('attTable');
+  if (!att.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No attendance records for this date.</td></tr>'; return; }
+  tbody.innerHTML = att.map(a => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((a.profiles?.first_name||'')+' '+(a.profiles?.last_name||''))}</div>
+        <div class="emp-name">${a.profiles?.first_name||''} ${a.profiles?.last_name||''}</div></div></td>
+      <td>${a.profiles?.department||'—'}</td>
+      <td>${a.time_in||'—'}</td>
+      <td>${a.time_out||'—'}</td>
+      <td>${a.total_hours != null ? a.total_hours+'h' : '—'}</td>
+      <td>${badgeHtml(a.status)}</td>
+    </tr>`).join('');
+}
+
+// ── Leave ─────────────────────────────────────────────────────
+async function loadLeave() {
+  document.getElementById('leaveList').innerHTML = '<div class="empty-msg">Loading...</div>';
+
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*, profiles(first_name, last_name)')
+    .order('filed_at', { ascending: false });
+
+  if (error) { toast('Failed to load leave requests', 'error'); return; }
+  let leaves = data || [];
+  const query = (document.getElementById('leaveSearch')?.value || '').trim().toLowerCase();
+  if (query) {
+    leaves = leaves.filter(l => {
+      const name = `${l.profiles?.first_name||''} ${l.profiles?.last_name||''}`.toLowerCase();
+      const type = (l.leave_type || '').toLowerCase();
+      const reason = (l.reason || '').toLowerCase();
+      const status = (l.status || '').toLowerCase();
+      return name.includes(query) || type.includes(query) || reason.includes(query) || status.includes(query);
+    });
+  }
+
+  document.getElementById('lvPending').textContent  = leaves.filter(l => l.status === 'pending').length;
+  document.getElementById('lvApproved').textContent = leaves.filter(l => l.status === 'approved').length;
+  document.getElementById('lvRejected').textContent = leaves.filter(l => l.status === 'rejected').length;
+
+  const div = document.getElementById('leaveList');
+  if (!leaves.length) { div.innerHTML = '<div class="empty-msg">No leave requests found.</div>'; return; }
+  div.innerHTML = leaves.map(l => `
+    <div class="leave-item">
+      <div class="mini-avatar">${initials((l.profiles?.first_name||'')+' '+(l.profiles?.last_name||''))}</div>
+      <div class="leave-info">
+        <div class="leave-name">${l.profiles?.first_name||''} ${l.profiles?.last_name||''} — <span style="font-weight:400;color:var(--muted)">${l.leave_type}</span></div>
+        <div class="leave-detail">${l.start_date} – ${l.end_date} · ${l.num_days} day(s)${l.reason ? ' · "'+l.reason+'"' : ''}</div>
+      </div>
+      <div class="leave-actions" id="la-${l.id}">
+        ${l.status === 'pending'
+          ? `<button class="btn-approve" onclick="approveLeave('${l.id}')">✓ Approve</button><button class="btn-reject" onclick="rejectLeave('${l.id}')">✗ Reject</button>`
+          : badgeHtml(l.status)}
+      </div>
+    </div>`).join('');
+}
+
+async function approveLeave(id) {
+  const { error } = await sb.from('leave_requests').update({ status: 'approved' }).eq('id', id);
+  if (error) { toast('Failed to approve leave', 'error'); return; }
+  toast('Leave approved!', 'success');
+  const el = document.getElementById(`la-${id}`);
+  if (el) el.innerHTML = badgeHtml('approved');
+  const el2 = document.getElementById(`dla-${id}`);
+  if (el2) el2.innerHTML = badgeHtml('approved');
+  loadLeave();
+  loadDashboard();
+}
+
+async function rejectLeave(id) {
+  const { error } = await sb.from('leave_requests').update({ status: 'rejected' }).eq('id', id);
+  if (error) { toast('Failed to reject leave', 'error'); return; }
+  toast('Leave rejected.', 'success');
+  const el = document.getElementById(`la-${id}`);
+  if (el) el.innerHTML = badgeHtml('rejected');
+  const el2 = document.getElementById(`dla-${id}`);
+  if (el2) el2.innerHTML = badgeHtml('rejected');
+  loadLeave();
+  loadDashboard();
+}
+
+// ── Payroll ───────────────────────────────────────────────────
+async function loadPayroll() {
+  document.getElementById('payrollTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
+
+  const { data, error } = await sb
+    .from('payroll')
+    .select('*, profiles(first_name, last_name, department)');
+
+  if (error) { toast('Failed to load payroll', 'error'); return; }
+  let payroll = data || [];
+  const query = (document.getElementById('payrollSearch')?.value || '').trim().toLowerCase();
+  const selectedDept = document.getElementById('payrollDeptFilter')?.value || 'all';
+  if (selectedDept !== 'all') {
+    payroll = payroll.filter(p => (p.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
+  }
+  if (query) {
+    payroll = payroll.filter(p => {
+      const name = `${p.profiles?.first_name||''} ${p.profiles?.last_name||''}`.toLowerCase();
+      const dept = (p.profiles?.department || '').toLowerCase();
+      const status = (p.status || '').toLowerCase();
+      return name.includes(query) || dept.includes(query) || status.includes(query);
+    });
+  }
+
+  const tbody = document.getElementById('payrollTable');
+  if (!payroll.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No payroll records found.</td></tr>'; return; }
+  tbody.innerHTML = payroll.map(p => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((p.profiles?.first_name||'')+' '+(p.profiles?.last_name||''))}</div>
+        <div class="emp-name">${p.profiles?.first_name||''} ${p.profiles?.last_name||''}</div></div></td>
+      <td>${p.profiles?.department||'—'}</td>
+      <td>₱${Number(p.basic_pay||0).toLocaleString('en-PH')}</td>
+      <td>₱${Number((p.tax||0)+(p.late_deduction||0)+(p.absence_deduction||0)).toLocaleString('en-PH')}</td>
+      <td><strong>₱${Number(p.net_pay||0).toLocaleString('en-PH')}</strong></td>
+      <td>${badgeHtml(p.status||'pending')}</td>
+    </tr>`).join('');
+}
+
+// ── Reports ───────────────────────────────────────────────────
+function downloadCSV(data, columns, filename) {
+  if (!data || !data.length) { toast('No data to export', 'error'); return; }
+  const header = columns.join(',');
+  const rows = data.map(row =>
+    columns.map(col => `"${(row[col] ?? '').toString().replace(/"/g, '""')}"`).join(',')
+  );
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${filename}.csv downloaded!`, 'success');
+}
+
+async function exportReport(type) {
+  const card = document.getElementById(`rc-${type}`);
+  if (card) { card.classList.add('loading'); card.querySelector('.report-export').textContent = 'Generating...'; }
+
+  try {
+    if (type === 'employee') {
+      const { data } = await sb.from('profiles').select('first_name,last_name,gender,department,position,status,date_hired,separation_date').order('first_name');
+      downloadCSV(data, ['first_name','last_name','gender','department','position','status','date_hired','separation_date'], 'employee_report');
+
+    } else if (type === 'attendance') {
+      const { data } = await sb.from('attendance').select('*, profiles(first_name,last_name,department)').order('date', { ascending: false });
+      const rows = (data||[]).map(a => ({
+        first_name: a.profiles?.first_name||'',
+        last_name: a.profiles?.last_name||'',
+        department: a.profiles?.department||'',
+        date: a.date, time_in: a.time_in||'', time_out: a.time_out||'',
+        total_hours: a.total_hours||'', status: a.status
+      }));
+      downloadCSV(rows, ['first_name','last_name','department','date','time_in','time_out','total_hours','status'], 'attendance_report');
+
+    } else if (type === 'leave') {
+      const { data } = await sb.from('leave_requests').select('*, profiles(first_name,last_name)').order('filed_at', { ascending: false });
+      const rows = (data||[]).map(l => ({
+        first_name: l.profiles?.first_name||'',
+        last_name: l.profiles?.last_name||'',
+        leave_type: l.leave_type, num_days: l.num_days,
+        start_date: l.start_date, end_date: l.end_date,
+        reason: l.reason||'', status: l.status,
+        filed_at: l.filed_at ? l.filed_at.split('T')[0] : ''
+      }));
+      downloadCSV(rows, ['first_name','last_name','leave_type','num_days','start_date','end_date','reason','status','filed_at'], 'leave_report');
+
+    } else if (type === 'payroll') {
+      const { data } = await sb.from('payroll').select('*, profiles(first_name,last_name,department)');
+      const rows = (data||[]).map(p => ({
+        first_name: p.profiles?.first_name||'',
+        last_name: p.profiles?.last_name||'',
+        department: p.profiles?.department||'',
+        pay_period_start: p.pay_period_start, pay_period_end: p.pay_period_end,
+        basic_pay: p.basic_pay, overtime: p.overtime||0, bonus: p.bonus||0,
+        tax: p.tax||0, late_deduction: p.late_deduction||0,
+        absence_deduction: p.absence_deduction||0, net_pay: p.net_pay, status: p.status
+      }));
+      downloadCSV(rows, ['first_name','last_name','department','pay_period_start','pay_period_end','basic_pay','overtime','bonus','tax','late_deduction','absence_deduction','net_pay','status'], 'payroll_summary');
+
+    } else if (type === 'department') {
+      const { data } = await sb.from('profiles').select('department,status');
+      const counts = {};
+      (data||[]).forEach(p => {
+        const d = p.department || 'Unknown';
+        if (!counts[d]) counts[d] = { department: d, total: 0, active: 0, inactive: 0 };
+        counts[d].total++;
+        if (p.status === 'active') counts[d].active++;
+        else counts[d].inactive++;
+      });
+      downloadCSV(Object.values(counts), ['department','total','active','inactive'], 'department_report');
+
+    } else if (type === 'compliance') {
+      const { data } = await sb.from('profiles').select('first_name,last_name,department,position,status,date_hired,separation_date,gender,birthdate').order('first_name');
+      downloadCSV(data, ['first_name','last_name','gender','birthdate','department','position','status','date_hired','separation_date'], 'compliance_report');
+    }
+  } catch(e) {
+    toast('Export failed', 'error');
+  } finally {
+    if (card) { card.classList.remove('loading'); card.querySelector('.report-export').textContent = '↓ Export CSV'; }
+  }
+}
+
+// ── Auth check & Init ─────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  await loadDashboard();
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+init();
+</script>
+</body>
+</html>

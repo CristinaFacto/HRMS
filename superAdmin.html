@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Super Admin — HR Management System</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#1E3A5F;--primary-dark:#162d4a;--secondary:#F2C94C;--secondary-dark:#d9b132;
+  --white:#FFFFFF;--bg:#F4F5F7;--border:#DDE1E9;--text:#1A2336;--muted:#6B7A99;
+  --sidebar-w:240px;--radius:2px;--green:#1A7A4A;--green-bg:#E6F5EE;--yellow:#A07000;
+  --yellow-bg:#FEF9E7;--red:#B91C1C;--red-bg:#FEE2E2;--blue:#1D4ED8;--blue-bg:#EFF6FF;
+  --purple:#6D28D9;--purple-bg:#EDE9FE;
+}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:13px}
+.sidebar{width:var(--sidebar-w);background:var(--primary);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:200}
+.sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-logo .lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--secondary);text-transform:uppercase}
+.sidebar-logo .sub{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:0.5px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
+.nav-section{font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:14px 20px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:12.5px;color:rgba(255,255,255,0.65);cursor:pointer;border-left:3px solid transparent;transition:all 0.15s;user-select:none;position:relative}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:var(--white)}
+.nav-item.active{background:rgba(242,201,76,0.1);color:var(--secondary);border-left-color:var(--secondary);font-weight:700}
+.nav-item svg{width:15px;height:15px;flex-shrink:0}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:700;background:var(--red);color:#fff;border-radius:20px;padding:1px 7px;min-width:18px;text-align:center}
+.sidebar-footer{padding:12px 0;border-top:1px solid rgba(255,255,255,0.1)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px 20px}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--secondary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--primary);flex-shrink:0;position:relative}
+.user-avatar::after{content:'';position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--primary)}
+.user-name{font-size:12.5px;font-weight:700;color:var(--white)}
+.user-role{font-size:10px;font-weight:700;color:var(--secondary);letter-spacing:0.5px;text-transform:uppercase}
+.nav-item.logout{color:rgba(255,255,255,0.75)}
+.nav-item.logout:hover{background:rgba(185,28,28,0.15);color:#FCA5A5}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-size:14px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.8px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.icon-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s;position:relative}
+.icon-btn:hover{border-color:var(--primary);color:var(--primary)}
+.notif-dot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid var(--white)}
+.content{padding:24px 28px;flex:1}
+.section{display:none}.section.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color,var(--primary))}
+.stat-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.stat-val{font-size:28px;font-weight:700;color:var(--primary);line-height:1}
+.stat-sub{font-size:11.5px;color:var(--muted);margin-top:6px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.panel-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.panel-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--primary)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{background:var(--primary);color:var(--white);padding:10px 14px;text-align:left;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:hover{background:rgba(30,58,95,0.025)}
+tbody td{padding:10px 14px;color:var(--text)}
+.avatar-cell{display:flex;align-items:center;gap:8px}
+.mini-avatar{width:28px;height:28px;border-radius:50%;background:rgba(30,58,95,0.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--primary);flex-shrink:0}
+.emp-name{font-weight:700;font-size:12.5px}
+.emp-sub{font-size:10.5px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--radius);border:1.5px solid}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge-success{color:var(--green);border-color:var(--green);background:var(--green-bg)}
+.badge-danger{color:var(--red);border-color:var(--red);background:var(--red-bg)}
+.badge-warning{color:var(--yellow);border-color:var(--yellow);background:var(--yellow-bg)}
+.badge-info{color:var(--blue);border-color:var(--blue);background:var(--blue-bg)}
+.badge-purple{color:var(--purple);border-color:var(--purple);background:var(--purple-bg)}
+.badge-gray{color:var(--muted);border-color:var(--border);background:var(--bg)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;border:2px solid transparent;border-radius:var(--radius);cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--primary);color:var(--white);border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-secondary{background:var(--secondary);color:var(--primary);border-color:var(--secondary)}
+.btn-secondary:hover{background:var(--secondary-dark)}
+.btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--border);border-radius:var(--radius);padding:5px 11px;font-family:Arial,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--primary)}
+.btn-danger-sm{padding:4px 10px;border-radius:var(--radius);border:1.5px solid rgba(185,28,28,0.2);background:rgba(185,28,28,0.05);color:var(--red);font-family:Arial,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer}
+.btn-sm{padding:5px 11px;font-size:11.5px}
+.leave-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s}
+.leave-item:last-child{border-bottom:none}
+.leave-item:hover{background:var(--bg)}
+.leave-info{flex:1;min-width:0}
+.leave-name{font-weight:700;font-size:12.5px}
+.leave-detail{font-size:11px;color:var(--muted);margin-top:1px}
+.leave-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-approve{padding:5px 12px;border-radius:var(--radius);border:1.5px solid var(--green);background:var(--green-bg);color:var(--green);font-size:11.5px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif}
+.btn-reject{padding:5px 12px;border-radius:var(--radius);border:1.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11.5px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.payroll-banner{background:var(--primary);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.pb-title{font-size:18px;font-weight:700;color:var(--white)}
+.pb-sub{font-size:11.5px;color:rgba(255,255,255,0.5);margin-top:3px}
+.pb-actions{display:flex;gap:8px}
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:11px 20px;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.activity-main{font-size:12.5px;font-weight:700}
+.activity-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);width:480px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-head{background:var(--primary);padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{color:var(--white);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px}
+.modal-close{background:none;border:none;color:rgba(255,255,255,0.6);font-size:18px;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--white)}
+.modal-body{padding:22px}
+.form-row{margin-bottom:12px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:block;margin-bottom:4px}
+.form-input{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:8px 11px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;font-family:Arial,sans-serif;background:var(--white)}
+.form-input:focus{border-color:var(--primary)}
+.modal-footer{padding:0 22px 18px;display:flex;gap:8px;justify-content:flex-end}
+.reports-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 20px 20px}
+.report-card{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:all .15s;background:var(--bg)}
+.report-card:hover{border-color:var(--primary)}
+.report-icon{font-size:20px;margin-bottom:6px}
+.report-name{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:2px}
+.report-desc{font-size:11px;color:var(--muted)}
+.report-export{margin-top:8px;font-size:10.5px;font-weight:700;color:var(--secondary-dark)}
+.settings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 20px 20px}
+.setting-card{border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .15s;background:var(--bg);display:flex;flex-direction:column;gap:6px}
+.setting-card:hover{border-color:var(--primary)}
+.setting-icon{font-size:20px}.setting-name{font-size:12.5px;font-weight:700;color:var(--primary)}
+.setting-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.setting-arrow{font-size:11px;color:var(--muted);margin-top:4px}
+.empty-msg{padding:20px;color:var(--muted);font-size:12px;text-align:center}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--primary);color:var(--white);padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:700;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="lbl">HRM System</div>
+    <div class="sub">Super Admin Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+    </div>
+    <div class="nav-section">People</div>
+    <div class="nav-item" onclick="navigate('employees',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Employees
+    </div>
+    <div class="nav-item" onclick="navigate('attendance',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Attendance
+    </div>
+    <div class="nav-item" onclick="navigate('leave',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Leave <span class="nav-badge" id="leaveBadge">0</span>
+    </div>
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" onclick="navigate('payroll',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Payroll
+    </div>
+    <div class="nav-section">Insights</div>
+    <div class="nav-item" onclick="navigate('reports',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>Reports
+    </div>
+    <div class="nav-section">Administration</div>
+    <div class="nav-item" onclick="navigate('users',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><circle cx="19" cy="11" r="2"/><path d="M19 14v1a2 2 0 0 1-2 2h-1"/><path d="M22 9l-3 2-3-2"/></svg>User Management
+    </div>
+    <div class="nav-item" onclick="navigate('settings',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar" id="saAvatar">SA</div>
+      <div>
+        <div class="user-name" id="saName">Super Admin</div>
+        <div class="user-role">Super Administrator</div>
+      </div>
+    </div>
+    <div class="nav-item logout" onclick="logout()">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Logout
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="page-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <div id="datetime-display" style="font-size:12px;font-weight:700;color:var(--primary);text-align:right;line-height:1.4">
+        <div id="dt-date" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)"></div>
+        <div id="dt-time"></div>
+      </div>
+      <div class="icon-btn"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></div>
+    </div>
+  </header>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card" style="--card-color:var(--primary)"><div class="stat-lbl">Total Employees</div><div class="stat-val" id="statTotal">—</div><div class="stat-sub">registered users</div></div>
+        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Attendance Rate</div><div class="stat-val" id="statAtt">—</div><div class="stat-sub">today</div></div>
+        <div class="stat-card" style="--card-color:var(--secondary)"><div class="stat-lbl">Monthly Payroll</div><div class="stat-val" id="statPayroll" style="font-size:22px">—</div><div class="stat-sub">this cycle</div></div>
+        <div class="stat-card" style="--card-color:var(--purple)"><div class="stat-lbl">Active Users</div><div class="stat-val" id="statUsers">—</div><div class="stat-sub">system users</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Pending Leave Requests</span><span class="badge badge-warning" id="dashLeaveBadge"><span class="dot"></span>0 Pending</span></div>
+          <div id="dashLeaveList"><div class="empty-msg">Loading...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Recently Added Employees</span></div>
+          <div id="activityLog"><div class="empty-msg">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES -->
+    <div class="section" id="sec-employees">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Employee Directory</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="text" id="empSearch" placeholder="Search…" oninput="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif"/>
+            <select id="empDeptFilter" onchange="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
+              <option value="all">All Departments</option>
+            </select>
+            <button class="btn btn-secondary" onclick="document.getElementById('addEmpModal').classList.add('open')">+ Add Employee</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="empTable"><tr><td colspan="6" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section" id="sec-attendance">
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Present</div><div class="stat-val" id="attPresent">—</div></div>
+        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Absent</div><div class="stat-val" id="attAbsent">—</div></div>
+        <div class="stat-card" style="--card-color:var(--yellow)"><div class="stat-lbl">Late</div><div class="stat-val" id="attLate">—</div></div>
+        <div class="stat-card" style="--card-color:var(--blue)"><div class="stat-lbl">On Leave</div><div class="stat-val" id="attOnLeave">—</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Attendance Logs</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="date" id="attDate" onchange="loadAttendance()" style="border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;font-size:12.5px;font-family:Arial,sans-serif;outline:none"/>
+            <select id="attDeptFilter" onchange="loadAttendance()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
+              <option value="all">All Departments</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Dept.</th><th>Time In</th><th>Time Out</th><th>Hours</th><th>Status</th></tr></thead><tbody id="attTable"><tr><td colspan="6" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- LEAVE -->
+    <div class="section" id="sec-leave">
+      <div class="three-col">
+        <div class="stat-card" style="--card-color:var(--yellow)"><div class="stat-lbl">Pending</div><div class="stat-val" id="lvPending">—</div></div>
+        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Approved</div><div class="stat-val" id="lvApproved">—</div></div>
+        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Rejected</div><div class="stat-val" id="lvRejected">—</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Leave Requests</span>
+          <input type="text" id="leaveSearch" placeholder="Search leave requests…" oninput="loadLeave()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;margin-left:auto;min-width:220px"/>
+        </div>
+        <div id="leaveList"><div class="empty-msg">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- PAYROLL -->
+    <div class="section" id="sec-payroll">
+      <div class="payroll-banner">
+        <div><div class="pb-title">Payroll Management</div><div class="pb-sub" id="payrollSub">Loading...</div></div>
+        <div class="pb-actions"><button class="btn btn-secondary">Create Payslips</button></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Payroll Records</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
+            <input type="text" id="payrollSearch" placeholder="Search payroll…" oninput="loadPayroll()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;min-width:220px;margin-left:auto"/>
+            <select id="payrollDeptFilter" onchange="loadPayroll()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;min-width:180px">
+              <option value="all">All Departments</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Dept.</th><th>Basic Pay</th><th>Deductions</th><th>Net Pay</th><th>Status</th></tr></thead><tbody id="payrollTable"><tr><td colspan="6" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="section" id="sec-reports">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Full Reports Access</span></div>
+        <div class="reports-grid">
+          <div class="report-card" id="rc-employee" onclick="exportReport('employee')"><div class="report-icon">👥</div><div class="report-name">Employee Report</div><div class="report-desc">Full directory with history</div><div class="report-export">↓ PDF / Excel / CSV</div></div>
+          <div class="report-card" id="rc-attendance" onclick="exportReport('attendance')"><div class="report-icon">🕐</div><div class="report-name">Attendance Report</div><div class="report-desc">Monthly logs with absence patterns</div><div class="report-export">↓ PDF / Excel / CSV</div></div>
+          <div class="report-card" id="rc-leave" onclick="exportReport('leave')"><div class="report-icon">📅</div><div class="report-name">Leave Report</div><div class="report-desc">Usage per type and team</div><div class="report-export">↓ PDF / Excel / CSV</div></div>
+          <div class="report-card" id="rc-payroll" onclick="exportReport('payroll')"><div class="report-icon">💰</div><div class="report-name">Payroll Report</div><div class="report-desc">Full payroll breakdown</div><div class="report-export">↓ PDF / Excel / CSV</div></div>
+          <div class="report-card" id="rc-analytics" onclick="exportReport('analytics')"><div class="report-icon">📈</div><div class="report-name">Analytics Report</div><div class="report-desc">Trends and turnover rate</div><div class="report-export">↓ PDF / Excel / CSV</div></div>
+          <div class="report-card" id="rc-audit" onclick="exportReport('audit')"><div class="report-icon">🔑</div><div class="report-name">Audit Log</div><div class="report-desc">System-wide activity</div><div class="report-export">↓ PDF / Excel / CSV</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER MANAGEMENT -->
+    <div class="section" id="sec-users">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">System Users</span>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('addUserModal').classList.add('open')">+ Add User</button>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="usersTable"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section" id="sec-settings">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">System Configuration</span></div>
+        <div class="settings-grid">
+          <div class="setting-card"><div class="setting-icon">🏢</div><div class="setting-name">Company Profile</div><div class="setting-desc">Update company name, address, logo.</div><div class="setting-arrow">→ Configure</div></div>
+          <div class="setting-card"><div class="setting-icon">📋</div><div class="setting-name">HR Policies</div><div class="setting-desc">Set and publish official HR policies.</div><div class="setting-arrow">→ Configure</div></div>
+          <div class="setting-card"><div class="setting-icon">🔗</div><div class="setting-name">Integrations</div><div class="setting-desc">Connect payroll software, biometrics.</div><div class="setting-arrow">→ Configure</div></div>
+          <div class="setting-card"><div class="setting-icon">📧</div><div class="setting-name">Email & Notifications</div><div class="setting-desc">Configure SMTP and templates.</div><div class="setting-arrow">→ Configure</div></div>
+          <div class="setting-card"><div class="setting-icon">🔐</div><div class="setting-name">Security & Access</div><div class="setting-desc">Manage 2FA and session timeouts.</div><div class="setting-arrow">→ Configure</div></div>
+          <div class="setting-card"><div class="setting-icon">📅</div><div class="setting-name">Work Calendar</div><div class="setting-desc">Set holidays and shift patterns.</div><div class="setting-arrow">→ Configure</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL: Add Employee -->
+<div class="modal-overlay" id="addEmpModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add New Employee</h3><button class="modal-close" onclick="document.getElementById('addEmpModal').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:12px">
+        <div class="form-row"><label class="form-lbl">First Name</label><input id="empFirst" class="form-input" placeholder="First name"/></div>
+        <div class="form-row"><label class="form-lbl">Last Name</label><input id="empLast" class="form-input" placeholder="Last name"/></div>
+      </div>
+      <div class="form-row"><label class="form-lbl">Email Address</label><input id="empEmail" class="form-input" type="email" placeholder="email@company.com"/></div>
+      <div class="form-grid" style="margin-top:12px">
+        <div class="form-row"><label class="form-lbl">Department</label><input id="empDept" class="form-input" placeholder="Department"/></div>
+        <div class="form-row"><label class="form-lbl">Position</label><input id="empPos" class="form-input" placeholder="Job title"/></div>
+      </div>
+      <div class="form-grid" style="margin-top:12px">
+        <div class="form-row"><label class="form-lbl">Date Hired</label><input id="empHired" class="form-input" type="date"/></div>
+        <div class="form-row"><label class="form-lbl">Employment Type</label>
+          <select id="empType" class="form-input"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Probation</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById('addEmpModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add User -->
+<div class="modal-overlay" id="addUserModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add System User</h3><button class="modal-close" onclick="document.getElementById('addUserModal').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:12px">
+        <div class="form-row"><label class="form-lbl">First Name</label><input id="userFirst" class="form-input" placeholder="First name"/></div>
+        <div class="form-row"><label class="form-lbl">Last Name</label><input id="userLast" class="form-input" placeholder="Last name"/></div>
+      </div>
+      <div class="form-row"><label class="form-lbl">Email</label><input id="userEmail" class="form-input" type="email" placeholder="email@company.com"/></div>
+      <div class="form-row" style="margin-top:12px"><label class="form-lbl">Assign Role</label>
+        <select id="userRole" class="form-input"><option value="super_admin">Super Admin</option><option value="admin">Admin</option><option value="user">User</option></select>
+      </div>
+      <div class="form-row" style="margin-top:12px"><label class="form-lbl">Password</label><input id="userPass" class="form-input" type="password" placeholder="Set password"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById('addUserModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase ───────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://cuifjbmpgztjwqepfkvf.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWZqYm1wZ3p0andxZXBma3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTA1MjcsImV4cCI6MjA5MDg4NjUyN30.sB7eN054Nt-xvv30jFBjhVoZV5Q6VIW-MiKQyZ1m1fg';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let allProfiles = [];
+let departmentOptions = [];
+
+function getDepartments(records) {
+  return [...new Set((records || []).map(r => (r.department || '').trim()).filter(Boolean))].sort();
+}
+
+function renderDepartmentFilter(selectId, departments) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  const currentValue = select.value || 'all';
+  select.innerHTML = '';
+  const allOption = document.createElement('option');
+  allOption.value = 'all';
+  allOption.textContent = 'All Departments';
+  select.appendChild(allOption);
+  departments.forEach(dept => {
+    const option = document.createElement('option');
+    option.value = dept;
+    option.textContent = dept;
+    select.appendChild(option);
+  });
+  if ([...select.options].some(o => o.value === currentValue)) {
+    select.value = currentValue;
+  }
+}
+
+function initDepartmentFilters(records) {
+  departmentOptions = getDepartments(records);
+  ['empDeptFilter', 'attDeptFilter', 'payrollDeptFilter'].forEach(id => renderDepartmentFilter(id, departmentOptions));
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function initials(name) { return name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-PH') : '—'; }
+
+function badgeHtml(status) {
+  const map = {active:'badge-success',present:'badge-success',processed:'badge-success',approved:'badge-success',pending:'badge-warning','on leave':'badge-warning',late:'badge-warning',absent:'badge-danger',rejected:'badge-danger',inactive:'badge-gray',user:'badge-gray',admin:'badge-info',super_admin:'badge-purple'};
+  const cls = map[status?.toLowerCase()] || 'badge-gray';
+  return `<span class="badge ${cls}"><span class="dot"></span>${status}</span>`;
+}
+
+// ── DateTime ──────────────────────────────────────────────────
+function updateDateTime() {
+  const now = new Date();
+  document.getElementById('dt-date').textContent = now.toLocaleDateString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('dt-time').textContent = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+}
+updateDateTime();
+setInterval(updateDateTime, 1000);
+
+// ── Navigate ──────────────────────────────────────────────────
+function navigate(section, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const target = document.getElementById('sec-'+section);
+  if (target) target.classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = {dashboard:'Dashboard',employees:'Employees',attendance:'Attendance',leave:'Leave Management',payroll:'Payroll',reports:'Reports',users:'User Management',settings:'Settings'};
+  document.getElementById('pageTitle').textContent = titles[section]||section;
+  if (section==='employees') loadEmployees();
+  if (section==='attendance') loadAttendance();
+  if (section==='leave') loadLeave();
+  if (section==='payroll') loadPayroll();
+  if (section==='users') loadUsers();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────
+async function loadDashboard() {
+  // Profiles
+  const { data: profiles } = await sb.from('profiles').select('*');
+  allProfiles = profiles || [];
+  initDepartmentFilters(allProfiles);
+
+  const employees = allProfiles.filter(p => p.role === 'user');
+  document.getElementById('statTotal').textContent = employees.length;
+  document.getElementById('statUsers').textContent = allProfiles.length;
+
+  // Set sidebar name from session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    const me = allProfiles.find(p => p.id === session.user.id);
+    const name = me ? `${me.first_name||''} ${me.last_name||''}`.trim() : 'Super Admin';
+    document.getElementById('saName').textContent = name || 'Super Admin';
+    document.getElementById('saAvatar').textContent = initials(name || 'SA');
+  }
+
+  // Today's attendance
+  const today = new Date().toISOString().split('T')[0];
+  const { data: attToday } = await sb.from('attendance').select('status').eq('date', today);
+  const totalAtt = attToday?.length || 0;
+  const presentAtt = attToday?.filter(a => a.status === 'present').length || 0;
+  const attRate = totalAtt > 0 ? Math.round((presentAtt / totalAtt) * 100) + '%' : '—';
+  document.getElementById('statAtt').textContent = attRate;
+
+  // Payroll total
+  const { data: payrollData } = await sb.from('payroll').select('net_pay');
+  const total = (payrollData || []).reduce((sum, p) => sum + Number(p.net_pay || 0), 0);
+  document.getElementById('statPayroll').textContent = '₱' + total.toLocaleString('en-PH');
+  document.getElementById('payrollSub').textContent = `${(payrollData||[]).length} payroll records`;
+
+  // Pending leaves
+  const { data: pendingLeaves } = await sb
+    .from('leave_requests')
+    .select('*, profiles(first_name, last_name)')
+    .eq('status', 'pending')
+    .order('filed_at', { ascending: false });
+
+  const leaves = pendingLeaves || [];
+  document.getElementById('leaveBadge').textContent = leaves.length;
+  document.getElementById('dashLeaveBadge').innerHTML = `<span class="dot"></span>${leaves.length} Pending`;
+
+  const leaveDiv = document.getElementById('dashLeaveList');
+  if (!leaves.length) {
+    leaveDiv.innerHTML = '<div class="empty-msg">No pending leave requests.</div>';
+  } else {
+    leaveDiv.innerHTML = leaves.map(l => `
+      <div class="leave-item">
+        <div class="mini-avatar">${initials((l.profiles?.first_name||'')+' '+(l.profiles?.last_name||''))}</div>
+        <div class="leave-info">
+          <div class="leave-name">${l.profiles?.first_name} ${l.profiles?.last_name}</div>
+          <div class="leave-detail">${l.leave_type} · ${l.start_date} – ${l.end_date}</div>
+        </div>
+        <div class="leave-actions">
+          <button class="btn-approve" onclick="approveLeave('${l.id}',this)">✓</button>
+          <button class="btn-reject" onclick="rejectLeave('${l.id}',this)">✗</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // Recently added employees
+  const recent = [...allProfiles].sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0)).slice(0,5);
+  const actDiv = document.getElementById('activityLog');
+  if (!recent.length) {
+    actDiv.innerHTML = '<div class="empty-msg">No recent activity.</div>';
+  } else {
+    actDiv.innerHTML = recent.map(u => `
+      <div class="activity-item">
+        <div class="activity-dot" style="background:var(--green)"></div>
+        <div>
+          <div class="activity-main">${u.first_name||''} ${u.last_name||''}</div>
+          <div class="activity-sub">${u.role} · ${u.department||'No dept'} · ${fmtDate(u.created_at)}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ── Employees ─────────────────────────────────────────────────
+async function loadEmployees() {
+  document.getElementById('empTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
+  const { data, error } = await sb.from('profiles').select('*').order('first_name');
+  if (error) { toast('Failed to load employees', 'error'); return; }
+  allProfiles = data || [];
+  initDepartmentFilters(allProfiles);
+  renderEmpTable(allProfiles);
+}
+
+function renderEmpTable(emps) {
+  const tbody = document.getElementById('empTable');
+  if (!emps.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No employees found.</td></tr>'; return; }
+  tbody.innerHTML = emps.map(e => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
+        <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
+      <td>${e.department||'—'}</td>
+      <td>${e.position||'—'}</td>
+      <td>${badgeHtml(e.status||'active')}</td>
+      <td>${fmtDate(e.date_hired)}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-ghost btn-sm" onclick="editEmployee('${e.id}')">Edit</button>
+        <button class="btn-danger-sm" onclick="deactivateEmployee('${e.id}')">Inactive</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterEmployees() {
+  const q = document.getElementById('empSearch').value.toLowerCase();
+  const selectedDept = document.getElementById('empDeptFilter')?.value || 'all';
+  renderEmpTable(allProfiles.filter(e => {
+    const matchesSearch = `${e.first_name} ${e.last_name} ${e.email} ${e.department}`.toLowerCase().includes(q);
+    const matchesDept = selectedDept === 'all' || (e.department || '').toLowerCase() === selectedDept.toLowerCase();
+    return matchesSearch && matchesDept;
+  }));
+}
+
+async function saveEmployee() {
+  const first = document.getElementById('empFirst').value.trim();
+  const last  = document.getElementById('empLast').value.trim();
+  const email = document.getElementById('empEmail').value.trim();
+  const dept  = document.getElementById('empDept').value.trim();
+  const pos   = document.getElementById('empPos').value.trim();
+  const hired = document.getElementById('empHired').value;
+  const type  = document.getElementById('empType').value;
+
+  if (!first || !last || !email) { toast('First name, last name and email are required.', 'error'); return; }
+
+  const { error } = await sb.from('profiles').insert({
+    first_name: first, last_name: last, email, department: dept,
+    position: pos, date_hired: hired || null, employment_type: type,
+    status: 'active', role: 'user'
+  });
+
+  if (error) { toast('Failed to add employee: ' + error.message, 'error'); return; }
+  toast('Employee added successfully!', 'success');
+  document.getElementById('addEmpModal').classList.remove('open');
+  ['empFirst','empLast','empEmail','empDept','empPos','empHired'].forEach(id => document.getElementById(id).value = '');
+  loadEmployees();
+}
+
+async function deactivateEmployee(id) {
+  if (!confirm('Set this employee to inactive?')) return;
+  const { error } = await sb.from('profiles').update({ status: 'inactive' }).eq('id', id);
+  if (error) { toast('Failed to update status', 'error'); return; }
+  toast('Employee set to inactive.', 'success');
+  loadEmployees();
+}
+
+function editEmployee(id) {
+  toast('Edit feature coming soon.', 'success');
+}
+
+// ── Attendance ────────────────────────────────────────────────
+async function loadAttendance() {
+  const dateInput = document.getElementById('attDate');
+  if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  const date = dateInput.value;
+
+  document.getElementById('attTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
+
+  const { data, error } = await sb
+    .from('attendance')
+    .select('*, profiles(first_name, last_name, department)')
+    .eq('date', date);
+
+  if (error) { toast('Failed to load attendance', 'error'); return; }
+  let att = data || [];
+  const selectedDept = document.getElementById('attDeptFilter')?.value || 'all';
+  if (selectedDept !== 'all') {
+    att = att.filter(a => (a.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
+  }
+
+  document.getElementById('attPresent').textContent  = att.filter(a=>a.status==='present').length;
+  document.getElementById('attAbsent').textContent   = att.filter(a=>a.status==='absent').length;
+  document.getElementById('attLate').textContent     = att.filter(a=>a.status==='late').length;
+  document.getElementById('attOnLeave').textContent  = att.filter(a=>a.status==='on leave').length;
+
+  const tbody = document.getElementById('attTable');
+  if (!att.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No attendance records for this date.</td></tr>'; return; }
+  tbody.innerHTML = att.map(a => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((a.profiles?.first_name||'')+' '+(a.profiles?.last_name||''))}</div>
+        <div class="emp-name">${a.profiles?.first_name||''} ${a.profiles?.last_name||''}</div></div></td>
+      <td>${a.profiles?.department||'—'}</td>
+      <td>${a.time_in||'—'}</td>
+      <td>${a.time_out||'—'}</td>
+      <td>${a.total_hours != null ? a.total_hours+'h' : '—'}</td>
+      <td>${badgeHtml(a.status)}</td>
+    </tr>`).join('');
+}
+
+// ── Leave ─────────────────────────────────────────────────────
+async function loadLeave() {
+  document.getElementById('leaveList').innerHTML = '<div class="empty-msg">Loading...</div>';
+
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*, profiles(first_name, last_name)')
+    .order('filed_at', { ascending: false });
+
+  if (error) { toast('Failed to load leave requests', 'error'); return; }
+  let leaves = data || [];
+  const query = (document.getElementById('leaveSearch')?.value || '').trim().toLowerCase();
+  if (query) {
+    leaves = leaves.filter(l => {
+      const name = `${l.profiles?.first_name||''} ${l.profiles?.last_name||''}`.toLowerCase();
+      const type = (l.leave_type || '').toLowerCase();
+      const reason = (l.reason || '').toLowerCase();
+      const status = (l.status || '').toLowerCase();
+      return name.includes(query) || type.includes(query) || reason.includes(query) || status.includes(query);
+    });
+  }
+
+  document.getElementById('lvPending').textContent  = leaves.filter(l=>l.status==='pending').length;
+  document.getElementById('lvApproved').textContent = leaves.filter(l=>l.status==='approved').length;
+  document.getElementById('lvRejected').textContent = leaves.filter(l=>l.status==='rejected').length;
+
+  const div = document.getElementById('leaveList');
+  if (!leaves.length) { div.innerHTML = '<div class="empty-msg">No leave requests found.</div>'; return; }
+  div.innerHTML = leaves.map(l => `
+    <div class="leave-item">
+      <div class="mini-avatar">${initials((l.profiles?.first_name||'')+' '+(l.profiles?.last_name||''))}</div>
+      <div class="leave-info">
+        <div class="leave-name">${l.profiles?.first_name||''} ${l.profiles?.last_name||''} — <span style="font-weight:400;color:var(--muted)">${l.leave_type}</span></div>
+        <div class="leave-detail">${l.start_date} – ${l.end_date} · ${l.num_days} day(s)</div>
+      </div>
+      <div class="leave-actions" id="la-${l.id}">
+        ${l.status==='pending'
+          ? `<button class="btn-approve" onclick="approveLeave('${l.id}',this)">✓ Approve</button><button class="btn-reject" onclick="rejectLeave('${l.id}',this)">✗ Reject</button>`
+          : badgeHtml(l.status)}
+      </div>
+    </div>`).join('');
+}
+
+async function approveLeave(id, btn) {
+  const { error } = await sb.from('leave_requests').update({ status: 'approved' }).eq('id', id);
+  if (error) { toast('Failed to approve leave', 'error'); return; }
+  toast('Leave approved!', 'success');
+  document.getElementById(`la-${id}`).innerHTML = badgeHtml('approved');
+  loadDashboard();
+}
+
+async function rejectLeave(id, btn) {
+  const { error } = await sb.from('leave_requests').update({ status: 'rejected' }).eq('id', id);
+  if (error) { toast('Failed to reject leave', 'error'); return; }
+  toast('Leave rejected.', 'success');
+  document.getElementById(`la-${id}`).innerHTML = badgeHtml('rejected');
+  loadDashboard();
+}
+
+// ── Payroll ───────────────────────────────────────────────────
+async function loadPayroll() {
+  document.getElementById('payrollTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
+
+  const { data, error } = await sb
+    .from('payroll')
+    .select('*, profiles(first_name, last_name, department)');
+
+  if (error) { toast('Failed to load payroll', 'error'); return; }
+  let payroll = data || [];
+  const query = (document.getElementById('payrollSearch')?.value || '').trim().toLowerCase();
+  const selectedDept = document.getElementById('payrollDeptFilter')?.value || 'all';
+  if (selectedDept !== 'all') {
+    payroll = payroll.filter(p => (p.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
+  }
+  if (query) {
+    payroll = payroll.filter(p => {
+      const name = `${p.profiles?.first_name||''} ${p.profiles?.last_name||''}`.toLowerCase();
+      const dept = (p.profiles?.department || '').toLowerCase();
+      const status = (p.status || '').toLowerCase();
+      const basic = String(p.basic_pay || '').toLowerCase();
+      const net = String(p.net_pay || '').toLowerCase();
+      return name.includes(query) || dept.includes(query) || status.includes(query) || basic.includes(query) || net.includes(query);
+    });
+  }
+  const total = payroll.reduce((sum,p) => sum + Number(p.net_pay||0), 0);
+  document.getElementById('payrollSub').textContent = `${payroll.length} records · Total: ₱${total.toLocaleString('en-PH')}`;
+
+  const tbody = document.getElementById('payrollTable');
+  if (!payroll.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No payroll records found.</td></tr>'; return; }
+  tbody.innerHTML = payroll.map(p => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((p.profiles?.first_name||'')+' '+(p.profiles?.last_name||''))}</div>
+        <div class="emp-name">${p.profiles?.first_name||''} ${p.profiles?.last_name||''}</div></div></td>
+      <td>${p.profiles?.department||'—'}</td>
+      <td>₱${Number(p.basic_pay||0).toLocaleString('en-PH')}</td>
+      <td>₱${Number((p.tax||0)+(p.late_deduction||0)+(p.absence_deduction||0)).toLocaleString('en-PH')}</td>
+      <td><strong>₱${Number(p.net_pay||0).toLocaleString('en-PH')}</strong></td>
+      <td>${badgeHtml(p.status||'pending')}</td>
+    </tr>`).join('');
+}
+
+function downloadCSV(data, columns, filename) {
+  if (!data || !data.length) { toast('No data to export', 'error'); return; }
+  const header = columns.join(',');
+  const rows = data.map(row =>
+    columns.map(col => `"${(row[col] ?? '').toString().replace(/"/g, '""')}"`).join(',')
+  );
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${filename}.csv downloaded!`, 'success');
+}
+
+async function exportReport(type) {
+  const card = document.getElementById(`rc-${type}`);
+  if (card) { card.classList.add('loading'); card.querySelector('.report-export').textContent = 'Generating...'; }
+
+  try {
+    if (type === 'employee') {
+      const { data } = await sb.from('profiles').select('first_name,last_name,gender,department,position,status,date_hired,separation_date').order('first_name');
+      downloadCSV(data, ['first_name','last_name','gender','department','position','status','date_hired','separation_date'], 'employee_report');
+
+    } else if (type === 'attendance') {
+      const { data } = await sb.from('attendance').select('*, profiles(first_name,last_name,department)').order('date', { ascending: false });
+      const rows = (data||[]).map(a => ({
+        first_name: a.profiles?.first_name||'',
+        last_name: a.profiles?.last_name||'',
+        department: a.profiles?.department||'',
+        date: a.date, time_in: a.time_in||'', time_out: a.time_out||'',
+        total_hours: a.total_hours||'', status: a.status
+      }));
+      downloadCSV(rows, ['first_name','last_name','department','date','time_in','time_out','total_hours','status'], 'attendance_report');
+
+    } else if (type === 'leave') {
+      const { data } = await sb.from('leave_requests').select('*, profiles(first_name,last_name)').order('filed_at', { ascending: false });
+      const rows = (data||[]).map(l => ({
+        first_name: l.profiles?.first_name||'',
+        last_name: l.profiles?.last_name||'',
+        leave_type: l.leave_type, num_days: l.num_days,
+        start_date: l.start_date, end_date: l.end_date,
+        reason: l.reason||'', status: l.status,
+        filed_at: l.filed_at ? l.filed_at.split('T')[0] : ''
+      }));
+      downloadCSV(rows, ['first_name','last_name','leave_type','num_days','start_date','end_date','reason','status','filed_at'], 'leave_report');
+
+    } else if (type === 'payroll') {
+      const { data } = await sb.from('payroll').select('*, profiles(first_name,last_name,department)');
+      const rows = (data||[]).map(p => ({
+        first_name: p.profiles?.first_name||'',
+        last_name: p.profiles?.last_name||'',
+        department: p.profiles?.department||'', pay_period_start: p.pay_period_start || '',
+        pay_period_end: p.pay_period_end || '', basic_pay: p.basic_pay || 0,
+        overtime: p.overtime || 0, bonus: p.bonus || 0,
+        tax: p.tax || 0, late_deduction: p.late_deduction || 0,
+        absence_deduction: p.absence_deduction || 0, net_pay: p.net_pay || 0,
+        status: p.status || ''
+      }));
+      downloadCSV(rows, ['first_name','last_name','department','pay_period_start','pay_period_end','basic_pay','overtime','bonus','tax','late_deduction','absence_deduction','net_pay','status'], 'payroll_report');
+
+    } else if (type === 'analytics') {
+      toast('Analytics report export is not available yet.', 'error');
+
+    } else if (type === 'audit') {
+      toast('Audit log export is not available yet.', 'error');
+
+    } else {
+      toast('Unknown report type.', 'error');
+    }
+  } catch (error) {
+    toast('Failed to generate report: ' + (error.message || error), 'error');
+  } finally {
+    if (card) {
+      card.classList.remove('loading');
+      card.querySelector('.report-export').textContent = '↓ PDF / Excel / CSV';
+    }
+  }
+}
+
+// ── Users ─────────────────────────────────────────────────────
+async function loadUsers() {
+  document.getElementById('usersTable').innerHTML = '<tr><td colspan="5" class="empty-msg">Loading...</td></tr>';
+  const { data, error } = await sb.from('profiles').select('*').order('role');
+  if (error) { toast('Failed to load users', 'error'); return; }
+  const users = data || [];
+  const tbody = document.getElementById('usersTable');
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">No users found.</td></tr>'; return; }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((u.first_name||'')+' '+(u.last_name||''))}</div>
+        <div><div class="emp-name">${u.first_name||''} ${u.last_name||''}</div><div class="emp-sub">${u.username||''}</div></div></div></td>
+      <td style="color:var(--muted)">${u.email||'—'}</td>
+      <td>${badgeHtml(u.role||'user')}</td>
+      <td>${badgeHtml(u.status||'active')}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-ghost btn-sm">Edit</button>
+        <button class="btn-danger-sm" onclick="setUserInactive('${u.id}')">Inactive</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function createUser() {
+  const first = document.getElementById('userFirst').value.trim();
+  const last  = document.getElementById('userLast').value.trim();
+  const email = document.getElementById('userEmail').value.trim();
+  const role  = document.getElementById('userRole').value;
+  const pass  = document.getElementById('userPass').value;
+
+  if (!email || !pass) { toast('Email and password are required.', 'error'); return; }
+
+  // Create auth user
+  const { data: authData, error: authErr } = await sb.auth.signUp({ email, password: pass });
+  if (authErr) { toast('Auth error: ' + authErr.message, 'error'); return; }
+
+  // Insert profile
+  const { error: profErr } = await sb.from('profiles').insert({
+    id: authData.user.id, first_name: first, last_name: last,
+    email, role, status: 'active'
+  });
+  if (profErr) { toast('Profile error: ' + profErr.message, 'error'); return; }
+
+  toast('User created successfully!', 'success');
+  document.getElementById('addUserModal').classList.remove('open');
+  ['userFirst','userLast','userEmail','userPass'].forEach(id => document.getElementById(id).value = '');
+  loadUsers();
+}
+
+async function setUserInactive(id) {
+  if (!confirm('Set this user to inactive?')) return;
+  const { error } = await sb.from('profiles').update({ status: 'inactive' }).eq('id', id);
+  if (error) { toast('Failed to update user', 'error'); return; }
+  toast('User set to inactive.', 'success');
+  loadUsers();
+}
+
+// ── Auth check & Init ─────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  await loadDashboard();
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+init();
+</script>
+</body>
+</html>
