@@ -905,7 +905,7 @@ async function init() {
 
 async function logout() {
   await sb.auth.signOut();
-  window.location.href = 'index.html';
+  window.location.href = 'index.html#login';
 }
 
 document.querySelectorAll('.modal-overlay').forEach(o => {
