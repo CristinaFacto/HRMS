@@ -73,7 +73,10 @@
 
   // ── State ──────────────────────────────────────────────────────
   let isLogin = false;
-
+// Auto switch to login if #login is in URL
+if (window.location.hash === '#login') {
+  document.addEventListener('DOMContentLoaded', () => toggleMode());
+}
   // ── Helpers ───────────────────────────────────────────────────
   function showMessage(text, type = 'error') {
     const el = document.getElementById('message');
