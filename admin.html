@@ -73,6 +73,13 @@ tbody td{padding:10px 14px;color:var(--text)}
 .badge-gray{color:var(--muted);border-color:var(--border);background:var(--bg)}
 .btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--border);border-radius:var(--radius);padding:5px 11px;font-family:Arial,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
 .btn-ghost:hover{border-color:var(--primary)}
+
+/* ── Scrollable leave list ── */
+.leave-scroll{max-height:260px;overflow-y:auto}
+.leave-scroll::-webkit-scrollbar{width:4px}
+.leave-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.leave-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
 .leave-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s}
 .leave-item:last-child{border-bottom:none}
 .leave-item:hover{background:var(--bg)}
@@ -109,6 +116,30 @@ tbody td{padding:10px 14px;color:var(--text)}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.success{background:var(--green)}
 .toast.error{background:var(--red)}
+
+/* ── Notification Panel ── */
+.notif-panel{position:absolute;top:46px;right:0;width:320px;background:var(--white);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(16,24,40,0.12);z-index:300;display:none}
+.notif-panel.open{display:block}
+.notif-panel-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-panel-title{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.8px}
+.notif-mark-all{font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;background:none;border:none;font-family:Arial,sans-serif}
+.notif-list{max-height:340px;overflow-y:auto}
+.notif-list::-webkit-scrollbar{width:4px}
+.notif-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.notif-item{display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--bg)}
+.notif-item.unread{background:#F0F5FF}
+.notif-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px}
+.notif-body{flex:1;min-width:0}
+.notif-text{font-size:12px;font-weight:700;color:var(--text);line-height:1.4}
+.notif-subtext{font-size:11px;color:var(--muted);margin-top:2px}
+.notif-time{font-size:10.5px;color:var(--muted);margin-top:3px}
+.notif-empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:12px}
+.notif-footer{padding:10px 16px;border-top:1px solid var(--border);text-align:center;font-size:11.5px;font-weight:700;color:var(--primary);cursor:pointer}
+.notif-footer:hover{background:var(--bg)}
+.notif-wrap{position:relative}
+.notif-count{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--white);padding:0 3px}
 </style>
 </head>
 <body>
@@ -163,7 +194,21 @@ tbody td{padding:10px 14px;color:var(--text)}
         <div id="dt-date" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)"></div>
         <div id="dt-time"></div>
       </div>
-      <div class="icon-btn"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></div>
+      <!-- Notification Button -->
+      <div class="notif-wrap">
+        <div class="icon-btn" id="notifBtn" onclick="toggleNotifPanel()">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notif-count" id="notifCount" style="display:none">0</span>
+        </div>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-panel-head">
+            <span class="notif-panel-title">Notifications</span>
+            <button class="notif-mark-all" onclick="markAllRead()">Mark all read</button>
+          </div>
+          <div class="notif-list" id="notifList"><div class="notif-empty">Loading...</div></div>
+          <div class="notif-footer" onclick="navigateTo('leave')">View all leave requests →</div>
+        </div>
+      </div>
     </div>
   </header>
   <div class="content">
@@ -176,6 +221,23 @@ tbody td{padding:10px 14px;color:var(--text)}
         <div class="stat-card" style="--card-color:var(--secondary)"><div class="stat-lbl">Pending Leaves</div><div class="stat-val" id="statLeaves">—</div><div class="stat-sub">awaiting approval</div></div>
         <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Absent Today</div><div class="stat-val" id="statAbsent">—</div><div class="stat-sub">not present today</div></div>
       </div>
+
+      <!-- Employee Status Filter -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head">
+          <span class="panel-title">Employee Status Overview</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="dashStatusFilter" onchange="filterDashEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Joined</th></tr></thead>
+        <tbody id="dashEmpTable"><tr><td colspan="4" class="empty-msg">Loading...</td></tr></tbody></table></div>
+      </div>
+
       <div class="two-col">
         <div class="panel">
           <div class="panel-head"><span class="panel-title">Attendance This Week</span><button class="panel-action" onclick="navigateTo('attendance')">View Logs →</button></div>
@@ -189,13 +251,8 @@ tbody td{padding:10px 14px;color:var(--text)}
         </div>
         <div class="panel">
           <div class="panel-head"><span class="panel-title">Pending Leave Requests</span><button class="panel-action" onclick="navigateTo('leave')">Manage →</button></div>
-          <div id="dashLeaveList"><div class="empty-msg">Loading...</div></div>
+          <div class="leave-scroll" id="dashLeaveList"><div class="empty-msg">Loading...</div></div>
         </div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Employee Directory</span></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Joined</th></tr></thead>
-        <tbody id="dashEmpTable"><tr><td colspan="4" class="empty-msg">Loading...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -207,6 +264,11 @@ tbody td{padding:10px 14px;color:var(--text)}
             <input type="text" id="empSearch" placeholder="Search employees…" oninput="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif"/>
             <select id="empDeptFilter" onchange="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
               <option value="all">All Departments</option>
+            </select>
+            <select id="empStatusFilter" onchange="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -247,7 +309,7 @@ tbody td{padding:10px 14px;color:var(--text)}
         <div class="panel-head"><span class="panel-title">Leave Requests</span>
           <input type="text" id="leaveSearch" placeholder="Search leave requests…" oninput="loadLeave()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;margin-left:auto;min-width:220px"/>
         </div>
-        <div id="leaveList"><div class="empty-msg">Loading...</div></div>
+        <div class="leave-scroll" id="leaveList"><div class="empty-msg">Loading...</div></div>
       </div>
     </div>
 
@@ -276,42 +338,12 @@ tbody td{padding:10px 14px;color:var(--text)}
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Generate & Export Reports</span></div>
         <div class="reports-grid">
-          <div class="report-card" id="rc-employee" onclick="exportReport('employee')">
-            <div class="report-icon">👥</div>
-            <div class="report-name">Employee Report</div>
-            <div class="report-desc">Full employee directory</div>
-            <div class="report-export">↓ Export CSV</div>
-          </div>
-          <div class="report-card" id="rc-attendance" onclick="exportReport('attendance')">
-            <div class="report-icon">🕐</div>
-            <div class="report-name">Attendance Report</div>
-            <div class="report-desc">Monthly attendance logs</div>
-            <div class="report-export">↓ Export CSV</div>
-          </div>
-          <div class="report-card" id="rc-leave" onclick="exportReport('leave')">
-            <div class="report-icon">📅</div>
-            <div class="report-name">Leave Report</div>
-            <div class="report-desc">Leave usage per employee</div>
-            <div class="report-export">↓ Export CSV</div>
-          </div>
-          <div class="report-card" id="rc-payroll" onclick="exportReport('payroll')">
-            <div class="report-icon">💰</div>
-            <div class="report-name">Payroll Summary</div>
-            <div class="report-desc">Payroll totals and deductions</div>
-            <div class="report-export">↓ Export CSV</div>
-          </div>
-          <div class="report-card" id="rc-department" onclick="exportReport('department')">
-            <div class="report-icon">📈</div>
-            <div class="report-name">Department Report</div>
-            <div class="report-desc">Headcount per department</div>
-            <div class="report-export">↓ Export CSV</div>
-          </div>
-          <div class="report-card" id="rc-compliance" onclick="exportReport('compliance')">
-            <div class="report-icon">📋</div>
-            <div class="report-name">Compliance Report</div>
-            <div class="report-desc">HR compliance summary</div>
-            <div class="report-export">↓ Export CSV</div>
-          </div>
+          <div class="report-card" id="rc-employee" onclick="exportReport('employee')"><div class="report-icon">👥</div><div class="report-name">Employee Report</div><div class="report-desc">Full employee directory</div><div class="report-export">↓ Export CSV</div></div>
+          <div class="report-card" id="rc-attendance" onclick="exportReport('attendance')"><div class="report-icon">🕐</div><div class="report-name">Attendance Report</div><div class="report-desc">Monthly attendance logs</div><div class="report-export">↓ Export CSV</div></div>
+          <div class="report-card" id="rc-leave" onclick="exportReport('leave')"><div class="report-icon">📅</div><div class="report-name">Leave Report</div><div class="report-desc">Leave usage per employee</div><div class="report-export">↓ Export CSV</div></div>
+          <div class="report-card" id="rc-payroll" onclick="exportReport('payroll')"><div class="report-icon">💰</div><div class="report-name">Payroll Summary</div><div class="report-desc">Payroll totals and deductions</div><div class="report-export">↓ Export CSV</div></div>
+          <div class="report-card" id="rc-department" onclick="exportReport('department')"><div class="report-icon">📈</div><div class="report-name">Department Report</div><div class="report-desc">Headcount per department</div><div class="report-export">↓ Export CSV</div></div>
+          <div class="report-card" id="rc-compliance" onclick="exportReport('compliance')"><div class="report-icon">📋</div><div class="report-name">Compliance Report</div><div class="report-desc">HR compliance summary</div><div class="report-export">↓ Export CSV</div></div>
         </div>
       </div>
     </div>
@@ -330,6 +362,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let allEmployees = [];
 let departmentOptions = [];
+let notifications = [];
 
 function getDepartments(records) {
   return [...new Set((records || []).map(r => (r.department || '').trim()).filter(Boolean))].sort();
@@ -350,9 +383,7 @@ function renderDepartmentFilter(selectId, departments) {
     option.textContent = dept;
     select.appendChild(option);
   });
-  if ([...select.options].some(o => o.value === currentValue)) {
-    select.value = currentValue;
-  }
+  if ([...select.options].some(o => o.value === currentValue)) select.value = currentValue;
 }
 
 function initDepartmentFilters(records) {
@@ -371,12 +402,20 @@ function toast(msg, type = 'success') {
 // ── Helpers ───────────────────────────────────────────────────
 function initials(name) { return name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?'; }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-PH') : '—'; }
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
 
 function badgeHtml(status) {
   const map = {
     active:'badge-success', present:'badge-success', processed:'badge-success', approved:'badge-success',
-    pending:'badge-warning', 'on leave':'badge-warning',
-    late:'badge-warning', absent:'badge-danger', rejected:'badge-danger', inactive:'badge-gray'
+    pending:'badge-warning', 'on leave':'badge-warning', late:'badge-warning',
+    absent:'badge-danger', rejected:'badge-danger', inactive:'badge-gray'
   };
   const cls = map[status?.toLowerCase()] || 'badge-gray';
   return `<span class="badge ${cls}"><span class="dot"></span>${status}</span>`;
@@ -390,6 +429,81 @@ function updateDateTime() {
 }
 updateDateTime();
 setInterval(updateDateTime, 1000);
+
+// ── Notifications ─────────────────────────────────────────────
+async function loadNotifications() {
+  const { data: leaves } = await sb
+    .from('leave_requests')
+    .select('*, profiles(first_name, last_name)')
+    .order('filed_at', { ascending: false })
+    .limit(20);
+
+  notifications = (leaves || []).map(l => ({
+    id: l.id,
+    type: l.status,
+    text: `${l.profiles?.first_name||''} ${l.profiles?.last_name||''} filed a ${l.leave_type} leave`,
+    subtext: `${l.start_date} – ${l.end_date} · ${l.num_days} day(s)`,
+    time: l.filed_at,
+    unread: l.status === 'pending'
+  }));
+
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const unreadCount = notifications.filter(n => n.unread).length;
+  const countEl = document.getElementById('notifCount');
+  if (unreadCount > 0) {
+    countEl.textContent = unreadCount > 9 ? '9+' : unreadCount;
+    countEl.style.display = 'flex';
+  } else {
+    countEl.style.display = 'none';
+  }
+
+  const list = document.getElementById('notifList');
+  if (!notifications.length) {
+    list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+    return;
+  }
+
+  const iconMap = { pending: { bg:'#FEF9E7', icon:'🕐' }, approved: { bg:'#E6F5EE', icon:'✅' }, rejected: { bg:'#FEE2E2', icon:'❌' } };
+  list.innerHTML = notifications.map(n => {
+    const ic = iconMap[n.type] || { bg:'#EFF6FF', icon:'📋' };
+    return `
+    <div class="notif-item ${n.unread ? 'unread' : ''}" onclick="markRead('${n.id}')">
+      <div class="notif-icon" style="background:${ic.bg}">${ic.icon}</div>
+      <div class="notif-body">
+        <div class="notif-text">${n.text}</div>
+        <div class="notif-subtext">${n.subtext}</div>
+        <div class="notif-time">${timeAgo(n.time)}</div>
+      </div>
+      ${n.unread ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:6px"></div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleNotifPanel() {
+  document.getElementById('notifPanel').classList.toggle('open');
+}
+
+function markRead(id) {
+  const n = notifications.find(n => n.id === id);
+  if (n) n.unread = false;
+  renderNotifications();
+}
+
+function markAllRead() {
+  notifications.forEach(n => n.unread = false);
+  renderNotifications();
+}
+
+// Close notification panel when clicking outside
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.notif-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('notifPanel').classList.remove('open');
+  }
+});
 
 // ── Navigate ──────────────────────────────────────────────────
 function navigateTo(section) {
@@ -412,6 +526,7 @@ function navigate(section, el) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────
+let dashAllEmployees = [];
 async function loadDashboard() {
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
@@ -425,23 +540,11 @@ async function loadDashboard() {
 
   const { data: profiles } = await sb.from('profiles').select('*').order('first_name');
   allEmployees = profiles || [];
+  dashAllEmployees = allEmployees.filter(p => p.role === 'user');
   initDepartmentFilters(allEmployees);
-  const employees = allEmployees.filter(p => p.role === 'user');
-  document.getElementById('statTotal').textContent = employees.length;
+  document.getElementById('statTotal').textContent = dashAllEmployees.length;
 
-  const tbody = document.getElementById('dashEmpTable');
-  if (!employees.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No employees found.</td></tr>';
-  } else {
-    tbody.innerHTML = employees.slice(0, 5).map(e => `
-      <tr>
-        <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
-          <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
-        <td>${e.department||'—'}</td>
-        <td>${badgeHtml(e.status||'active')}</td>
-        <td>${fmtDate(e.date_hired)}</td>
-      </tr>`).join('');
-  }
+  renderDashEmployeeTable(dashAllEmployees);
 
   const today = new Date().toISOString().split('T')[0];
   const { data: attToday } = await sb.from('attendance').select('status').eq('date', today);
@@ -477,6 +580,33 @@ async function loadDashboard() {
         </div>
       </div>`).join('');
   }
+
+  await loadNotifications();
+}
+
+function renderDashEmployeeTable(emps) {
+  const tbody = document.getElementById('dashEmpTable');
+  if (!emps.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No employees found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = emps.map(e => `
+    <tr>
+      <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
+        <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
+      <td>${e.department||'—'}</td>
+      <td>${badgeHtml(e.status||'active')}</td>
+      <td>${fmtDate(e.date_hired)}</td>
+    </tr>`).join('');
+}
+
+function filterDashEmployees() {
+  const statusFilter = document.getElementById('dashStatusFilter').value;
+  let filtered = dashAllEmployees;
+  if (statusFilter !== 'all') {
+    filtered = filtered.filter(e => (e.status || 'active').toLowerCase() === statusFilter);
+  }
+  renderDashEmployeeTable(filtered);
 }
 
 // ── Week Attendance Bars ──────────────────────────────────────
@@ -533,10 +663,12 @@ function renderEmployeeTable(emps) {
 function filterEmployees() {
   const q = document.getElementById('empSearch').value.toLowerCase();
   const selectedDept = document.getElementById('empDeptFilter')?.value || 'all';
+  const selectedStatus = document.getElementById('empStatusFilter')?.value || 'all';
   renderEmployeeTable(allEmployees.filter(e => {
     const matchesSearch = `${e.first_name} ${e.last_name} ${e.email} ${e.department}`.toLowerCase().includes(q);
     const matchesDept = selectedDept === 'all' || (e.department || '').toLowerCase() === selectedDept.toLowerCase();
-    return matchesSearch && matchesDept;
+    const matchesStatus = selectedStatus === 'all' || (e.status || 'active').toLowerCase() === selectedStatus;
+    return matchesSearch && matchesDept && matchesStatus;
   }));
 }
 
@@ -712,10 +844,9 @@ async function exportReport(type) {
     } else if (type === 'attendance') {
       const { data } = await sb.from('attendance').select('*, profiles(first_name,last_name,department)').order('date', { ascending: false });
       const rows = (data||[]).map(a => ({
-        first_name: a.profiles?.first_name||'',
-        last_name: a.profiles?.last_name||'',
-        department: a.profiles?.department||'',
-        date: a.date, time_in: a.time_in||'', time_out: a.time_out||'',
+        first_name: a.profiles?.first_name||'', last_name: a.profiles?.last_name||'',
+        department: a.profiles?.department||'', date: a.date,
+        time_in: a.time_in||'', time_out: a.time_out||'',
         total_hours: a.total_hours||'', status: a.status
       }));
       downloadCSV(rows, ['first_name','last_name','department','date','time_in','time_out','total_hours','status'], 'attendance_report');
@@ -723,8 +854,7 @@ async function exportReport(type) {
     } else if (type === 'leave') {
       const { data } = await sb.from('leave_requests').select('*, profiles(first_name,last_name)').order('filed_at', { ascending: false });
       const rows = (data||[]).map(l => ({
-        first_name: l.profiles?.first_name||'',
-        last_name: l.profiles?.last_name||'',
+        first_name: l.profiles?.first_name||'', last_name: l.profiles?.last_name||'',
         leave_type: l.leave_type, num_days: l.num_days,
         start_date: l.start_date, end_date: l.end_date,
         reason: l.reason||'', status: l.status,
@@ -735,8 +865,7 @@ async function exportReport(type) {
     } else if (type === 'payroll') {
       const { data } = await sb.from('payroll').select('*, profiles(first_name,last_name,department)');
       const rows = (data||[]).map(p => ({
-        first_name: p.profiles?.first_name||'',
-        last_name: p.profiles?.last_name||'',
+        first_name: p.profiles?.first_name||'', last_name: p.profiles?.last_name||'',
         department: p.profiles?.department||'',
         pay_period_start: p.pay_period_start, pay_period_end: p.pay_period_end,
         basic_pay: p.basic_pay, overtime: p.overtime||0, bonus: p.bonus||0,
