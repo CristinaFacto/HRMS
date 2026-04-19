@@ -12,6 +12,10 @@
     .container { width: 100%; max-width: 420px; padding: 28px; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 8px 20px rgba(16,24,40,0.06); margin: 0 auto; }
     h1 { text-align: center; color: var(--primary); margin-bottom: 20px; }
     .input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 3px; background: #FAFAFA; font-size: 14px; }
+    .pw-wrap { position: relative; margin-bottom: 12px; }
+    .pw-wrap .input { width: 100%; margin-bottom: 0; padding-right: 42px; }
+    .pw-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 4px; color: var(--muted); display: flex; align-items: center; }
+    .pw-toggle svg { width: 18px; height: 18px; }
     .btn { width: 100%; padding: 14px; border: none; border-radius: 3px; background: var(--primary); color: white; font-size: 15px; cursor: pointer; margin-top: 6px; }
     .btn-google { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 3px; background: white; cursor: pointer; margin-top: 10px; }
     .btn .icon, .btn-google .icon { display: inline-block; width: 18px; height: 18px; margin-right: 10px; vertical-align: middle; }
@@ -39,7 +43,16 @@
     </div>
 
     <input id="emailInput" class="input" placeholder="Email" />
-    <input id="passwordInput" class="input" type="password" placeholder="Password" />
+
+    <div class="pw-wrap">
+      <input id="passwordInput" class="input" type="password" placeholder="Password" />
+      <button class="pw-toggle" id="pwToggle" type="button" aria-label="Show password" tabindex="-1">
+        <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
 
     <div id="loginExtra" class="hidden">
       <div class="forgot" id="forgotBtn">Forgot Password</div>
@@ -73,11 +86,13 @@
 
   // ── State ──────────────────────────────────────────────────────
   let isLogin = false;
-// Auto switch to login if #login is in URL
-if (window.location.hash === '#login') {
-  document.addEventListener('DOMContentLoaded', () => toggleMode());
-}
-  // ── Helpers ───────────────────────────────────────────────────
+
+  // Auto switch to login if #login is in URL
+  if (window.location.hash === '#login') {
+    document.addEventListener('DOMContentLoaded', () => toggleMode());
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────
   function showMessage(text, type = 'error') {
     const el = document.getElementById('message');
     el.textContent = text;
@@ -95,10 +110,37 @@ if (window.location.hash === '#login') {
       loading ? 'Please wait…' : (isLogin ? 'Login' : 'Sign up');
   }
 
+  // ── Show/hide password toggle ──────────────────────────────────
+  const pwInput  = document.getElementById('passwordInput');
+  const pwToggle = document.getElementById('pwToggle');
+  const eyeIcon  = document.getElementById('eyeIcon');
+
+  const eyeOpen  = `<path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>`;
+  const eyeSlash = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+  pwToggle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const showing = pwInput.type === 'text';
+    pwInput.type = showing ? 'password' : 'text';
+    eyeIcon.innerHTML = showing ? eyeOpen : eyeSlash;
+    pwToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  });
+
+  // ── Enter key submits ──────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('submitBtn').click();
+    }
+  });
+
   // ── Toggle sign-up / login ─────────────────────────────────────
   function toggleMode() {
     isLogin = !isLogin;
     clearMessage();
+
+    // Reset password visibility when switching modes
+    pwInput.type = 'password';
+    eyeIcon.innerHTML = eyeOpen;
 
     document.getElementById('title').innerText = isLogin ? 'Login' : 'Sign up';
     document.getElementById('registerFields').classList.toggle('hidden', isLogin);
@@ -112,7 +154,7 @@ if (window.location.hash === '#login') {
       isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login';
   }
 
-  // ── Sign up ───────────────────────────────────────────────────
+  // ── Sign up ────────────────────────────────────────────────────
   async function handleSignup(email, password) {
     const firstName = document.getElementById('firstNameInput').value.trim();
     const lastName  = document.getElementById('lastNameInput').value.trim();
@@ -143,37 +185,37 @@ if (window.location.hash === '#login') {
     toggleMode();
   }
 
-  // ── Login ─────────────────────────────────────────────────────
-async function handleLogin(email, password) {
-  setLoading(true);
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  // ── Login ──────────────────────────────────────────────────────
+  async function handleLogin(email, password) {
+    setLoading(true);
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-  if (error) { setLoading(false); showMessage(error.message); return; }
+    if (error) { setLoading(false); showMessage(error.message); return; }
 
-  // ── Fetch role from profiles table ──
-  const { data: profile, error: profileError } = await sb
-    .from('profiles')
-    .select('role')
-    .eq('id', data.user.id)
-    .single();
+    // ── Fetch role from profiles table ──
+    const { data: profile, error: profileError } = await sb
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
 
-  setLoading(false);
+    setLoading(false);
 
-  if (profileError || !profile) { showMessage('Could not load user role.'); return; }
+    if (profileError || !profile) { showMessage('Could not load user role.'); return; }
 
-  // ── Redirect based on role ──
-  const role = profile.role?.toLowerCase();
+    // ── Redirect based on role ──
+    const role = profile.role?.toLowerCase();
 
-  if (role === 'superadmin') {
-    window.location.href = 'superAdmin.html';
-  } else if (role === 'admin') {
-    window.location.href = 'admin.html';
-  } else {
-    window.location.href = 'user.html';
+    if (role === 'superadmin') {
+      window.location.href = 'superAdmin.html';
+    } else if (role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'user.html';
+    }
   }
-}
 
-  // ── Forgot password ───────────────────────────────────────────
+  // ── Forgot password ────────────────────────────────────────────
   document.getElementById('forgotBtn').addEventListener('click', async () => {
     const email = document.getElementById('emailInput').value.trim();
     if (!email) { showMessage('Enter your email above first.'); return; }
@@ -186,7 +228,7 @@ async function handleLogin(email, password) {
     showMessage('Password reset email sent!', 'success');
   });
 
-  // ── Submit button ─────────────────────────────────────────────
+  // ── Submit button ──────────────────────────────────────────────
   document.getElementById('submitBtn').addEventListener('click', async () => {
     clearMessage();
     const email    = document.getElementById('emailInput').value.trim();
@@ -201,7 +243,7 @@ async function handleLogin(email, password) {
     }
   });
 
-  // ── Google OAuth ──────────────────────────────────────────────
+  // ── Google OAuth ───────────────────────────────────────────────
   document.getElementById('googleBtn').addEventListener('click', async () => {
     clearMessage();
     setLoading(true);
@@ -212,6 +254,6 @@ async function handleLogin(email, password) {
     setLoading(false);
     if (error) showMessage(error.message);
   });
-</script>
+  </script>
 </body>
 </html>
