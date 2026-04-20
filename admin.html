@@ -74,11 +74,17 @@ tbody td{padding:10px 14px;color:var(--text)}
 .btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--border);border-radius:var(--radius);padding:5px 11px;font-family:Arial,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
 .btn-ghost:hover{border-color:var(--primary)}
 
-/* ── Scrollable leave list ── */
+/* ── Scrollable leave list (dashboard pending leaves) ── */
 .leave-scroll{max-height:260px;overflow-y:auto}
 .leave-scroll::-webkit-scrollbar{width:4px}
 .leave-scroll::-webkit-scrollbar-track{background:var(--bg)}
 .leave-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ── Scrollable employee table ── */
+.emp-table-scroll{max-height:320px;overflow-y:auto}
+.emp-table-scroll::-webkit-scrollbar{width:4px}
+.emp-table-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.emp-table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
 .leave-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s}
 .leave-item:last-child{border-bottom:none}
@@ -272,8 +278,8 @@ tbody td{padding:10px 14px;color:var(--text)}
             </select>
           </div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Status</th><th>Joined</th></tr></thead>
-        <tbody id="empTable"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table></div>
+        <div class="emp-table-scroll"><div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Status</th><th>Joined</th></tr></thead>
+        <tbody id="empTable"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table></div></div>
       </div>
     </div>
 
@@ -309,7 +315,7 @@ tbody td{padding:10px 14px;color:var(--text)}
         <div class="panel-head"><span class="panel-title">Leave Requests</span>
           <input type="text" id="leaveSearch" placeholder="Search leave requests…" oninput="loadLeave()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;margin-left:auto;min-width:220px"/>
         </div>
-        <div class="leave-scroll" id="leaveList"><div class="empty-msg">Loading...</div></div>
+        <div id="leaveList"><div class="empty-msg">Loading...</div></div>
       </div>
     </div>
 
