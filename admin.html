@@ -80,11 +80,11 @@ tbody td{padding:10px 14px;color:var(--text)}
 .leave-scroll::-webkit-scrollbar-track{background:var(--bg)}
 .leave-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
-/* ── Scrollable employee table ── */
-.emp-table-scroll{max-height:320px;overflow-y:auto}
-.emp-table-scroll::-webkit-scrollbar{width:4px}
-.emp-table-scroll::-webkit-scrollbar-track{background:var(--bg)}
-.emp-table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+/* ── Scrollable dashboard employee status table ── */
+.dash-emp-scroll{max-height:260px;overflow-y:auto}
+.dash-emp-scroll::-webkit-scrollbar{width:4px}
+.dash-emp-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.dash-emp-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
 .leave-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s}
 .leave-item:last-child{border-bottom:none}
@@ -200,7 +200,6 @@ tbody td{padding:10px 14px;color:var(--text)}
         <div id="dt-date" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)"></div>
         <div id="dt-time"></div>
       </div>
-      <!-- Notification Button -->
       <div class="notif-wrap">
         <div class="icon-btn" id="notifBtn" onclick="toggleNotifPanel()">
           <i class="fa-solid fa-bell"></i>
@@ -228,7 +227,7 @@ tbody td{padding:10px 14px;color:var(--text)}
         <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Absent Today</div><div class="stat-val" id="statAbsent">—</div><div class="stat-sub">not present today</div></div>
       </div>
 
-      <!-- Employee Status Filter -->
+      <!-- Employee Status Overview — sticky header + scrollable body -->
       <div class="panel" style="margin-bottom:16px">
         <div class="panel-head">
           <span class="panel-title">Employee Status Overview</span>
@@ -240,8 +239,14 @@ tbody td{padding:10px 14px;color:var(--text)}
             </select>
           </div>
         </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Joined</th></tr></thead>
-        <tbody id="dashEmpTable"><tr><td colspan="4" class="empty-msg">Loading...</td></tr></tbody></table></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Joined</th></tr></thead></table>
+        </div>
+        <div class="dash-emp-scroll">
+          <div class="tbl-wrap">
+            <table><tbody id="dashEmpTable"><tr><td colspan="4" class="empty-msg">Loading...</td></tr></tbody></table>
+          </div>
+        </div>
       </div>
 
       <div class="two-col">
@@ -278,8 +283,8 @@ tbody td{padding:10px 14px;color:var(--text)}
             </select>
           </div>
         </div>
-        <div class="emp-table-scroll"><div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Status</th><th>Joined</th></tr></thead>
-        <tbody id="empTable"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Status</th><th>Joined</th></tr></thead>
+        <tbody id="empTable"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -304,7 +309,7 @@ tbody td{padding:10px 14px;color:var(--text)}
       </div>
     </div>
 
-    <!-- LEAVE -->
+    <!-- LEAVE — no scroll on leaveList -->
     <div class="section" id="sec-leave">
       <div class="three-col">
         <div class="stat-card" style="--card-color:var(--yellow)"><div class="stat-lbl">Pending</div><div class="stat-val" id="lvPending">—</div></div>
@@ -360,7 +365,6 @@ tbody td{padding:10px 14px;color:var(--text)}
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Supabase ───────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://cuifjbmpgztjwqepfkvf.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWZqYm1wZ3p0andxZXBma3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTA1MjcsImV4cCI6MjA5MDg4NjUyN30.sB7eN054Nt-xvv30jFBjhVoZV5Q6VIW-MiKQyZ1m1fg';
 const { createClient } = supabase;
@@ -373,31 +377,26 @@ let notifications = [];
 function getDepartments(records) {
   return [...new Set((records || []).map(r => (r.department || '').trim()).filter(Boolean))].sort();
 }
-
 function renderDepartmentFilter(selectId, departments) {
   const select = document.getElementById(selectId);
   if (!select) return;
   const currentValue = select.value || 'all';
   select.innerHTML = '';
   const allOption = document.createElement('option');
-  allOption.value = 'all';
-  allOption.textContent = 'All Departments';
+  allOption.value = 'all'; allOption.textContent = 'All Departments';
   select.appendChild(allOption);
   departments.forEach(dept => {
     const option = document.createElement('option');
-    option.value = dept;
-    option.textContent = dept;
+    option.value = dept; option.textContent = dept;
     select.appendChild(option);
   });
   if ([...select.options].some(o => o.value === currentValue)) select.value = currentValue;
 }
-
 function initDepartmentFilters(records) {
   departmentOptions = getDepartments(records);
   ['empDeptFilter', 'attDeptFilter', 'payrollDeptFilter'].forEach(id => renderDepartmentFilter(id, departmentOptions));
 }
 
-// ── Toast ──────────────────────────────────────────────────────
 function toast(msg, type = 'success') {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -405,7 +404,6 @@ function toast(msg, type = 'success') {
   setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-// ── Helpers ───────────────────────────────────────────────────
 function initials(name) { return name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?'; }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-PH') : '—'; }
 function timeAgo(ts) {
@@ -416,7 +414,6 @@ function timeAgo(ts) {
   if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
   return `${Math.floor(diff/86400)}d ago`;
 }
-
 function badgeHtml(status) {
   const map = {
     active:'badge-success', present:'badge-success', processed:'badge-success', approved:'badge-success',
@@ -427,7 +424,6 @@ function badgeHtml(status) {
   return `<span class="badge ${cls}"><span class="dot"></span>${status}</span>`;
 }
 
-// ── DateTime ──────────────────────────────────────────────────
 function updateDateTime() {
   const now = new Date();
   document.getElementById('dt-date').textContent = now.toLocaleDateString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
@@ -436,47 +432,28 @@ function updateDateTime() {
 updateDateTime();
 setInterval(updateDateTime, 1000);
 
-// ── Notifications ─────────────────────────────────────────────
 async function loadNotifications() {
-  const { data: leaves } = await sb
-    .from('leave_requests')
-    .select('*, profiles(first_name, last_name)')
-    .order('filed_at', { ascending: false })
-    .limit(20);
-
+  const { data: leaves } = await sb.from('leave_requests').select('*, profiles(first_name, last_name)').order('filed_at', { ascending: false }).limit(20);
   notifications = (leaves || []).map(l => ({
-    id: l.id,
-    type: l.status,
+    id: l.id, type: l.status,
     text: `${l.profiles?.first_name||''} ${l.profiles?.last_name||''} filed a ${l.leave_type} leave`,
     subtext: `${l.start_date} – ${l.end_date} · ${l.num_days} day(s)`,
-    time: l.filed_at,
-    unread: l.status === 'pending'
+    time: l.filed_at, unread: l.status === 'pending'
   }));
-
   renderNotifications();
 }
 
 function renderNotifications() {
   const unreadCount = notifications.filter(n => n.unread).length;
   const countEl = document.getElementById('notifCount');
-  if (unreadCount > 0) {
-    countEl.textContent = unreadCount > 9 ? '9+' : unreadCount;
-    countEl.style.display = 'flex';
-  } else {
-    countEl.style.display = 'none';
-  }
-
+  if (unreadCount > 0) { countEl.textContent = unreadCount > 9 ? '9+' : unreadCount; countEl.style.display = 'flex'; }
+  else { countEl.style.display = 'none'; }
   const list = document.getElementById('notifList');
-  if (!notifications.length) {
-    list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
-    return;
-  }
-
+  if (!notifications.length) { list.innerHTML = '<div class="notif-empty">No notifications yet.</div>'; return; }
   const iconMap = { pending: { bg:'#FEF9E7', icon:'🕐' }, approved: { bg:'#E6F5EE', icon:'✅' }, rejected: { bg:'#FEE2E2', icon:'❌' } };
   list.innerHTML = notifications.map(n => {
     const ic = iconMap[n.type] || { bg:'#EFF6FF', icon:'📋' };
-    return `
-    <div class="notif-item ${n.unread ? 'unread' : ''}" onclick="markRead('${n.id}')">
+    return `<div class="notif-item ${n.unread ? 'unread' : ''}" onclick="markRead('${n.id}')">
       <div class="notif-icon" style="background:${ic.bg}">${ic.icon}</div>
       <div class="notif-body">
         <div class="notif-text">${n.text}</div>
@@ -487,36 +464,18 @@ function renderNotifications() {
     </div>`;
   }).join('');
 }
-
-function toggleNotifPanel() {
-  document.getElementById('notifPanel').classList.toggle('open');
-}
-
-function markRead(id) {
-  const n = notifications.find(n => n.id === id);
-  if (n) n.unread = false;
-  renderNotifications();
-}
-
-function markAllRead() {
-  notifications.forEach(n => n.unread = false);
-  renderNotifications();
-}
-
-// Close notification panel when clicking outside
+function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
+function markRead(id) { const n = notifications.find(n => n.id === id); if (n) n.unread = false; renderNotifications(); }
+function markAllRead() { notifications.forEach(n => n.unread = false); renderNotifications(); }
 document.addEventListener('click', (e) => {
   const wrap = document.querySelector('.notif-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('notifPanel').classList.remove('open');
-  }
+  if (wrap && !wrap.contains(e.target)) document.getElementById('notifPanel').classList.remove('open');
 });
 
-// ── Navigate ──────────────────────────────────────────────────
 function navigateTo(section) {
   const el = document.querySelector(`.nav-item[onclick*="'${section}'"]`);
   navigate(section, el);
 }
-
 function navigate(section, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -531,7 +490,6 @@ function navigate(section, el) {
   if (section === 'payroll') loadPayroll();
 }
 
-// ── Dashboard ─────────────────────────────────────────────────
 let dashAllEmployees = [];
 async function loadDashboard() {
   const { data: { session } } = await sb.auth.getSession();
@@ -543,13 +501,11 @@ async function loadDashboard() {
       document.getElementById('adminAvatar').textContent = initials(name || 'AU');
     }
   }
-
   const { data: profiles } = await sb.from('profiles').select('*').order('first_name');
   allEmployees = profiles || [];
   dashAllEmployees = allEmployees.filter(p => p.role === 'user');
   initDepartmentFilters(allEmployees);
   document.getElementById('statTotal').textContent = dashAllEmployees.length;
-
   renderDashEmployeeTable(dashAllEmployees);
 
   const today = new Date().toISOString().split('T')[0];
@@ -560,12 +516,7 @@ async function loadDashboard() {
 
   await loadWeekBars();
 
-  const { data: pendingLeaves } = await sb
-    .from('leave_requests')
-    .select('*, profiles(first_name, last_name)')
-    .eq('status', 'pending')
-    .order('filed_at', { ascending: false });
-
+  const { data: pendingLeaves } = await sb.from('leave_requests').select('*, profiles(first_name, last_name)').eq('status', 'pending').order('filed_at', { ascending: false });
   const leaves = pendingLeaves || [];
   document.getElementById('statLeaves').textContent = leaves.length;
 
@@ -586,16 +537,12 @@ async function loadDashboard() {
         </div>
       </div>`).join('');
   }
-
   await loadNotifications();
 }
 
 function renderDashEmployeeTable(emps) {
   const tbody = document.getElementById('dashEmpTable');
-  if (!emps.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No employees found.</td></tr>';
-    return;
-  }
+  if (!emps.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No employees found.</td></tr>'; return; }
   tbody.innerHTML = emps.map(e => `
     <tr>
       <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
@@ -605,44 +552,34 @@ function renderDashEmployeeTable(emps) {
       <td>${fmtDate(e.date_hired)}</td>
     </tr>`).join('');
 }
-
 function filterDashEmployees() {
   const statusFilter = document.getElementById('dashStatusFilter').value;
   let filtered = dashAllEmployees;
-  if (statusFilter !== 'all') {
-    filtered = filtered.filter(e => (e.status || 'active').toLowerCase() === statusFilter);
-  }
+  if (statusFilter !== 'all') filtered = filtered.filter(e => (e.status || 'active').toLowerCase() === statusFilter);
   renderDashEmployeeTable(filtered);
 }
 
-// ── Week Attendance Bars ──────────────────────────────────────
 async function loadWeekBars() {
   const now = new Date();
   const dayOfWeek = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
   const days = ['Mon','Tue','Wed','Thu','Fri'];
   const counts = [];
-
   for (let i = 0; i < 5; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const dateStr = d.toISOString().split('T')[0];
-    const { data } = await sb.from('attendance').select('status').eq('date', dateStr).eq('status', 'present');
+    const { data } = await sb.from('attendance').select('status').eq('date', d.toISOString().split('T')[0]).eq('status', 'present');
     counts.push((data || []).length);
   }
-
   const max = Math.max(...counts, 1);
-  const bars = document.getElementById('weekBars');
-  bars.innerHTML = counts.map((c, i) => `
+  document.getElementById('weekBars').innerHTML = counts.map((c, i) => `
     <div class="bar-col">
       <div class="bar ${i === dayOfWeek - 1 ? 'accent-bar' : 'primary-bar'}" style="height:${Math.round((c/max)*100)}%"></div>
       <div class="bar-lbl">${days[i]}</div>
     </div>`).join('');
 }
 
-// ── Employees ─────────────────────────────────────────────────
 async function loadEmployees() {
   document.getElementById('empTable').innerHTML = '<tr><td colspan="5" class="empty-msg">Loading...</td></tr>';
   const { data, error } = await sb.from('profiles').select('*').order('first_name');
@@ -651,7 +588,6 @@ async function loadEmployees() {
   initDepartmentFilters(allEmployees);
   renderEmployeeTable(allEmployees);
 }
-
 function renderEmployeeTable(emps) {
   const tbody = document.getElementById('empTable');
   if (!emps.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">No employees found.</td></tr>'; return; }
@@ -659,13 +595,10 @@ function renderEmployeeTable(emps) {
     <tr>
       <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
         <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
-      <td>${e.department||'—'}</td>
-      <td>${e.position||'—'}</td>
-      <td>${badgeHtml(e.status||'active')}</td>
-      <td>${fmtDate(e.date_hired)}</td>
+      <td>${e.department||'—'}</td><td>${e.position||'—'}</td>
+      <td>${badgeHtml(e.status||'active')}</td><td>${fmtDate(e.date_hired)}</td>
     </tr>`).join('');
 }
-
 function filterEmployees() {
   const q = document.getElementById('empSearch').value.toLowerCase();
   const selectedDept = document.getElementById('empDeptFilter')?.value || 'all';
@@ -678,70 +611,44 @@ function filterEmployees() {
   }));
 }
 
-// ── Attendance ────────────────────────────────────────────────
 async function loadAttendance() {
   const dateInput = document.getElementById('attDate');
   if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-  const date = dateInput.value;
-
   document.getElementById('attTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
-
-  const { data, error } = await sb
-    .from('attendance')
-    .select('*, profiles(first_name, last_name, department)')
-    .eq('date', date);
-
+  const { data, error } = await sb.from('attendance').select('*, profiles(first_name, last_name, department)').eq('date', dateInput.value);
   if (error) { toast('Failed to load attendance', 'error'); return; }
   let att = data || [];
   const selectedDept = document.getElementById('attDeptFilter')?.value || 'all';
-  if (selectedDept !== 'all') {
-    att = att.filter(a => (a.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
-  }
-
+  if (selectedDept !== 'all') att = att.filter(a => (a.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
   document.getElementById('attPresent').textContent = att.filter(a => a.status === 'present').length;
   document.getElementById('attAbsent').textContent  = att.filter(a => a.status === 'absent').length;
   document.getElementById('attLate').textContent    = att.filter(a => a.status === 'late').length;
-
   const tbody = document.getElementById('attTable');
   if (!att.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No attendance records for this date.</td></tr>'; return; }
   tbody.innerHTML = att.map(a => `
     <tr>
       <td><div class="avatar-cell"><div class="mini-avatar">${initials((a.profiles?.first_name||'')+' '+(a.profiles?.last_name||''))}</div>
         <div class="emp-name">${a.profiles?.first_name||''} ${a.profiles?.last_name||''}</div></div></td>
-      <td>${a.profiles?.department||'—'}</td>
-      <td>${a.time_in||'—'}</td>
-      <td>${a.time_out||'—'}</td>
-      <td>${a.total_hours != null ? a.total_hours+'h' : '—'}</td>
-      <td>${badgeHtml(a.status)}</td>
+      <td>${a.profiles?.department||'—'}</td><td>${a.time_in||'—'}</td><td>${a.time_out||'—'}</td>
+      <td>${a.total_hours != null ? a.total_hours+'h' : '—'}</td><td>${badgeHtml(a.status)}</td>
     </tr>`).join('');
 }
 
-// ── Leave ─────────────────────────────────────────────────────
 async function loadLeave() {
   document.getElementById('leaveList').innerHTML = '<div class="empty-msg">Loading...</div>';
-
-  const { data, error } = await sb
-    .from('leave_requests')
-    .select('*, profiles(first_name, last_name)')
-    .order('filed_at', { ascending: false });
-
+  const { data, error } = await sb.from('leave_requests').select('*, profiles(first_name, last_name)').order('filed_at', { ascending: false });
   if (error) { toast('Failed to load leave requests', 'error'); return; }
   let leaves = data || [];
   const query = (document.getElementById('leaveSearch')?.value || '').trim().toLowerCase();
   if (query) {
     leaves = leaves.filter(l => {
       const name = `${l.profiles?.first_name||''} ${l.profiles?.last_name||''}`.toLowerCase();
-      const type = (l.leave_type || '').toLowerCase();
-      const reason = (l.reason || '').toLowerCase();
-      const status = (l.status || '').toLowerCase();
-      return name.includes(query) || type.includes(query) || reason.includes(query) || status.includes(query);
+      return name.includes(query) || (l.leave_type||'').toLowerCase().includes(query) || (l.reason||'').toLowerCase().includes(query) || (l.status||'').toLowerCase().includes(query);
     });
   }
-
   document.getElementById('lvPending').textContent  = leaves.filter(l => l.status === 'pending').length;
   document.getElementById('lvApproved').textContent = leaves.filter(l => l.status === 'approved').length;
   document.getElementById('lvRejected').textContent = leaves.filter(l => l.status === 'rejected').length;
-
   const div = document.getElementById('leaveList');
   if (!leaves.length) { div.innerHTML = '<div class="empty-msg">No leave requests found.</div>'; return; }
   div.innerHTML = leaves.map(l => `
@@ -758,55 +665,32 @@ async function loadLeave() {
       </div>
     </div>`).join('');
 }
-
 async function approveLeave(id) {
   const { error } = await sb.from('leave_requests').update({ status: 'approved' }).eq('id', id);
   if (error) { toast('Failed to approve leave', 'error'); return; }
   toast('Leave approved!', 'success');
-  const el = document.getElementById(`la-${id}`);
-  if (el) el.innerHTML = badgeHtml('approved');
-  const el2 = document.getElementById(`dla-${id}`);
-  if (el2) el2.innerHTML = badgeHtml('approved');
-  loadLeave();
-  loadDashboard();
+  const el = document.getElementById(`la-${id}`); if (el) el.innerHTML = badgeHtml('approved');
+  const el2 = document.getElementById(`dla-${id}`); if (el2) el2.innerHTML = badgeHtml('approved');
+  loadLeave(); loadDashboard();
 }
-
 async function rejectLeave(id) {
   const { error } = await sb.from('leave_requests').update({ status: 'rejected' }).eq('id', id);
   if (error) { toast('Failed to reject leave', 'error'); return; }
   toast('Leave rejected.', 'success');
-  const el = document.getElementById(`la-${id}`);
-  if (el) el.innerHTML = badgeHtml('rejected');
-  const el2 = document.getElementById(`dla-${id}`);
-  if (el2) el2.innerHTML = badgeHtml('rejected');
-  loadLeave();
-  loadDashboard();
+  const el = document.getElementById(`la-${id}`); if (el) el.innerHTML = badgeHtml('rejected');
+  const el2 = document.getElementById(`dla-${id}`); if (el2) el2.innerHTML = badgeHtml('rejected');
+  loadLeave(); loadDashboard();
 }
 
-// ── Payroll ───────────────────────────────────────────────────
 async function loadPayroll() {
   document.getElementById('payrollTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
-
-  const { data, error } = await sb
-    .from('payroll')
-    .select('*, profiles(first_name, last_name, department)');
-
+  const { data, error } = await sb.from('payroll').select('*, profiles(first_name, last_name, department)');
   if (error) { toast('Failed to load payroll', 'error'); return; }
   let payroll = data || [];
   const query = (document.getElementById('payrollSearch')?.value || '').trim().toLowerCase();
   const selectedDept = document.getElementById('payrollDeptFilter')?.value || 'all';
-  if (selectedDept !== 'all') {
-    payroll = payroll.filter(p => (p.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
-  }
-  if (query) {
-    payroll = payroll.filter(p => {
-      const name = `${p.profiles?.first_name||''} ${p.profiles?.last_name||''}`.toLowerCase();
-      const dept = (p.profiles?.department || '').toLowerCase();
-      const status = (p.status || '').toLowerCase();
-      return name.includes(query) || dept.includes(query) || status.includes(query);
-    });
-  }
-
+  if (selectedDept !== 'all') payroll = payroll.filter(p => (p.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
+  if (query) payroll = payroll.filter(p => `${p.profiles?.first_name||''} ${p.profiles?.last_name||''} ${p.profiles?.department||''} ${p.status||''}`.toLowerCase().includes(query));
   const tbody = document.getElementById('payrollTable');
   if (!payroll.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No payroll records found.</td></tr>'; return; }
   tbody.innerHTML = payroll.map(p => `
@@ -821,100 +705,50 @@ async function loadPayroll() {
     </tr>`).join('');
 }
 
-// ── Reports ───────────────────────────────────────────────────
 function downloadCSV(data, columns, filename) {
   if (!data || !data.length) { toast('No data to export', 'error'); return; }
-  const header = columns.join(',');
-  const rows = data.map(row =>
-    columns.map(col => `"${(row[col] ?? '').toString().replace(/"/g, '""')}"`).join(',')
-  );
-  const csv = [header, ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
+  const csv = [columns.join(','), ...data.map(row => columns.map(col => `"${(row[col]??'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
   const a = document.createElement('a');
-  a.href = url; a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
-  URL.revokeObjectURL(url);
   toast(`${filename}.csv downloaded!`, 'success');
 }
-
 async function exportReport(type) {
   const card = document.getElementById(`rc-${type}`);
   if (card) { card.classList.add('loading'); card.querySelector('.report-export').textContent = 'Generating...'; }
-
   try {
     if (type === 'employee') {
       const { data } = await sb.from('profiles').select('first_name,last_name,gender,department,position,status,date_hired,separation_date').order('first_name');
       downloadCSV(data, ['first_name','last_name','gender','department','position','status','date_hired','separation_date'], 'employee_report');
-
     } else if (type === 'attendance') {
       const { data } = await sb.from('attendance').select('*, profiles(first_name,last_name,department)').order('date', { ascending: false });
-      const rows = (data||[]).map(a => ({
-        first_name: a.profiles?.first_name||'', last_name: a.profiles?.last_name||'',
-        department: a.profiles?.department||'', date: a.date,
-        time_in: a.time_in||'', time_out: a.time_out||'',
-        total_hours: a.total_hours||'', status: a.status
-      }));
-      downloadCSV(rows, ['first_name','last_name','department','date','time_in','time_out','total_hours','status'], 'attendance_report');
-
+      downloadCSV((data||[]).map(a => ({first_name:a.profiles?.first_name||'',last_name:a.profiles?.last_name||'',department:a.profiles?.department||'',date:a.date,time_in:a.time_in||'',time_out:a.time_out||'',total_hours:a.total_hours||'',status:a.status})), ['first_name','last_name','department','date','time_in','time_out','total_hours','status'], 'attendance_report');
     } else if (type === 'leave') {
       const { data } = await sb.from('leave_requests').select('*, profiles(first_name,last_name)').order('filed_at', { ascending: false });
-      const rows = (data||[]).map(l => ({
-        first_name: l.profiles?.first_name||'', last_name: l.profiles?.last_name||'',
-        leave_type: l.leave_type, num_days: l.num_days,
-        start_date: l.start_date, end_date: l.end_date,
-        reason: l.reason||'', status: l.status,
-        filed_at: l.filed_at ? l.filed_at.split('T')[0] : ''
-      }));
-      downloadCSV(rows, ['first_name','last_name','leave_type','num_days','start_date','end_date','reason','status','filed_at'], 'leave_report');
-
+      downloadCSV((data||[]).map(l => ({first_name:l.profiles?.first_name||'',last_name:l.profiles?.last_name||'',leave_type:l.leave_type,num_days:l.num_days,start_date:l.start_date,end_date:l.end_date,reason:l.reason||'',status:l.status,filed_at:l.filed_at?l.filed_at.split('T')[0]:''})), ['first_name','last_name','leave_type','num_days','start_date','end_date','reason','status','filed_at'], 'leave_report');
     } else if (type === 'payroll') {
       const { data } = await sb.from('payroll').select('*, profiles(first_name,last_name,department)');
-      const rows = (data||[]).map(p => ({
-        first_name: p.profiles?.first_name||'', last_name: p.profiles?.last_name||'',
-        department: p.profiles?.department||'',
-        pay_period_start: p.pay_period_start, pay_period_end: p.pay_period_end,
-        basic_pay: p.basic_pay, overtime: p.overtime||0, bonus: p.bonus||0,
-        tax: p.tax||0, late_deduction: p.late_deduction||0,
-        absence_deduction: p.absence_deduction||0, net_pay: p.net_pay, status: p.status
-      }));
-      downloadCSV(rows, ['first_name','last_name','department','pay_period_start','pay_period_end','basic_pay','overtime','bonus','tax','late_deduction','absence_deduction','net_pay','status'], 'payroll_summary');
-
+      downloadCSV((data||[]).map(p => ({first_name:p.profiles?.first_name||'',last_name:p.profiles?.last_name||'',department:p.profiles?.department||'',pay_period_start:p.pay_period_start,pay_period_end:p.pay_period_end,basic_pay:p.basic_pay,overtime:p.overtime||0,bonus:p.bonus||0,tax:p.tax||0,late_deduction:p.late_deduction||0,absence_deduction:p.absence_deduction||0,net_pay:p.net_pay,status:p.status})), ['first_name','last_name','department','pay_period_start','pay_period_end','basic_pay','overtime','bonus','tax','late_deduction','absence_deduction','net_pay','status'], 'payroll_summary');
     } else if (type === 'department') {
       const { data } = await sb.from('profiles').select('department,status');
       const counts = {};
-      (data||[]).forEach(p => {
-        const d = p.department || 'Unknown';
-        if (!counts[d]) counts[d] = { department: d, total: 0, active: 0, inactive: 0 };
-        counts[d].total++;
-        if (p.status === 'active') counts[d].active++;
-        else counts[d].inactive++;
-      });
+      (data||[]).forEach(p => { const d = p.department||'Unknown'; if (!counts[d]) counts[d]={department:d,total:0,active:0,inactive:0}; counts[d].total++; if (p.status==='active') counts[d].active++; else counts[d].inactive++; });
       downloadCSV(Object.values(counts), ['department','total','active','inactive'], 'department_report');
-
     } else if (type === 'compliance') {
       const { data } = await sb.from('profiles').select('first_name,last_name,department,position,status,date_hired,separation_date,gender,birthdate').order('first_name');
       downloadCSV(data, ['first_name','last_name','gender','birthdate','department','position','status','date_hired','separation_date'], 'compliance_report');
     }
-  } catch(e) {
-    toast('Export failed', 'error');
-  } finally {
-    if (card) { card.classList.remove('loading'); card.querySelector('.report-export').textContent = '↓ Export CSV'; }
-  }
+  } catch(e) { toast('Export failed', 'error'); }
+  finally { if (card) { card.classList.remove('loading'); card.querySelector('.report-export').textContent = '↓ Export CSV'; } }
 }
 
-// ── Auth check & Init ─────────────────────────────────────────
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'index.html'; return; }
   await loadDashboard();
 }
-
-async function logout() {
-  await sb.auth.signOut();
-  window.location.href = 'index.html#login';
-}
-
+async function logout() { await sb.auth.signOut(); window.location.href = 'index.html#login'; }
 init();
 </script>
 </body>
