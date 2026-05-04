@@ -1,508 +1,636 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>HR Management – Admin</title>
+<title>HR Management System</title>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --primary:#1E3A5F;--secondary:#F2C94C;--white:#fff;
-  --bg:#F5F7FA;--text:#1a1a2e;--muted:#6b7280;--border:#d1d5db;
-  --danger:#c0392b;--success:#27ae60;--warn:#e67e22;--block:#7f1d1d;
-  --sw:230px;--r:2px;--hover:#EAF0F9;
-  --del-bg:#fdf0f0;--del-text:#c0392b;
-  --blk-bg:#fef3c7;--blk-text:#92400e;
-}
-body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── SIDEBAR ── */
-#sidebar{width:var(--sw);background:var(--primary);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-.sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
-.sb-logo .lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--secondary);display:block;margin-bottom:2px}
-.sb-logo .ttl{font-size:14px;font-weight:bold;color:#fff}
-.sb-logo .role-chip{display:inline-block;margin-top:6px;background:var(--secondary);color:var(--primary);font-size:10px;font-weight:bold;padding:2px 7px;border-radius:var(--r);letter-spacing:.5px}
-.nav-item{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:9px 16px;cursor:pointer;color:rgba(255,255,255,.75);font-size:12px;border-left:3px solid transparent;transition:background .15s,color .15s;user-select:none}
-.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
-.nav-item.active{background:rgba(242,201,76,.13);border-left-color:var(--secondary);color:var(--secondary);font-weight:bold}
-.nav-item-left{display:flex;align-items:center;gap:9px}
-.nav-item svg{flex-shrink:0}
-.nav-badge{background:var(--danger);color:#fff;font-size:9px;font-weight:bold;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center;line-height:14px}
-.sb-footer{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.1)}
-.sb-footer .name{font-size:12px;font-weight:bold;color:rgba(255,255,255,.8)}
-.sb-footer .sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
-.sb-logout{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 0;cursor:pointer;color:var(--secondary);font-size:12px;font-weight:bold;letter-spacing:.3px;border-top:1px solid rgba(255,255,255,.08)}
-.sb-logout:hover{color:#fff}
+  :root {
+    --primary: #1E3A5F;
+    --primary-dark: #162d4a;
+    --secondary: #F2C94C;
+    --white: #ffffff;
+    --bg: #F5F7FA;
+    --text: #1a1a2e;
+    --text-muted: #6b7280;
+    --border: #d1d5db;
+    --danger: #c0392b;
+    --success: #27ae60;
+    --sidebar-width: 220px;
+    --radius: 2px;
+    --row-hover: #EAF0F9;
+    --deleted-bg: #fdf0f0;
+    --deleted-text: #c0392b;
+  }
 
-/* ── TOPBAR ── */
-#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.topbar-title{font-size:14px;font-weight:bold;color:var(--primary)}
-.topbar-right{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
-.role-badge{background:var(--primary);color:#fff;font-size:10px;padding:2px 7px;border-radius:var(--r);font-weight:bold;letter-spacing:.5px}
-.content-area{flex:1;overflow-y:auto;padding:22px 24px}
+  body {
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-/* ── LAYOUT ── */
-.page{display:none}.page.active{display:block}
-.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
-.ph-left h2{font-size:17px;color:var(--primary)}
-.ph-left p{font-size:11px;color:var(--muted);margin-top:2px}
-.btn-group{display:flex;gap:7px;flex-wrap:wrap}
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-width);
+    background: var(--primary);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
 
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px;font-family:Arial,sans-serif;font-weight:bold;border:none;border-radius:var(--r);cursor:pointer;transition:opacity .15s;text-transform:uppercase;letter-spacing:.5px}
-.btn:hover{opacity:.85}.btn:disabled{opacity:.35;cursor:not-allowed}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-success{background:var(--success);color:#fff}
-.btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
-.btn-white{background:#fff;color:var(--primary);border:1px solid var(--border)}
-.btn-block{background:#92400e;color:#fff}
-.btn-restore{background:var(--success);color:#fff}
-.btn-audit{background:#e8f0fe;color:#1a73e8;border:1px solid #c5d4f5}
-.btn-approve{background:#166534;color:#fff}
-.btn-reject{background:var(--danger);color:#fff}
-.btn-pending{background:#92400e;color:#fff}
+  .sidebar-logo {
+    padding: 22px 18px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo .logo-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--secondary);
+    display: block;
+    margin-bottom: 2px;
+  }
+  .sidebar-logo .logo-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--white);
+  }
 
-/* ── FILTERS ── */
-.filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-.filter-row input,.filter-row select{font-family:Arial,sans-serif;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--text);outline:none}
-.filter-row input:focus,.filter-row select:focus{border-color:var(--primary)}
-.filter-row input{min-width:190px}
-.del-toggle{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}
+  .sidebar-section-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    padding: 18px 18px 6px;
+  }
 
-/* ── TABLE ── */
-.tw{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-table{width:100%;border-collapse:collapse;font-size:12px}
-thead tr{background:var(--primary);color:#fff}
-thead th{padding:9px 12px;text-align:left;font-size:10px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap}
-th.cc{width:34px}
-tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:var(--hover)}
-tbody tr.del-row{background:var(--del-bg);color:var(--del-text);opacity:.72}
-tbody tr.del-row td{text-decoration:line-through}
-tbody tr.del-row td.ns{text-decoration:none}
-tbody tr.blk-row{background:var(--blk-bg)}
-tbody tr.pending-row{background:#fffbeb}
-tbody td{padding:8px 12px;vertical-align:middle}
-.tbl-empty{text-align:center;padding:28px;color:var(--muted);font-size:12px}
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.75);
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }
+  .nav-item.active {
+    background: rgba(242,201,76,0.12);
+    border-left-color: var(--secondary);
+    color: var(--secondary);
+    font-weight: bold;
+  }
+  .nav-item svg { flex-shrink: 0; }
 
-/* ── BADGES ── */
-.badge{display:inline-block;padding:2px 7px;border-radius:var(--r);font-size:10px;font-weight:bold}
-.b-active{background:#e6f4ea;color:var(--success)}
-.b-del{background:#fce8e6;color:var(--danger)}
-.b-dept{background:#e8f0fe;color:#1a73e8}
-.b-blk{background:#fef3c7;color:#92400e}
-.b-admin{background:#e8f0fe;color:#1a73e8}
-.b-pending{background:#fff3cd;color:#856404;border:1px solid #ffc107}
-.b-approved{background:#e6f4ea;color:#166534}
-.b-rejected{background:#fce8e6;color:var(--danger)}
-.b-user{background:#f3f4f6;color:#374151}
-.b-sa{background:#f3e8ff;color:#7c3aed}
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 14px 18px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+  }
+  .sidebar-footer strong { color: rgba(255,255,255,0.7); display: block; }
 
-/* ── STATS ── */
-.stats{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.sc{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 18px;min-width:120px}
-.sc.ac{border-left:3px solid var(--secondary)}
-.sc.warn{border-left:3px solid var(--danger)}
-.sc .n{font-size:20px;font-weight:bold;color:var(--primary)}
-.sc .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  /* ── MAIN ── */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-/* ── MODAL ── */
-.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
-.mo.open{display:flex}
-.modal{background:#fff;border-radius:var(--r);width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;border:1px solid var(--border)}
-.modal-wide{width:700px}
-.mh{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.mh h3{font-size:14px;color:var(--primary)}
-.mc-btn{background:none;border:none;font-size:17px;cursor:pointer;color:var(--muted);line-height:1}
-.mc-btn:hover{color:var(--text)}
-.mb{padding:18px}
-.mf{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px}
-.fr{margin-bottom:12px}
-.fr label{display:block;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
-.fr input,.fr select,.fr textarea{width:100%;padding:7px 9px;font-family:Arial,sans-serif;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--text);outline:none}
-.fr input:focus,.fr select:focus,.fr textarea:focus{border-color:var(--primary)}
-.fr textarea{resize:vertical;min-height:64px}
-.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .topbar-title { font-size: 15px; font-weight: bold; color: var(--primary); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); }
+  .admin-badge {
+    background: var(--primary);
+    color: var(--white);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: var(--radius);
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
 
-/* ── PROFILE ── */
-.pp{background:#fff;border:1px solid var(--border);border-radius:var(--r);max-width:760px}
-.pp-head{background:var(--primary);padding:20px 22px;display:flex;align-items:center;gap:16px;border-radius:var(--r) var(--r) 0 0}
-.ava{width:52px;height:52px;background:var(--secondary);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:var(--primary);flex-shrink:0}
-.pp-info .pname{font-size:16px;font-weight:bold;color:#fff}
-.pp-info .prole{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
-.pp-info .pid{font-size:10px;color:var(--secondary);margin-top:3px;letter-spacing:.5px}
-.pp-body{padding:18px 22px}
-.pst{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:var(--secondary);background:var(--primary);display:inline-block;padding:2px 7px;border-radius:var(--r);margin-bottom:10px}
-.pg{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-bottom:18px}
-.pf label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);display:block;margin-bottom:1px}
-.pf .v{font-size:12px;color:var(--text)}
-.ht{width:100%;border-collapse:collapse;font-size:11px}
-.ht th{text-align:left;padding:5px 9px;background:var(--bg);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border)}
-.ht td{padding:7px 9px;border-bottom:1px solid var(--border)}
-.ht tr:last-child td{border-bottom:none}
+  .content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+  }
 
-/* ── TABS ── */
-.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:16px;gap:0;flex-wrap:wrap}
-.tab-btn{padding:7px 16px;font-size:12px;font-family:Arial,sans-serif;background:none;border:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s;display:flex;align-items:center;gap:6px}
-.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:bold}
-.tab-btn:hover:not(.active){color:var(--text)}
-.tab-panel{display:none}.tab-panel.active{display:block}
-.tab-count{background:var(--danger);color:#fff;font-size:9px;font-weight:bold;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center;line-height:14px}
-.tab-count.zero{background:var(--border);color:var(--muted)}
+  /* ── PAGE SECTIONS ── */
+  .page { display: none; }
+  .page.active { display: block; }
 
-/* ── AUDIT LOG ── */
-.audit-strip{background:#f0f4ff;border:1px solid #c5d4f5;border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:11px;color:#1a3a6e}
-.audit-strip strong{font-weight:bold}
-.audit-entry{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:11px}
-.audit-entry:last-child{border-bottom:none}
-.audit-time{color:var(--muted);min-width:130px;flex-shrink:0;font-size:10px;padding-top:1px}
-.audit-who{font-weight:bold;color:var(--primary);min-width:90px;flex-shrink:0}
-.audit-action{color:var(--text);flex:1}
-.audit-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
-.dot-edit{background:#1a73e8}
-.dot-block{background:#92400e}
-.dot-restore{background:var(--success)}
-.dot-add{background:var(--primary)}
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .page-header-left h2 { font-size: 18px; color: var(--primary); }
+  .page-header-left p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-/* ── PERMISSION NOTICE ── */
-.perm-notice{background:#fff8e1;border:1px solid #f2c94c;border-radius:var(--r);padding:9px 14px;font-size:11px;color:#78540a;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.perm-notice svg{flex-shrink:0}
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* ── PENDING CARD ── */
-.pending-banner{background:#fffbeb;border:1px solid #fbbf24;border-radius:var(--r);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.pending-banner-left{display:flex;align-items:center;gap:10px;font-size:12px;color:#78350f}
-.pending-banner-left strong{font-size:14px;color:#92400e}
-.reg-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.reg-card:last-child{margin-bottom:0}
-.reg-avatar{width:40px;height:40px;background:var(--primary);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:#fff;flex-shrink:0}
-.reg-info{flex:1;min-width:160px}
-.reg-info .reg-name{font-size:13px;font-weight:bold;color:var(--text)}
-.reg-info .reg-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.reg-info .reg-detail{font-size:11px;color:var(--muted);margin-top:1px}
-.reg-actions{display:flex;gap:6px;flex-wrap:wrap}
-.reg-note{font-size:11px;color:var(--muted);font-style:italic;margin-top:4px}
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── SECTION DIVIDER ── */
-.section-divider{display:flex;align-items:center;gap:10px;margin:22px 0 16px}
-.section-divider-line{flex:1;height:1px;background:var(--border)}
-.section-divider-label{font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  .btn-primary { background: var(--primary); color: var(--white); }
+  .btn-secondary { background: var(--secondary); color: var(--primary); }
+  .btn-danger { background: var(--danger); color: var(--white); }
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .btn-success { background: var(--success); color: var(--white); }
 
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-thumb{background:#c1c8d0;border-radius:3px}
+  /* ── FILTER/SEARCH ROW ── */
+  .filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-row input, .filter-row select {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+  }
+  .filter-row input:focus, .filter-row select:focus { border-color: var(--primary); }
+  .filter-row input { min-width: 200px; }
+
+  .show-deleted-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .show-deleted-toggle input { cursor: pointer; }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--primary); color: var(--white); }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  thead th.col-check { width: 36px; }
+  thead th.col-actions { width: 100px; }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody tr.deleted-row { background: var(--deleted-bg); color: var(--deleted-text); opacity: 0.75; }
+  tbody tr.deleted-row td { text-decoration: line-through; }
+  tbody tr.deleted-row td.no-strike { text-decoration: none; }
+  tbody td { padding: 9px 14px; vertical-align: middle; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.3px;
+  }
+  .badge-active { background: #e6f4ea; color: var(--success); }
+  .badge-deleted { background: #fce8e6; color: var(--danger); }
+  .badge-dept { background: #e8f0fe; color: #1a73e8; }
+
+  .tbl-empty { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius);
+    width: 480px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+  }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h3 { font-size: 15px; color: var(--primary); }
+  .modal-close {
+    background: none; border: none; font-size: 18px; cursor: pointer;
+    color: var(--text-muted); line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 20px; }
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .form-row { margin-bottom: 14px; }
+  .form-row label {
+    display: block; font-size: 11px; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-muted); margin-bottom: 4px;
+  }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; padding: 8px 10px;
+    font-family: Arial, sans-serif; font-size: 13px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--white); color: var(--text); outline: none;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: var(--primary);
+  }
+  .form-row textarea { resize: vertical; min-height: 70px; }
+  .form-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── CARDS (dept / job pages) ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .card-title { font-size: 14px; font-weight: bold; color: var(--primary); margin-bottom: 4px; }
+  .card-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+  .card-meta { font-size: 12px; color: var(--text-muted); }
+  .card-meta span { color: var(--text); font-weight: bold; }
+  .card-footer {
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
+    display: flex; gap: 6px;
+  }
+
+  /* ── PROFILE PANEL ── */
+  .profile-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    max-width: 680px;
+  }
+  .profile-header {
+    background: var(--primary);
+    padding: 22px 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .avatar {
+    width: 56px; height: 56px;
+    background: var(--secondary);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold; color: var(--primary);
+    flex-shrink: 0;
+  }
+  .profile-header-info .name { font-size: 17px; font-weight: bold; color: var(--white); }
+  .profile-header-info .role { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+  .profile-header-info .emp-id {
+    font-size: 11px; color: var(--secondary);
+    margin-top: 4px; letter-spacing: 0.5px;
+  }
+  .profile-body { padding: 20px 24px; }
+  .profile-section-title {
+    font-size: 11px; font-weight: bold; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--secondary);
+    background: var(--primary); display: inline-block;
+    padding: 3px 8px; border-radius: var(--radius);
+    margin-bottom: 12px;
+  }
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-bottom: 20px; }
+  .profile-field label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-muted); display: block; margin-bottom: 2px;
+  }
+  .profile-field .val { font-size: 13px; color: var(--text); }
+
+  .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .history-table th {
+    text-align: left; padding: 6px 10px;
+    background: var(--bg); color: var(--text-muted);
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .history-table tr:last-child td { border-bottom: none; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 18px; gap: 0; }
+  .tab-btn {
+    padding: 8px 18px; font-size: 13px; font-family: Arial, sans-serif;
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: bold; }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── CONFIRM MODAL ── */
+  .confirm-msg { font-size: 14px; color: var(--text); line-height: 1.6; }
+
+  /* ── STAT STRIP ── */
+  .stat-strip { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    min-width: 130px;
+  }
+  .stat-card .stat-num { font-size: 22px; font-weight: bold; color: var(--primary); }
+  .stat-card .stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .stat-card.accent { border-left: 3px solid var(--secondary); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c1c8d0; border-radius: 3px; }
 </style>
 </head>
 <body>
 
-<!-- ════════ SIDEBAR ════════ -->
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
 <nav id="sidebar">
-  <div class="sb-logo">
-    <span class="lbl">HR System</span>
-    <span class="ttl">HR Management</span>
-    <span class="role-chip">ADMIN</span>
+  <div class="sidebar-logo">
+    <span class="logo-label">Admin Panel</span>
+    <span class="logo-title">HR Management</span>
   </div>
 
-  <div class="nav-item active" data-page="employees" onclick="nav(this,'employees')">
-    <div class="nav-item-left">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Employees
-    </div>
+  <div class="sidebar-section-label">Main</div>
+  <div class="nav-item active" data-page="employees" onclick="navigate(this,'employees')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Employees
   </div>
-  <div class="nav-item" data-page="job-history" onclick="nav(this,'job-history')">
-    <div class="nav-item-left">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Job History
-    </div>
-  </div>
-  <div class="nav-item" data-page="departments" onclick="nav(this,'departments')">
-    <div class="nav-item-left">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-      Departments
-    </div>
-  </div>
-  <div class="nav-item" data-page="jobs" onclick="nav(this,'jobs')">
-    <div class="nav-item-left">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 21 12"/></svg>
-      Job Positions
-    </div>
-  </div>
-  <div class="nav-item" data-page="deleted" onclick="nav(this,'deleted')">
-    <div class="nav-item-left">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-      Deleted Items
-    </div>
-  </div>
-  <div class="nav-item" data-page="usermgmt" onclick="nav(this,'usermgmt')">
-    <div class="nav-item-left">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
-      User Management
-    </div>
-    <span class="nav-badge" id="nav-pending-count">3</span>
+  <div class="nav-item" data-page="job-history" onclick="navigate(this,'job-history')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Job History
   </div>
 
-  <div class="sb-footer">
-    <div class="name">admin1</div>
-    <div class="sub">Administrator</div>
-    <div class="sb-logout" onclick="doLogout()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Log Out
-    </div>
+  <div class="sidebar-section-label">Organization</div>
+  <div class="nav-item" data-page="departments" onclick="navigate(this,'departments')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    Departments
+  </div>
+  <div class="nav-item" data-page="jobs" onclick="navigate(this,'jobs')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 21 12"/></svg>
+    Job Positions
+  </div>
+
+  <div class="sidebar-footer">
+    <strong>admin1</strong>
+    System Administrator
   </div>
 </nav>
 
-<!-- ════════ MAIN ════════ -->
+<!-- ═══════════════════ MAIN ═══════════════════ -->
 <div id="main">
   <div class="topbar">
     <span class="topbar-title" id="topbar-title">Employees</span>
     <div class="topbar-right">
       <span>admin1</span>
-      <span class="role-badge">ADMIN</span>
+      <span class="admin-badge">ADMIN</span>
     </div>
   </div>
 
   <div class="content-area">
 
-    <!-- ══ EMPLOYEES ══ -->
+    <!-- ══════════ EMPLOYEES PAGE ══════════ -->
     <div id="page-employees" class="page active">
-      <div class="perm-notice">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Admin role: You can <strong>view, edit, block, and restore</strong> employees. Hard deletion is restricted to Super Admin.
-      </div>
-      <div class="ph">
-        <div class="ph-left"><h2>Employee Records</h2><p>Manage employee profiles. Blocked employees are hidden from users.</p></div>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Employee Records</h2>
+          <p>Manage all employee profiles in the system.</p>
+        </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="openAddEmp()">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <button class="btn btn-primary" onclick="openAddEmployee()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Employee
           </button>
-          <button class="btn btn-block" id="btn-blk-emp" onclick="bulkBlock('emp')" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-            Block
+          <button class="btn btn-danger" id="btn-delete-emp" onclick="deleteSelected('emp')" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Delete
           </button>
-          <button class="btn btn-restore" id="btn-rst-emp" onclick="bulkRestore('emp')" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+          <button class="btn btn-success" id="btn-restore-emp" onclick="restoreSelected('emp')" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
             Restore
           </button>
         </div>
       </div>
-      <div class="stats" id="emp-stats"></div>
+
+      <div class="stat-strip" id="emp-stats"></div>
+
       <div class="filter-row">
-        <input type="text" id="emp-q" placeholder="Search employees…" oninput="renderEmp()"/>
-        <select id="emp-fd" onchange="renderEmp()"><option value="">All Departments</option></select>
-        <select id="emp-fs" onchange="renderEmp()">
+        <input type="text" id="emp-search" placeholder="Search employees…" oninput="renderEmployees()"/>
+        <select id="emp-filter-dept" onchange="renderEmployees()">
+          <option value="">All Departments</option>
+        </select>
+        <select id="emp-filter-status" onchange="renderEmployees()">
           <option value="">All Status</option>
           <option value="active">Active</option>
-          <option value="blocked">Blocked</option>
-          <option value="inactive">Inactive</option>
+          <option value="deleted">Deleted</option>
         </select>
-        <label class="del-toggle"><input type="checkbox" id="emp-show-all" onchange="renderEmp()"/> Show blocked/inactive</label>
+        <label class="show-deleted-toggle">
+          <input type="checkbox" id="show-deleted-emp" onchange="renderEmployees()"/> Show deleted
+        </label>
       </div>
-      <div class="tw">
+
+      <div class="table-wrap">
         <table>
-          <thead><tr>
-            <th class="cc"><input type="checkbox" id="chk-emp-all" onchange="toggleAll('emp',this)"/></th>
-            <th>Emp No</th><th>Last Name</th><th>First Name</th><th>Gender</th>
-            <th>Hire Date</th><th>Sep Date</th><th>Current Job</th><th>Dept</th>
-            <th>Salary</th><th>Status</th><th>Last Modified</th><th>Actions</th>
-          </tr></thead>
-          <tbody id="emp-tbody"></tbody>
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="chk-emp-all" onchange="toggleAllEmp(this)"/></th>
+              <th>Emp ID</th>
+              <th>Username</th>
+              <th>Full Name</th>
+              <th>Department</th>
+              <th>Job Position</th>
+              <th>Status</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="emp-tbody">
+          </tbody>
         </table>
       </div>
-    </div>
+    </div><!-- /employees page -->
 
-    <!-- ══ JOB HISTORY ══ -->
+    <!-- ══════════ JOB HISTORY PAGE ══════════ -->
     <div id="page-job-history" class="page">
-      <div class="ph">
-        <div class="ph-left"><h2>Job History</h2><p>All employment history records.</p></div>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Job History</h2>
+          <p>Full employment history across all employees.</p>
+        </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="openAddHist()">Add Entry</button>
-          <button class="btn btn-block" id="btn-blk-hist" onclick="bulkBlock('hist')" disabled>Block</button>
-          <button class="btn btn-restore" id="btn-rst-hist" onclick="bulkRestore('hist')" disabled>Restore</button>
+          <button class="btn btn-primary" onclick="openAddHistory()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Entry
+          </button>
+          <button class="btn btn-danger" id="btn-delete-hist" onclick="deleteSelected('hist')" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Delete
+          </button>
+          <button class="btn btn-success" id="btn-restore-hist" onclick="restoreSelected('hist')" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+            Restore
+          </button>
         </div>
       </div>
+
       <div class="filter-row">
-        <input type="text" id="hist-q" placeholder="Search…" oninput="renderHist()"/>
-        <select id="hist-fe" onchange="renderHist()"><option value="">All Employees</option></select>
-        <label class="del-toggle"><input type="checkbox" id="hist-show-all" onchange="renderHist()"/> Show blocked</label>
+        <input type="text" id="hist-search" placeholder="Search history…" oninput="renderHistory()"/>
+        <select id="hist-filter-emp" onchange="renderHistory()">
+          <option value="">All Employees</option>
+        </select>
+        <label class="show-deleted-toggle">
+          <input type="checkbox" id="show-deleted-hist" onchange="renderHistory()"/> Show deleted
+        </label>
       </div>
-      <div class="tw">
+
+      <div class="table-wrap">
         <table>
-          <thead><tr>
-            <th class="cc"><input type="checkbox" id="chk-hist-all" onchange="toggleAll('hist',this)"/></th>
-            <th>ID</th><th>Employee</th><th>Job Code</th><th>Job Desc</th>
-            <th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Last Modified</th><th>Actions</th>
-          </tr></thead>
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="chk-hist-all" onchange="toggleAllHist(this)"/></th>
+              <th>History ID</th>
+              <th>Employee</th>
+              <th>Department</th>
+              <th>Job Position</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Status</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
           <tbody id="hist-tbody"></tbody>
         </table>
       </div>
-    </div>
+    </div><!-- /job-history page -->
 
-    <!-- ══ DEPARTMENTS ══ -->
+    <!-- ══════════ DEPARTMENTS PAGE ══════════ -->
     <div id="page-departments" class="page">
-      <div class="ph">
-        <div class="ph-left"><h2>Departments</h2><p>Manage organizational departments.</p></div>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Departments</h2>
+          <p>Manage organizational departments.</p>
+        </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="openAddDept()">Add Department</button>
+          <button class="btn btn-primary" onclick="openAddDept()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Department
+          </button>
         </div>
       </div>
-      <div class="tw">
-        <table>
-          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Description</th><th>Employees</th><th>Last Modified</th><th>Actions</th></tr></thead>
-          <tbody id="dept-tbody"></tbody>
-        </table>
-      </div>
+      <div id="dept-cards" class="cards-grid"></div>
     </div>
 
-    <!-- ══ JOB POSITIONS ══ -->
+    <!-- ══════════ JOB POSITIONS PAGE ══════════ -->
     <div id="page-jobs" class="page">
-      <div class="ph">
-        <div class="ph-left"><h2>Job Positions</h2><p>Define and manage job roles.</p></div>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Job Positions</h2>
+          <p>Define and manage job roles in the organization.</p>
+        </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="openAddJob()">Add Job Position</button>
+          <button class="btn btn-primary" onclick="openAddJob()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Job Position
+          </button>
         </div>
       </div>
-      <div class="tw">
-        <table>
-          <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Employees</th><th>Status</th><th>Last Modified</th><th>Actions</th></tr></thead>
-          <tbody id="job-tbody"></tbody>
-        </table>
-      </div>
+      <div id="job-cards" class="cards-grid"></div>
     </div>
 
-    <!-- ══ DELETED ITEMS ══ -->
-    <div id="page-deleted" class="page">
-      <div class="ph">
-        <div class="ph-left"><h2>Deleted Items</h2><p>Records blocked or soft-deleted by admin. Use Recover to restore visibility.</p></div>
-      </div>
-      <div class="perm-notice">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        These records are <strong>hidden from regular users</strong> but not permanently deleted. Only Super Admin can permanently delete from the database.
-      </div>
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchDelTab(this,'del-emp')">Employees</button>
-        <button class="tab-btn" onclick="switchDelTab(this,'del-hist')">Job History</button>
-        <button class="tab-btn" onclick="switchDelTab(this,'del-jobs')">Jobs</button>
-        <button class="tab-btn" onclick="switchDelTab(this,'del-depts')">Departments</button>
-      </div>
-      <div id="del-emp" class="tab-panel active">
-        <div class="tw"><table>
-          <thead><tr><th>Emp No</th><th>Last Name</th><th>First Name</th><th>Department</th><th>Job</th><th>Status</th><th>Hidden By</th><th>Hidden At</th><th>Action</th></tr></thead>
-          <tbody id="del-emp-tbody"></tbody>
-        </table></div>
-      </div>
-      <div id="del-hist" class="tab-panel">
-        <div class="tw"><table>
-          <thead><tr><th>ID</th><th>Employee</th><th>Job Code</th><th>Dept Code</th><th>Eff Date</th><th>Status</th><th>Hidden By</th><th>Action</th></tr></thead>
-          <tbody id="del-hist-tbody"></tbody>
-        </table></div>
-      </div>
-      <div id="del-jobs" class="tab-panel">
-        <div class="tw"><table>
-          <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Status</th><th>Hidden By</th><th>Action</th></tr></thead>
-          <tbody id="del-jobs-tbody"></tbody>
-        </table></div>
-      </div>
-      <div id="del-depts" class="tab-panel">
-        <div class="tw"><table>
-          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Status</th><th>Hidden By</th><th>Action</th></tr></thead>
-          <tbody id="del-depts-tbody"></tbody>
-        </table></div>
-      </div>
-    </div>
-
-    <!-- ══ USER MANAGEMENT ══ -->
-    <div id="page-usermgmt" class="page">
-      <div class="ph">
-        <div class="ph-left"><h2>User Management</h2><p>Manage system user accounts and review registration requests.</p></div>
-      </div>
-
-      <!-- Pending registrations banner -->
-      <div class="pending-banner" id="pending-banner">
-        <div class="pending-banner-left">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <div>
-            <strong id="pending-count-text">3 pending registrations</strong> are waiting for your approval.
-          </div>
-        </div>
-        <button class="btn btn-pending" onclick="switchUMTab(document.querySelector('#um-tab-pending'),'um-pending')">
-          Review Requests
-        </button>
-      </div>
-
-      <!-- User Management Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" id="um-tab-accounts" onclick="switchUMTab(this,'um-accounts')">
-          Active Accounts
-        </button>
-        <button class="tab-btn" id="um-tab-pending" onclick="switchUMTab(this,'um-pending')">
-          Pending Approval
-          <span class="tab-count" id="tab-pending-count">3</span>
-        </button>
-        <button class="tab-btn" id="um-tab-all" onclick="switchUMTab(this,'um-all')">
-          All Registrations
-        </button>
-      </div>
-
-      <!-- Active Accounts tab -->
-      <div id="um-accounts" class="tab-panel active">
-        <div class="stats" id="user-stats"></div>
-        <div class="filter-row">
-          <input type="text" id="users-q" placeholder="Search users…" oninput="renderUsers()"/>
-          <select id="users-fr" onchange="renderUsers()">
-            <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </select>
-        </div>
-        <div class="tw">
-          <table>
-            <thead><tr>
-              <th>Username</th><th>Full Name</th><th>Role</th><th>Linked Employee</th>
-              <th>Registered</th><th>Approved By</th><th>Status</th><th>Actions</th>
-            </tr></thead>
-            <tbody id="users-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Pending Approval tab -->
-      <div id="um-pending" class="tab-panel">
-        <div class="filter-row">
-          <input type="text" id="pending-q" placeholder="Search pending…" oninput="renderPending()"/>
-        </div>
-        <div id="pending-cards"></div>
-      </div>
-
-      <!-- All Registrations tab -->
-      <div id="um-all" class="tab-panel">
-        <div class="filter-row">
-          <input type="text" id="allreg-q" placeholder="Search registrations…" oninput="renderAllReg()"/>
-          <select id="allreg-fs" onchange="renderAllReg()">
-            <option value="">All Status</option>
-            <option value="approved">Approved</option>
-            <option value="pending">Pending</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-        <div class="tw">
-          <table>
-            <thead><tr>
-              <th>Username</th><th>Full Name</th><th>Requested Role</th><th>Linked Employee</th>
-              <th>Submitted</th><th>Status</th><th>Reviewed By</th><th>Note</th><th>Actions</th>
-            </tr></thead>
-            <tbody id="allreg-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ PROFILE ══ -->
+    <!-- ══════════ PROFILE VIEW PAGE ══════════ -->
     <div id="page-profile" class="page">
-      <div class="ph">
-        <div class="ph-left"><h2>Employee Profile</h2><p>Detailed employee view.</p></div>
-        <button class="btn btn-outline" onclick="nav(document.querySelector('[data-page=employees]'),'employees')">← Back</button>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Employee Profile</h2>
+          <p>Detailed view for selected employee.</p>
+        </div>
+        <button class="btn btn-outline" onclick="navigate(document.querySelector('.nav-item[data-page=employees]'),'employees')">
+          ← Back to Employees
+        </button>
       </div>
       <div id="profile-content"></div>
     </div>
@@ -510,755 +638,841 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div><!-- /content-area -->
 </div><!-- /main -->
 
-<!-- ════════ MODALS ════════ -->
+<!-- ═══════════════════ MODALS ═══════════════════ -->
 
-<!-- ADD / EDIT EMPLOYEE -->
-<div class="mo" id="mo-emp">
+<!-- Add / Edit Employee -->
+<div class="modal-overlay" id="modal-employee">
   <div class="modal">
-    <div class="mh"><h3 id="mo-emp-title">Add Employee</h3><button class="mc-btn" onclick="cm('mo-emp')">×</button></div>
-    <div class="mb">
-      <div class="f2">
-        <div class="fr"><label>Emp No</label><input id="fe-empno" placeholder="EMP-001"/></div>
-        <div class="fr"><label>Username</label><input id="fe-user" placeholder="employee1"/></div>
-      </div>
-      <div class="f2">
-        <div class="fr"><label>Last Name</label><input id="fe-ln" placeholder="Last name"/></div>
-        <div class="fr"><label>First Name</label><input id="fe-fn" placeholder="First name"/></div>
-      </div>
-      <div class="f2">
-        <div class="fr"><label>Gender</label>
-          <select id="fe-gender"><option value="">-- Select --</option><option>Male</option><option>Female</option><option>Other</option></select>
+    <div class="modal-header">
+      <h3 id="modal-emp-title">Add Employee</h3>
+      <button class="modal-close" onclick="closeModal('modal-employee')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Username</label>
+          <input type="text" id="f-username" placeholder="e.g. employee1"/>
         </div>
-        <div class="fr"><label>Hire Date</label><input type="date" id="fe-hire"/></div>
+        <div class="form-row">
+          <label>Employee ID</label>
+          <input type="text" id="f-empid" placeholder="e.g. EMP-001"/>
+        </div>
       </div>
-      <div class="f2">
-        <div class="fr"><label>Sep Date (if any)</label><input type="date" id="fe-sep"/></div>
-        <div class="fr"><label>Salary</label><input type="number" id="fe-sal" placeholder="0.00"/></div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>First Name</label>
+          <input type="text" id="f-firstname" placeholder="First name"/>
+        </div>
+        <div class="form-row">
+          <label>Last Name</label>
+          <input type="text" id="f-lastname" placeholder="Last name"/>
+        </div>
       </div>
-      <div class="f2">
-        <div class="fr"><label>Department</label><select id="fe-dept"></select></div>
-        <div class="fr"><label>Job Position</label><select id="fe-job"></select></div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Department</label>
+          <select id="f-dept"></select>
+        </div>
+        <div class="form-row">
+          <label>Job Position</label>
+          <select id="f-job"></select>
+        </div>
       </div>
-      <div class="f2">
-        <div class="fr"><label>Email</label><input type="email" id="fe-email" placeholder="email@company.com"/></div>
-        <div class="fr"><label>Phone</label><input id="fe-phone" placeholder="+63 9XX XXX XXXX"/></div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="email@company.com"/>
+        </div>
+        <div class="form-row">
+          <label>Phone</label>
+          <input type="text" id="f-phone" placeholder="+63 9XX XXX XXXX"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Hire Date</label>
+        <input type="date" id="f-hiredate"/>
       </div>
     </div>
-    <div class="mf">
-      <button class="btn btn-outline" onclick="cm('mo-emp')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEmp()">Save Employee</button>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-employee')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button>
     </div>
   </div>
 </div>
 
-<!-- ADD / EDIT JOB HISTORY -->
-<div class="mo" id="mo-hist">
+<!-- Add / Edit Department -->
+<div class="modal-overlay" id="modal-dept">
   <div class="modal">
-    <div class="mh"><h3 id="mo-hist-title">Add Job History</h3><button class="mc-btn" onclick="cm('mo-hist')">×</button></div>
-    <div class="mb">
-      <div class="fr"><label>Employee</label><select id="fh-emp"></select></div>
-      <div class="f2">
-        <div class="fr"><label>Job Position</label><select id="fh-job"></select></div>
-        <div class="fr"><label>Department</label><select id="fh-dept"></select></div>
+    <div class="modal-header">
+      <h3 id="modal-dept-title">Add Department</h3>
+      <button class="modal-close" onclick="closeModal('modal-dept')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>Department Code</label>
+        <input type="text" id="f-dept-code" placeholder="e.g. IT, HR, FIN"/>
       </div>
-      <div class="f2">
-        <div class="fr"><label>Effective Date</label><input type="date" id="fh-eff"/></div>
-        <div class="fr"><label>Salary</label><input type="number" id="fh-sal" placeholder="0.00"/></div>
+      <div class="form-row">
+        <label>Department Name</label>
+        <input type="text" id="f-dept-name" placeholder="Full department name"/>
+      </div>
+      <div class="form-row">
+        <label>Description</label>
+        <textarea id="f-dept-desc" placeholder="Brief description…"></textarea>
+      </div>
+      <div class="form-row">
+        <label>Manager (optional)</label>
+        <select id="f-dept-mgr"><option value="">-- None --</option></select>
       </div>
     </div>
-    <div class="mf">
-      <button class="btn btn-outline" onclick="cm('mo-hist')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveHist()">Save Entry</button>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-dept')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDept()">Save Department</button>
     </div>
   </div>
 </div>
 
-<!-- ADD / EDIT DEPT -->
-<div class="mo" id="mo-dept">
-  <div class="modal" style="width:420px">
-    <div class="mh"><h3 id="mo-dept-title">Add Department</h3><button class="mc-btn" onclick="cm('mo-dept')">×</button></div>
-    <div class="mb">
-      <div class="f2">
-        <div class="fr"><label>Dept Code</label><input id="fd-code" placeholder="IT"/></div>
-        <div class="fr"><label>Dept Name</label><input id="fd-name" placeholder="Information Technology"/></div>
+<!-- Add / Edit Job Position -->
+<div class="modal-overlay" id="modal-job">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-job-title">Add Job Position</h3>
+      <button class="modal-close" onclick="closeModal('modal-job')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Job Code</label>
+          <input type="text" id="f-job-code" placeholder="e.g. DEV, MGR"/>
+        </div>
+        <div class="form-row">
+          <label>Job Title</label>
+          <input type="text" id="f-job-title" placeholder="e.g. Software Developer"/>
+        </div>
       </div>
-      <div class="fr"><label>Description</label><textarea id="fd-desc"></textarea></div>
-    </div>
-    <div class="mf">
-      <button class="btn btn-outline" onclick="cm('mo-dept')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveDept()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADD / EDIT JOB -->
-<div class="mo" id="mo-job">
-  <div class="modal" style="width:420px">
-    <div class="mh"><h3 id="mo-job-title">Add Job Position</h3><button class="mc-btn" onclick="cm('mo-job')">×</button></div>
-    <div class="mb">
-      <div class="f2">
-        <div class="fr"><label>Job Code</label><input id="fj-code" placeholder="DEV"/></div>
-        <div class="fr"><label>Job Description</label><input id="fj-desc" placeholder="Software Developer"/></div>
+      <div class="form-row">
+        <label>Department</label>
+        <select id="f-job-dept"></select>
       </div>
-      <div class="fr"><label>Department</label><select id="fj-dept"></select></div>
+      <div class="form-row">
+        <label>Description</label>
+        <textarea id="f-job-desc" placeholder="Role description…"></textarea>
+      </div>
     </div>
-    <div class="mf">
-      <button class="btn btn-outline" onclick="cm('mo-job')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveJob()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- REJECT REGISTRATION MODAL -->
-<div class="mo" id="mo-reject">
-  <div class="modal" style="width:400px">
-    <div class="mh"><h3>Reject Registration</h3><button class="mc-btn" onclick="cm('mo-reject')">×</button></div>
-    <div class="mb">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Provide a reason for rejecting this registration request.</p>
-      <div class="fr"><label>Rejection Reason</label><textarea id="reject-note" placeholder="e.g. Duplicate account, invalid employee ID…"></textarea></div>
-      <p style="font-size:11px;color:var(--muted)" id="reject-for"></p>
-    </div>
-    <div class="mf">
-      <button class="btn btn-outline" onclick="cm('mo-reject')">Cancel</button>
-      <button class="btn btn-danger" onclick="confirmReject()">Reject</button>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-job')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJob()">Save Job Position</button>
     </div>
   </div>
 </div>
 
-<!-- AUDIT DETAIL MODAL -->
-<div class="mo" id="mo-audit-detail">
-  <div class="modal modal-wide">
-    <div class="mh"><h3 id="mo-ad-title">Change History</h3><button class="mc-btn" onclick="cm('mo-audit-detail')">×</button></div>
-    <div class="mb" id="mo-ad-body"></div>
-    <div class="mf"><button class="btn btn-outline" onclick="cm('mo-audit-detail')">Close</button></div>
+<!-- Add Job History Entry -->
+<div class="modal-overlay" id="modal-history">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-hist-title">Add Job History Entry</h3>
+      <button class="modal-close" onclick="closeModal('modal-history')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>Employee</label>
+        <select id="f-hist-emp"></select>
+      </div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Department</label>
+          <select id="f-hist-dept"></select>
+        </div>
+        <div class="form-row">
+          <label>Job Position</label>
+          <select id="f-hist-job"></select>
+        </div>
+      </div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Start Date</label>
+          <input type="date" id="f-hist-start"/>
+        </div>
+        <div class="form-row">
+          <label>End Date</label>
+          <input type="date" id="f-hist-end"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-history')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHistory()">Save Entry</button>
+    </div>
   </div>
 </div>
 
-<!-- CONFIRM -->
-<div class="mo" id="mo-confirm">
-  <div class="modal" style="width:370px">
-    <div class="mh"><h3 id="conf-title">Confirm</h3><button class="mc-btn" onclick="cm('mo-confirm')">×</button></div>
-    <div class="mb"><p id="conf-msg" style="font-size:13px;line-height:1.6;color:var(--text)"></p></div>
-    <div class="mf">
-      <button class="btn btn-outline" onclick="cm('mo-confirm')">Cancel</button>
-      <button class="btn btn-danger" id="conf-ok" onclick="doConfirm()">Confirm</button>
+<!-- Confirm -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="width:380px">
+    <div class="modal-header">
+      <h3 id="confirm-title">Confirm Action</h3>
+      <button class="modal-close" onclick="closeModal('modal-confirm')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="confirm-msg" id="confirm-msg"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-confirm')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok-btn" onclick="confirmAction()">Confirm</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ════════════════════════════════════
-   DATA STORE
-════════════════════════════════════ */
-const CURRENT_USER = 'admin1';
-
+/* ═══════════════════ DATA STORE ═══════════════════ */
 let departments = [
-  {id:1,code:'IT', name:'Information Technology',desc:'Tech infrastructure.',deleted:false,meta:null},
-  {id:2,code:'HR', name:'Human Resources',       desc:'Employee relations.',deleted:false,meta:null},
-  {id:3,code:'FIN',name:'Finance',               desc:'Financial management.',deleted:false,meta:null},
-  {id:4,code:'OPS',name:'Operations',            desc:'Day-to-day operations.',deleted:false,meta:null},
+  { id: 1, code: 'IT',  name: 'Information Technology', desc: 'Manages tech infrastructure and software.', manager: '' },
+  { id: 2, code: 'HR',  name: 'Human Resources',        desc: 'Handles recruitment and employee relations.', manager: '' },
+  { id: 3, code: 'FIN', name: 'Finance',                 desc: 'Manages company finances and accounting.', manager: '' },
+  { id: 4, code: 'OPS', name: 'Operations',              desc: 'Oversees day-to-day business operations.', manager: '' },
 ];
+
 let jobs = [
-  {id:1,code:'DEV', desc:'Software Developer',   deptId:1,deleted:false,meta:null},
-  {id:2,code:'SA',  desc:'System Administrator', deptId:1,deleted:false,meta:null},
-  {id:3,code:'HRO', desc:'HR Officer',           deptId:2,deleted:false,meta:null},
-  {id:4,code:'RECR',desc:'Recruiter',            deptId:2,deleted:false,meta:null},
-  {id:5,code:'ACCT',desc:'Accountant',           deptId:3,deleted:false,meta:null},
-  {id:6,code:'OPMG',desc:'Operations Manager',   deptId:4,deleted:false,meta:null},
+  { id: 1, code: 'DEV',  title: 'Software Developer',  deptId: 1, desc: 'Develops and maintains software systems.' },
+  { id: 2, code: 'SA',   title: 'System Administrator', deptId: 1, desc: 'Manages servers and network infrastructure.' },
+  { id: 3, code: 'HRO',  title: 'HR Officer',           deptId: 2, desc: 'Handles HR operations and employee welfare.' },
+  { id: 4, code: 'RECR', title: 'Recruiter',            deptId: 2, desc: 'Sources and screens job applicants.' },
+  { id: 5, code: 'ACCT', title: 'Accountant',           deptId: 3, desc: 'Manages financial records and reporting.' },
+  { id: 6, code: 'OPMG', title: 'Operations Manager',   deptId: 4, desc: 'Oversees operational efficiency.' },
 ];
+
 let employees = [
-  {id:1,empNo:'EMP-001',username:'admin1',    lastName:'One',   firstName:'Admin',    gender:'Male',  hireDate:'2020-01-15',sepDate:'',  salary:75000,deptId:2,jobId:3,email:'admin1@co.com',  phone:'+63 912 000 0001',deleted:false,blocked:false,meta:null},
-  {id:2,empNo:'EMP-002',username:'employee1', lastName:'One',   firstName:'Employee', gender:'Female',hireDate:'2021-03-01',sepDate:'',  salary:55000,deptId:1,jobId:1,email:'emp1@co.com',    phone:'+63 912 000 0002',deleted:false,blocked:false,meta:null},
-  {id:3,empNo:'EMP-003',username:'employee2', lastName:'Two',   firstName:'Employee', gender:'Male',  hireDate:'2021-06-15',sepDate:'',  salary:52000,deptId:1,jobId:2,email:'emp2@co.com',    phone:'+63 912 000 0003',deleted:false,blocked:false,meta:null},
-  {id:4,empNo:'EMP-004',username:'employee3', lastName:'Three', firstName:'Employee', gender:'Female',hireDate:'2022-02-10',sepDate:'',  salary:60000,deptId:3,jobId:5,email:'emp3@co.com',    phone:'+63 912 000 0004',deleted:false,blocked:false,meta:null},
-  {id:5,empNo:'EMP-005',username:'employee4', lastName:'Four',  firstName:'Employee', gender:'Male',  hireDate:'2022-08-20',sepDate:'',  salary:65000,deptId:4,jobId:6,email:'emp4@co.com',    phone:'+63 912 000 0005',deleted:false,blocked:false,meta:null},
-  {id:6,empNo:'EMP-006',username:'employee5', lastName:'Five',  firstName:'Employee', gender:'Female',hireDate:'2023-01-05',sepDate:'2024-12-31',salary:48000,deptId:2,jobId:4,email:'emp5@co.com',phone:'+63 912 000 0006',deleted:true,blocked:false,meta:{by:'superadmin1',at:'2024-12-31 08:00',action:'BLOCK',note:'Separated'}},
+  { id: 1, empId: 'EMP-001', username: 'admin1',     firstName: 'Admin',    lastName: 'One',   deptId: 2, jobId: 3, email: 'admin1@company.com',     phone: '+63 912 111 0001', hireDate: '2020-01-15', deleted: false },
+  { id: 2, empId: 'EMP-002', username: 'employee1',  firstName: 'Employee', lastName: 'One',   deptId: 1, jobId: 1, email: 'employee1@company.com',   phone: '+63 912 111 0002', hireDate: '2021-03-01', deleted: false },
+  { id: 3, empId: 'EMP-003', username: 'employee2',  firstName: 'Employee', lastName: 'Two',   deptId: 1, jobId: 2, email: 'employee2@company.com',   phone: '+63 912 111 0003', hireDate: '2021-06-15', deleted: false },
+  { id: 4, empId: 'EMP-004', username: 'employee3',  firstName: 'Employee', lastName: 'Three', deptId: 3, jobId: 5, email: 'employee3@company.com',   phone: '+63 912 111 0004', hireDate: '2022-02-10', deleted: false },
+  { id: 5, empId: 'EMP-005', username: 'employee4',  firstName: 'Employee', lastName: 'Four',  deptId: 4, jobId: 6, email: 'employee4@company.com',   phone: '+63 912 111 0005', hireDate: '2022-08-20', deleted: false },
+  { id: 6, empId: 'EMP-006', username: 'employee5',  firstName: 'Employee', lastName: 'Five',  deptId: 2, jobId: 4, email: 'employee5@company.com',   phone: '+63 912 111 0006', hireDate: '2023-01-05', deleted: true  },
 ];
+
 let jobHistory = [
-  {id:1,empId:1,jobId:3,deptId:2,effDate:'2020-01-15',salary:75000,deleted:false,meta:null},
-  {id:2,empId:2,jobId:1,deptId:1,effDate:'2021-03-01',salary:55000,deleted:false,meta:null},
-  {id:3,empId:3,jobId:2,deptId:1,effDate:'2021-06-15',salary:52000,deleted:false,meta:null},
-  {id:4,empId:4,jobId:5,deptId:3,effDate:'2022-02-10',salary:60000,deleted:false,meta:null},
-  {id:5,empId:5,jobId:6,deptId:4,effDate:'2022-08-20',salary:65000,deleted:false,meta:null},
-  {id:6,empId:6,jobId:4,deptId:2,effDate:'2023-01-05',salary:48000,deleted:true, meta:{by:'admin1',at:'2025-01-02 09:15',action:'BLOCK',note:'Employee separated'}},
-  {id:7,empId:2,jobId:2,deptId:1,effDate:'2020-05-01',salary:50000,deleted:false,meta:null},
+  { id: 1, empId: 1, deptId: 2, jobId: 3, startDate: '2020-01-15', endDate: '',           deleted: false },
+  { id: 2, empId: 2, deptId: 1, jobId: 1, startDate: '2021-03-01', endDate: '',           deleted: false },
+  { id: 3, empId: 3, deptId: 1, jobId: 2, startDate: '2021-06-15', endDate: '',           deleted: false },
+  { id: 4, empId: 4, deptId: 3, jobId: 5, startDate: '2022-02-10', endDate: '',           deleted: false },
+  { id: 5, empId: 5, deptId: 4, jobId: 6, startDate: '2022-08-20', endDate: '',           deleted: false },
+  { id: 6, empId: 6, deptId: 2, jobId: 4, startDate: '2023-01-05', endDate: '2024-12-31', deleted: false },
 ];
 
-/* ── System users (approved, active accounts) ── */
-let sysUsers = [
-  {id:1,username:'admin1',    firstName:'Admin',    lastName:'One',   role:'admin',empId:1, registeredAt:'2020-01-10',approvedBy:'superadmin1',deleted:false},
-  {id:2,username:'employee1', firstName:'Employee', lastName:'One',   role:'user', empId:2, registeredAt:'2021-03-01',approvedBy:'admin1',     deleted:false},
-  {id:3,username:'employee2', firstName:'Employee', lastName:'Two',   role:'user', empId:3, registeredAt:'2021-06-15',approvedBy:'admin1',     deleted:false},
-  {id:4,username:'employee3', firstName:'Employee', lastName:'Three', role:'user', empId:4, registeredAt:'2022-02-10',approvedBy:'admin1',     deleted:false},
-  {id:5,username:'employee4', firstName:'Employee', lastName:'Four',  role:'user', empId:5, registeredAt:'2022-08-20',approvedBy:'admin1',     deleted:false},
-];
+let nextEmpId    = 7;
+let nextDeptId   = 5;
+let nextJobId    = 7;
+let nextHistId   = 7;
+let editingEmpId = null;
+let editingDeptId = null;
+let editingJobId = null;
+let editingHistId = null;
+let pendingConfirmFn = null;
 
-/* ── Registration requests (pending, approved, rejected) ── */
-let registrations = [
-  {id:1, username:'newuser1',  firstName:'New',      lastName:'User',    requestedRole:'user', empId:3, empNo:'EMP-003', email:'newuser1@co.com',  submittedAt:'2025-05-01 09:00', status:'pending',  reviewedBy:null, reviewedAt:null, note:''},
-  {id:2, username:'newuser2',  firstName:'Another',  lastName:'User',    requestedRole:'user', empId:4, empNo:'EMP-004', email:'newuser2@co.com',  submittedAt:'2025-05-02 10:15', status:'pending',  reviewedBy:null, reviewedAt:null, note:''},
-  {id:3, username:'hradmin2',  firstName:'HR',       lastName:'Admin',   requestedRole:'admin',empId:1, empNo:'EMP-001', email:'hradmin2@co.com',  submittedAt:'2025-05-03 08:30', status:'pending',  reviewedBy:null, reviewedAt:null, note:''},
-  {id:4, username:'olduser1',  firstName:'Old',      lastName:'User',    requestedRole:'user', empId:2, empNo:'EMP-002', email:'olduser1@co.com',  submittedAt:'2025-04-10 14:00', status:'approved', reviewedBy:'admin1', reviewedAt:'2025-04-11 09:00', note:''},
-  {id:5, username:'badactor1', firstName:'Bad',      lastName:'Actor',   requestedRole:'admin',empId:null,empNo:'',     email:'bad@external.com', submittedAt:'2025-04-15 11:00', status:'rejected', reviewedBy:'admin1', reviewedAt:'2025-04-15 14:30', note:'No matching employee record.'},
-];
+/* ═══════════════════ HELPERS ═══════════════════ */
+const getDept = id => departments.find(d => d.id === id);
+const getJob  = id => jobs.find(j => j.id === id);
+const getEmp  = id => employees.find(e => e.id === id);
 
-let nextRegId = 6;
-let pendingRejectId = null;
-let auditLog = [
-  {id:1, timestamp:'2025-01-02 09:15',user:'admin1',action:'BLOCK',  entity:'Employee',  record:'EMP-006 (Employee Five)',          note:'Employee separated from company.'},
-  {id:2, timestamp:'2025-01-02 09:16',user:'admin1',action:'BLOCK',  entity:'JobHistory',record:'JH-006',                           note:'History blocked with employee.'},
-  {id:3, timestamp:'2025-01-10 14:30',user:'admin1',action:'EDIT',   entity:'Employee',  record:'EMP-002 (Employee One)',           note:'Updated salary to ₱55,000.'},
-  {id:4, timestamp:'2025-02-01 10:00',user:'admin1',action:'ADD',    entity:'Employee',  record:'EMP-005 (Employee Four)',          note:'New employee added.'},
-  {id:5, timestamp:'2025-02-14 11:22',user:'user1', action:'VIEW',   entity:'Employee',  record:'EMP-003 (Employee Two)',           note:'Profile viewed.'},
-  {id:6, timestamp:'2025-03-05 08:45',user:'admin1',action:'EDIT',   entity:'Department',record:'IT – Information Technology',      note:'Updated description.'},
-  {id:7, timestamp:'2025-03-15 15:10',user:'admin1',action:'ADD',    entity:'JobHistory',record:'JH-007 (Employee One)',            note:'New job history entry added.'},
-  {id:8, timestamp:'2025-04-20 09:00',user:'user1', action:'VIEW',   entity:'Employee',  record:'EMP-001 (Admin One)',              note:'Profile viewed.'},
-  {id:9, timestamp:'2025-04-22 13:00',user:'admin1',action:'RESTORE',entity:'Employee',  record:'EMP-006 (Employee Five)',          note:'Restored at HR request.'},
-  {id:10,timestamp:'2025-05-01 08:30',user:'admin1',action:'EDIT',   entity:'Employee',  record:'EMP-004 (Employee Three)',         note:'Updated phone number.'},
-];
-let nextAuditId = 11;
-let nE=7,nD=5,nJ=7,nH=8;
-let editId={emp:null,dept:null,job:null,hist:null};
-let pendingFn=null;
+function deptName(id)  { const d = getDept(id); return d ? d.name : '—'; }
+function deptCode(id)  { const d = getDept(id); return d ? d.code : ''; }
+function jobTitle(id)  { const j = getJob(id);  return j ? j.title : '—'; }
+function empName(id)   { const e = getEmp(id);  return e ? `${e.firstName} ${e.lastName}` : '—'; }
+function initials(emp) { return (emp.firstName[0] + emp.lastName[0]).toUpperCase(); }
 
-/* ════════════════════════════════════
-   HELPERS
-════════════════════════════════════ */
-const gD  = id => departments.find(d=>d.id===id);
-const gJ  = id => jobs.find(j=>j.id===id);
-const gE  = id => employees.find(e=>e.id===id);
-const dn  = id => { const d=gD(id); return d?d.name:'—'; };
-const dc  = id => { const d=gD(id); return d?d.code:'—'; };
-const jd  = id => { const j=gJ(id); return j?j.desc:'—'; };
-const jc  = id => { const j=gJ(id); return j?j.code:'—'; };
-const en  = id => { const e=gE(id); return e?`${e.lastName}, ${e.firstName}`:'—'; };
-const ini = e  => (e.firstName[0]+e.lastName[0]).toUpperCase();
-const fmt = d  => d ? d : '—';
-const fmtSal = s => s ? '₱'+Number(s).toLocaleString() : '—';
-const now  = () => {
-  const d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
-    +' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-};
-function logAudit(action,entity,record,note=''){
-  auditLog.unshift({id:nextAuditId++,timestamp:now(),user:CURRENT_USER,action,entity,record,note});
-}
-function metaTag(meta){
-  if(!meta) return '<span style="color:var(--muted);font-size:10px">—</span>';
-  return `<span style="font-size:10px;color:var(--muted)">${meta.by} · ${meta.at}</span>`;
-}
-function pendingCount(){ return registrations.filter(r=>r.status==='pending').length; }
-function updatePendingBadges(){
-  const n = pendingCount();
-  const el = document.getElementById('nav-pending-count');
-  const tab = document.getElementById('tab-pending-count');
-  const banner = document.getElementById('pending-banner');
-  const txt = document.getElementById('pending-count-text');
-  if(el)  { el.textContent=n; el.style.display=n?'':'none'; }
-  if(tab) { tab.textContent=n; tab.className='tab-count'+(n===0?' zero':''); }
-  if(banner){ banner.style.display=n?'flex':'none'; }
-  if(txt){ txt.textContent=`${n} pending registration${n!==1?'s':''}`; }
-}
+function formatDate(d) { return d ? d : '—'; }
 
-/* ════════════════════════════════════
-   NAVIGATION
-════════════════════════════════════ */
-function nav(el,page){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+/* ═══════════════════ NAVIGATION ═══════════════════ */
+function navigate(el, page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  const t={employees:'Employees','job-history':'Job History',departments:'Departments',jobs:'Job Positions',deleted:'Deleted Items',usermgmt:'User Management',profile:'Employee Profile'};
-  document.getElementById('topbar-title').textContent=t[page]||page;
-  if(page==='employees')   { renderEmp(); renderStats(); }
-  if(page==='job-history') renderHist();
-  if(page==='departments') renderDepts();
-  if(page==='jobs')        renderJobs();
-  if(page==='deleted')     renderDeleted();
-  if(page==='usermgmt')    { renderUsers(); renderPending(); renderAllReg(); renderUserStats(); updatePendingBadges(); }
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const titles = {
+    employees: 'Employees', 'job-history': 'Job History',
+    departments: 'Departments', jobs: 'Job Positions', profile: 'Employee Profile'
+  };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+  if (page === 'employees')    { renderEmployees(); updateEmpStats(); }
+  if (page === 'job-history')  renderHistory();
+  if (page === 'departments')  renderDepts();
+  if (page === 'jobs')         renderJobs();
 }
 
-/* ════════════════════════════════════
-   MODALS
-════════════════════════════════════ */
-const om = id => document.getElementById(id).classList.add('open');
-const cm = id => document.getElementById(id).classList.remove('open');
-function doConfirm(){ if(pendingFn)pendingFn(); cm('mo-confirm'); }
-function askConfirm(title,msg,fn,btn='Confirm',btnClass='btn-danger'){
-  document.getElementById('conf-title').textContent=title;
-  document.getElementById('conf-msg').textContent=msg;
-  const ok=document.getElementById('conf-ok');
-  ok.textContent=btn; ok.className='btn '+btnClass;
-  pendingFn=fn; om('mo-confirm');
+/* ═══════════════════ MODAL HELPERS ═══════════════════ */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function confirm(title, msg, fn, btnLabel = 'Confirm') {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent   = msg;
+  document.getElementById('confirm-ok-btn').textContent = btnLabel;
+  pendingConfirmFn = fn;
+  openModal('modal-confirm');
+}
+function confirmAction() { if (pendingConfirmFn) pendingConfirmFn(); closeModal('modal-confirm'); }
+
+/* ═══════════════════ EMPLOYEES ═══════════════════ */
+function updateEmpStats() {
+  const active  = employees.filter(e => !e.deleted).length;
+  const deleted = employees.filter(e => e.deleted).length;
+  const depts   = new Set(employees.filter(e => !e.deleted).map(e => e.deptId)).size;
+  document.getElementById('emp-stats').innerHTML = `
+    <div class="stat-card accent"><div class="stat-num">${active}</div><div class="stat-lbl">Active</div></div>
+    <div class="stat-card"><div class="stat-num">${deleted}</div><div class="stat-lbl">Deleted</div></div>
+    <div class="stat-card"><div class="stat-num">${depts}</div><div class="stat-lbl">Departments</div></div>
+    <div class="stat-card"><div class="stat-num">${employees.length}</div><div class="stat-lbl">Total Records</div></div>
+  `;
 }
 
-/* ════════════════════════════════════
-   STATS
-════════════════════════════════════ */
-function renderStats(){
-  const a=employees.filter(e=>!e.deleted&&!e.blocked).length;
-  const b=employees.filter(e=>e.blocked).length;
-  const d=employees.filter(e=>e.deleted).length;
-  const dp=new Set(employees.filter(e=>!e.deleted&&!e.blocked).map(e=>e.deptId)).size;
-  document.getElementById('emp-stats').innerHTML=`
-    <div class="sc ac"><div class="n">${a}</div><div class="l">Active</div></div>
-    <div class="sc"><div class="n">${b}</div><div class="l">Blocked</div></div>
-    <div class="sc"><div class="n">${d}</div><div class="l">Inactive</div></div>
-    <div class="sc"><div class="n">${dp}</div><div class="l">Departments</div></div>
-    <div class="sc"><div class="n">${employees.length}</div><div class="l">Total</div></div>`;
-}
-function renderUserStats(){
-  const total = sysUsers.filter(u=>!u.deleted).length;
-  const admins = sysUsers.filter(u=>!u.deleted&&u.role==='admin').length;
-  const users = sysUsers.filter(u=>!u.deleted&&u.role==='user').length;
-  const pend = pendingCount();
-  document.getElementById('user-stats').innerHTML=`
-    <div class="sc ac"><div class="n">${total}</div><div class="l">Active Users</div></div>
-    <div class="sc"><div class="n">${admins}</div><div class="l">Admins</div></div>
-    <div class="sc"><div class="n">${users}</div><div class="l">Users</div></div>
-    <div class="sc ${pend>0?'warn':''}"><div class="n">${pend}</div><div class="l">Pending</div></div>`;
-}
-
-/* ════════════════════════════════════
-   EMPLOYEES
-════════════════════════════════════ */
-function popDeptFilter(){
-  const s=document.getElementById('emp-fd'),v=s.value;
-  s.innerHTML='<option value="">All Departments</option>';
-  departments.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;if(String(d.id)===v)o.selected=true;s.appendChild(o);});
-}
-function renderEmp(){
-  popDeptFilter();
-  const q=document.getElementById('emp-q').value.toLowerCase();
-  const fd=document.getElementById('emp-fd').value;
-  const fs=document.getElementById('emp-fs').value;
-  const all=document.getElementById('emp-show-all').checked;
-  let data=employees.filter(e=>{
-    const hidden=e.deleted||e.blocked;
-    if(!all&&fs!=='blocked'&&fs!=='inactive'&&hidden)return false;
-    if(fs==='active'&&(e.deleted||e.blocked))return false;
-    if(fs==='blocked'&&!e.blocked)return false;
-    if(fs==='inactive'&&!e.deleted)return false;
-    if(fd&&String(e.deptId)!==fd)return false;
-    return `${e.empNo} ${e.lastName} ${e.firstName} ${jd(e.jobId)} ${dn(e.deptId)}`.toLowerCase().includes(q);
-  }).sort((a,b)=>a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName));
-  const tb=document.getElementById('emp-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="13" class="tbl-empty">No employees found.</td></tr>`;upBtns('emp');return;}
-  tb.innerHTML=data.map(e=>{
-    const rowCls=e.deleted?'del-row':e.blocked?'blk-row':'';
-    const sb=e.deleted?'<span class="badge b-del">Inactive</span>':e.blocked?'<span class="badge b-blk">Blocked</span>':'<span class="badge b-active">Active</span>';
-    return `<tr class="${rowCls}">
-      <td><input type="checkbox" class="chk-emp" value="${e.id}" onchange="upBtns('emp')"/></td>
-      <td>${e.empNo}</td><td><strong>${e.lastName}</strong></td><td>${e.firstName}</td>
-      <td>${e.gender||'—'}</td><td>${fmt(e.hireDate)}</td>
-      <td>${e.sepDate?fmt(e.sepDate):'—'}</td><td>${jd(e.jobId)}</td>
-      <td><span class="badge b-dept">${dc(e.deptId)}</span></td>
-      <td>${fmtSal(e.salary)}</td><td class="ns">${sb}</td>
-      <td class="ns">${metaTag(e.meta)}</td>
-      <td class="ns" style="white-space:nowrap">
-        <button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf(${e.id})">View</button>
-        <button class="btn btn-white"   style="padding:3px 7px;font-size:10px" onclick="openEditEmp(${e.id})">Edit</button>
-        <button class="btn btn-audit"   style="padding:3px 7px;font-size:10px" onclick="viewEmpAudit(${e.id})">Log</button>
-      </td></tr>`;
-  }).join('');
-  upBtns('emp');
-}
-function getChk(cls){return[...document.querySelectorAll('.'+cls+':checked')].map(c=>+c.value);}
-function toggleAll(scope,cb){document.querySelectorAll(`.chk-${scope}`).forEach(c=>c.checked=cb.checked);upBtns(scope);}
-function upBtns(scope){
-  if(scope==='emp'){
-    const ids=getChk('chk-emp');
-    document.getElementById('btn-blk-emp').disabled=!ids.some(id=>{const e=gE(id);return e&&!e.deleted&&!e.blocked;});
-    document.getElementById('btn-rst-emp').disabled=!ids.some(id=>{const e=gE(id);return e&&(e.deleted||e.blocked);});
-  }
-  if(scope==='hist'){
-    const ids=getChk('chk-hist');
-    document.getElementById('btn-blk-hist').disabled=!ids.some(id=>{const h=jobHistory.find(x=>x.id===id);return h&&!h.deleted;});
-    document.getElementById('btn-rst-hist').disabled=!ids.some(id=>{const h=jobHistory.find(x=>x.id===id);return h&&h.deleted;});
-  }
-}
-function bulkBlock(scope){
-  if(scope==='emp'){
-    const ids=getChk('chk-emp').filter(id=>{const e=gE(id);return e&&!e.deleted&&!e.blocked;});
-    if(!ids.length)return;
-    askConfirm('Block Employees',`Block ${ids.length} employee(s)? They will be hidden from users.`,()=>{
-      ids.forEach(id=>{const e=gE(id);if(e){e.blocked=true;e.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked by admin'};logAudit('BLOCK','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Blocked by admin');}});
-      renderEmp();renderStats();
-    },'Block','btn-block');
-  }
-  if(scope==='hist'){
-    const ids=getChk('chk-hist').filter(id=>{const h=jobHistory.find(x=>x.id===id);return h&&!h.deleted;});
-    if(!ids.length)return;
-    askConfirm('Block History',`Block ${ids.length} record(s)?`,()=>{
-      ids.forEach(id=>{const h=jobHistory.find(x=>x.id===id);if(h){h.deleted=true;h.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked by admin'};logAudit('BLOCK','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Blocked by admin');}});
-      renderHist();
-    },'Block','btn-block');
-  }
-}
-function bulkRestore(scope){
-  if(scope==='emp'){
-    const ids=getChk('chk-emp').filter(id=>{const e=gE(id);return e&&(e.deleted||e.blocked);});
-    if(!ids.length)return;
-    askConfirm('Restore Employees',`Restore ${ids.length} employee(s)?`,()=>{
-      ids.forEach(id=>{const e=gE(id);if(e){e.deleted=false;e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Restored by admin'};logAudit('RESTORE','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Restored by admin');}});
-      renderEmp();renderStats();
-    },'Restore','btn-success');
-  }
-  if(scope==='hist'){
-    const ids=getChk('chk-hist').filter(id=>{const h=jobHistory.find(x=>x.id===id);return h&&h.deleted;});
-    if(!ids.length)return;
-    askConfirm('Restore History',`Restore ${ids.length} record(s)?`,()=>{
-      ids.forEach(id=>{const h=jobHistory.find(x=>x.id===id);if(h){h.deleted=false;h.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Restored by admin'};logAudit('RESTORE','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Restored by admin');}});
-      renderHist();
-    },'Restore','btn-success');
-  }
-}
-function popFormSelects(){
-  ['fe-dept','fh-dept','fj-dept'].forEach(sid=>{const s=document.getElementById(sid);if(!s)return;s.innerHTML='<option value="">-- Select --</option>';departments.filter(d=>!d.deleted).forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;s.appendChild(o);});});
-  ['fe-job','fh-job'].forEach(sid=>{const s=document.getElementById(sid);if(!s)return;s.innerHTML='<option value="">-- Select --</option>';jobs.filter(j=>!j.deleted).forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.code} – ${j.desc}`;s.appendChild(o);});});
-  const s=document.getElementById('fh-emp');if(!s)return;s.innerHTML='<option value="">-- Select --</option>';employees.filter(e=>!e.deleted&&!e.blocked).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=`${e.empNo} – ${e.lastName}, ${e.firstName}`;s.appendChild(o);});
-}
-function openAddEmp(){editId.emp=null;document.getElementById('mo-emp-title').textContent='Add Employee';['fe-empno','fe-user','fe-ln','fe-fn','fe-email','fe-phone','fe-sal'].forEach(f=>document.getElementById(f).value='');document.getElementById('fe-hire').value=new Date().toISOString().split('T')[0];document.getElementById('fe-sep').value='';document.getElementById('fe-gender').value='';popFormSelects();om('mo-emp');}
-function openEditEmp(id){const e=gE(id);if(!e)return;editId.emp=id;document.getElementById('mo-emp-title').textContent='Edit Employee';document.getElementById('fe-empno').value=e.empNo;document.getElementById('fe-user').value=e.username;document.getElementById('fe-ln').value=e.lastName;document.getElementById('fe-fn').value=e.firstName;document.getElementById('fe-gender').value=e.gender||'';document.getElementById('fe-hire').value=e.hireDate;document.getElementById('fe-sep').value=e.sepDate||'';document.getElementById('fe-sal').value=e.salary||'';document.getElementById('fe-email').value=e.email||'';document.getElementById('fe-phone').value=e.phone||'';popFormSelects();setTimeout(()=>{document.getElementById('fe-dept').value=e.deptId;document.getElementById('fe-job').value=e.jobId;},10);om('mo-emp');}
-function saveEmp(){
-  const empNo=document.getElementById('fe-empno').value.trim(),username=document.getElementById('fe-user').value.trim(),lastName=document.getElementById('fe-ln').value.trim(),firstName=document.getElementById('fe-fn').value.trim(),gender=document.getElementById('fe-gender').value,hireDate=document.getElementById('fe-hire').value,sepDate=document.getElementById('fe-sep').value,salary=+document.getElementById('fe-sal').value||0,deptId=+document.getElementById('fe-dept').value,jobId=+document.getElementById('fe-job').value,email=document.getElementById('fe-email').value.trim(),phone=document.getElementById('fe-phone').value.trim();
-  if(!empNo||!lastName||!firstName||!deptId||!jobId){alert('Fill required fields.');return;}
-  const metaInfo={by:CURRENT_USER,at:now(),action:editId.emp?'EDIT':'ADD',note:editId.emp?'Profile updated':'New employee added'};
-  if(editId.emp){Object.assign(gE(editId.emp),{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta:metaInfo});logAudit('EDIT','Employee',`${empNo} (${lastName}, ${firstName})`,'Profile updated');}
-  else{employees.push({id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta:metaInfo});logAudit('ADD','Employee',`${empNo} (${lastName}, ${firstName})`,'New employee added');}
-  cm('mo-emp');renderEmp();renderStats();
-}
-
-/* ════════════════════════════════════
-   JOB HISTORY
-════════════════════════════════════ */
-function renderHist(){
-  const q=document.getElementById('hist-q').value.toLowerCase(),fe=document.getElementById('hist-fe').value,all=document.getElementById('hist-show-all').checked;
-  const sel=document.getElementById('hist-fe'),cv=sel.value;
-  sel.innerHTML='<option value="">All Employees</option>';
-  employees.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=`${e.empNo} – ${e.lastName}, ${e.firstName}`;if(String(e.id)===cv)o.selected=true;sel.appendChild(o);});
-  let data=jobHistory.filter(h=>{if(!all&&h.deleted)return false;if(fe&&String(h.empId)!==fe)return false;return `${en(h.empId)} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)}`.toLowerCase().includes(q);}).sort((a,b)=>b.effDate.localeCompare(a.effDate));
-  const tb=document.getElementById('hist-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="12" class="tbl-empty">No records.</td></tr>`;upBtns('hist');return;}
-  tb.innerHTML=data.map(h=>`<tr class="${h.deleted?'del-row':''}">
-    <td><input type="checkbox" class="chk-hist" value="${h.id}" onchange="upBtns('hist')"/></td>
-    <td>JH-${String(h.id).padStart(3,'0')}</td><td>${en(h.empId)}</td><td>${jc(h.jobId)}</td><td>${jd(h.jobId)}</td>
-    <td>${dc(h.deptId)}</td><td>${dn(h.deptId)}</td><td>${fmt(h.effDate)}</td><td>${fmtSal(h.salary)}</td>
-    <td><span class="badge ${h.deleted?'b-del':'b-active'}">${h.deleted?'Blocked':'Active'}</span></td>
-    <td class="ns">${metaTag(h.meta)}</td>
-    <td class="ns"><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditHist(${h.id})">Edit</button></td>
-  </tr>`).join('');
-  upBtns('hist');
-}
-function openAddHist(){editId.hist=null;document.getElementById('mo-hist-title').textContent='Add Job History';popFormSelects();document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];document.getElementById('fh-sal').value='';om('mo-hist');}
-function openEditHist(id){const h=jobHistory.find(x=>x.id===id);if(!h)return;editId.hist=id;document.getElementById('mo-hist-title').textContent='Edit Job History';popFormSelects();setTimeout(()=>{document.getElementById('fh-emp').value=h.empId;document.getElementById('fh-job').value=h.jobId;document.getElementById('fh-dept').value=h.deptId;},10);document.getElementById('fh-eff').value=h.effDate;document.getElementById('fh-sal').value=h.salary||'';om('mo-hist');}
-function saveHist(){
-  const empId=+document.getElementById('fh-emp').value,jobId=+document.getElementById('fh-job').value,deptId=+document.getElementById('fh-dept').value,effDate=document.getElementById('fh-eff').value,salary=+document.getElementById('fh-sal').value||0;
-  if(!empId||!jobId||!deptId||!effDate){alert('Fill required fields.');return;}
-  const metaInfo={by:CURRENT_USER,at:now(),action:editId.hist?'EDIT':'ADD',note:editId.hist?'History updated':'New history entry'};
-  if(editId.hist){Object.assign(jobHistory.find(x=>x.id===editId.hist),{empId,jobId,deptId,effDate,salary,meta:metaInfo});logAudit('EDIT','JobHistory',`JH-${String(editId.hist).padStart(3,'0')}`,'History updated');}
-  else{jobHistory.push({id:nH++,empId,jobId,deptId,effDate,salary,deleted:false,meta:metaInfo});logAudit('ADD','JobHistory',`JH-${String(nH-1).padStart(3,'0')} (${en(empId)})`,'New entry added');}
-  cm('mo-hist');renderHist();
-}
-
-/* ════════════════════════════════════
-   DEPARTMENTS
-════════════════════════════════════ */
-function renderDepts(){
-  const ec=id=>employees.filter(e=>e.deptId===id&&!e.deleted&&!e.blocked).length;
-  const tb=document.getElementById('dept-tbody'),data=departments.filter(d=>!d.deleted);
-  if(!data.length){tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No departments.</td></tr>`;return;}
-  tb.innerHTML=data.map(d=>`<tr>
-    <td><strong>${d.code}</strong></td><td>${d.name}</td>
-    <td style="max-width:200px;color:var(--muted)">${d.desc||'—'}</td><td>${ec(d.id)}</td>
-    <td class="ns">${metaTag(d.meta)}</td>
-    <td>
-      <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept(${d.id})">Edit</button>
-      <button class="btn btn-block" style="padding:3px 7px;font-size:10px" onclick="blockDept(${d.id})">Block</button>
-    </td></tr>`).join('');
-}
-function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name','fd-desc'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
-function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;document.getElementById('fd-desc').value=d.desc||'';om('mo-dept');}
-function saveDept(){const code=document.getElementById('fd-code').value.trim(),name=document.getElementById('fd-name').value.trim(),desc=document.getElementById('fd-desc').value.trim();if(!code||!name){alert('Code and name required.');return;}const metaInfo={by:CURRENT_USER,at:now(),action:editId.dept?'EDIT':'ADD',note:editId.dept?'Dept updated':'New dept added'};if(editId.dept){Object.assign(gD(editId.dept),{code,name,desc,meta:metaInfo});logAudit('EDIT','Department',`${code} – ${name}`,'Updated');}else{departments.push({id:nD++,code,name,desc,deleted:false,meta:metaInfo});logAudit('ADD','Department',`${code} – ${name}`,'Added');}cm('mo-dept');renderDepts();}
-function blockDept(id){const d=gD(id);askConfirm('Block Department',`Block "${d.name}"?`,()=>{d.deleted=true;d.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked by admin'};logAudit('BLOCK','Department',`${d.code} – ${d.name}`,'Blocked');renderDepts();},'Block','btn-block');}
-
-/* ════════════════════════════════════
-   JOB POSITIONS
-════════════════════════════════════ */
-function renderJobs(){
-  const ec=id=>employees.filter(e=>e.jobId===id&&!e.deleted&&!e.blocked).length;
-  const tb=document.getElementById('job-tbody'),data=jobs.filter(j=>!j.deleted);
-  if(!data.length){tb.innerHTML=`<tr><td colspan="7" class="tbl-empty">No jobs.</td></tr>`;return;}
-  tb.innerHTML=data.map(j=>`<tr>
-    <td><strong>${j.code}</strong></td><td>${j.desc}</td><td>${dn(j.deptId)}</td>
-    <td>${ec(j.id)}</td><td><span class="badge b-active">Active</span></td>
-    <td class="ns">${metaTag(j.meta)}</td>
-    <td>
-      <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditJob(${j.id})">Edit</button>
-      <button class="btn btn-block" style="padding:3px 7px;font-size:10px" onclick="blockJob(${j.id})">Block</button>
-    </td></tr>`).join('');
-}
-function openAddJob(){editId.job=null;document.getElementById('mo-job-title').textContent='Add Job Position';['fj-code','fj-desc'].forEach(f=>document.getElementById(f).value='');popFormSelects();om('mo-job');}
-function openEditJob(id){const j=gJ(id);if(!j)return;editId.job=id;document.getElementById('mo-job-title').textContent='Edit Job Position';document.getElementById('fj-code').value=j.code;document.getElementById('fj-desc').value=j.desc;popFormSelects();setTimeout(()=>{document.getElementById('fj-dept').value=j.deptId;},10);om('mo-job');}
-function saveJob(){const code=document.getElementById('fj-code').value.trim(),desc=document.getElementById('fj-desc').value.trim(),deptId=+document.getElementById('fj-dept').value;if(!code||!desc||!deptId){alert('All fields required.');return;}const metaInfo={by:CURRENT_USER,at:now(),action:editId.job?'EDIT':'ADD',note:editId.job?'Job updated':'New job added'};if(editId.job){Object.assign(gJ(editId.job),{code,desc,deptId,meta:metaInfo});logAudit('EDIT','Job',`${code} – ${desc}`,'Updated');}else{jobs.push({id:nJ++,code,desc,deptId,deleted:false,meta:metaInfo});logAudit('ADD','Job',`${code} – ${desc}`,'Added');}cm('mo-job');renderJobs();}
-function blockJob(id){const j=gJ(id);askConfirm('Block Job',`Block "${j.desc}"?`,()=>{j.deleted=true;j.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked by admin'};logAudit('BLOCK','Job',`${j.code} – ${j.desc}`,'Blocked');renderJobs();},'Block','btn-block');}
-
-/* ════════════════════════════════════
-   DELETED ITEMS
-════════════════════════════════════ */
-function switchDelTab(btn,panel){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(panel).classList.add('active');if(panel==='del-emp')renderHidEmp();if(panel==='del-hist')renderHidHist();if(panel==='del-jobs')renderHidJobs();if(panel==='del-depts')renderHidDepts();}
-function renderDeleted(){renderHidEmp();}
-function renderHidEmp(){const data=employees.filter(e=>e.deleted||e.blocked),tb=document.getElementById('del-emp-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="9" class="tbl-empty">No hidden employees.</td></tr>`;return;}tb.innerHTML=data.map(e=>`<tr class="${e.deleted?'del-row':'blk-row'}"><td class="ns">${e.empNo}</td><td class="ns"><strong>${e.lastName}</strong></td><td class="ns">${e.firstName}</td><td class="ns">${dn(e.deptId)}</td><td class="ns">${jd(e.jobId)}</td><td class="ns"><span class="badge ${e.deleted?'b-del':'b-blk'}">${e.deleted?'Inactive':'Blocked'}</span></td><td class="ns" style="font-size:10px">${e.meta?e.meta.by:'—'}</td><td class="ns" style="font-size:10px">${e.meta?e.meta.at:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverEmp(${e.id})">Recover</button></td></tr>`).join('');}
-function recoverEmp(id){askConfirm('Recover Employee','Restore to active?',()=>{const e=gE(id);e.deleted=false;e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Recovered');renderHidEmp();renderStats();},'Recover','btn-success');}
-function renderHidHist(){const data=jobHistory.filter(h=>h.deleted),tb=document.getElementById('del-hist-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="8" class="tbl-empty">No hidden history.</td></tr>`;return;}tb.innerHTML=data.map(h=>`<tr class="del-row"><td class="ns">JH-${String(h.id).padStart(3,'0')}</td><td class="ns">${en(h.empId)}</td><td class="ns">${jc(h.jobId)}</td><td class="ns">${dc(h.deptId)}</td><td class="ns">${fmt(h.effDate)}</td><td class="ns"><span class="badge b-blk">Blocked</span></td><td class="ns" style="font-size:10px">${h.meta?h.meta.by:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverHist(${h.id})">Recover</button></td></tr>`).join('');}
-function recoverHist(id){askConfirm('Recover History','Restore this entry?',()=>{const h=jobHistory.find(x=>x.id===id);h.deleted=false;h.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Recovered');renderHidHist();},'Recover','btn-success');}
-function renderHidJobs(){const data=jobs.filter(j=>j.deleted),tb=document.getElementById('del-jobs-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No hidden jobs.</td></tr>`;return;}tb.innerHTML=data.map(j=>`<tr class="del-row"><td class="ns">${j.code}</td><td class="ns">${j.desc}</td><td class="ns">${dn(j.deptId)}</td><td class="ns"><span class="badge b-blk">Blocked</span></td><td class="ns" style="font-size:10px">${j.meta?j.meta.by:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverJob(${j.id})">Recover</button></td></tr>`).join('');}
-function recoverJob(id){askConfirm('Recover Job','Restore this job?',()=>{const j=gJ(id);j.deleted=false;j.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Job',`${j.code} – ${j.desc}`,'Recovered');renderHidJobs();},'Recover','btn-success');}
-function renderHidDepts(){const data=departments.filter(d=>d.deleted),tb=document.getElementById('del-depts-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="5" class="tbl-empty">No hidden departments.</td></tr>`;return;}tb.innerHTML=data.map(d=>`<tr class="del-row"><td class="ns">${d.code}</td><td class="ns">${d.name}</td><td class="ns"><span class="badge b-blk">Blocked</span></td><td class="ns" style="font-size:10px">${d.meta?d.meta.by:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverDept(${d.id})">Recover</button></td></tr>`).join('');}
-function recoverDept(id){askConfirm('Recover Dept','Restore this department?',()=>{const d=gD(id);d.deleted=false;d.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Department',`${d.code} – ${d.name}`,'Recovered');renderHidDepts();},'Recover','btn-success');}
-
-/* ════════════════════════════════════
-   USER MANAGEMENT
-════════════════════════════════════ */
-function switchUMTab(btn, panel){
-  document.querySelectorAll('#page-usermgmt .tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('#page-usermgmt .tab-panel').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById(panel).classList.add('active');
-  if(panel==='um-accounts') renderUsers();
-  if(panel==='um-pending')  renderPending();
-  if(panel==='um-all')      renderAllReg();
-}
-
-/* Active accounts list */
-function renderUsers(){
-  const q  = document.getElementById('users-q').value.toLowerCase();
-  const fr = document.getElementById('users-fr').value;
-  let data = sysUsers.filter(u=>{
-    if(u.deleted) return false;
-    if(fr && u.role!==fr) return false;
-    return `${u.username} ${u.firstName} ${u.lastName} ${u.role}`.toLowerCase().includes(q);
+function populateDeptFilter() {
+  const sel = document.getElementById('emp-filter-dept');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All Departments</option>';
+  departments.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d.id; o.textContent = d.name;
+    if (String(d.id) === cur) o.selected = true;
+    sel.appendChild(o);
   });
-  const tb = document.getElementById('users-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="8" class="tbl-empty">No users found.</td></tr>`;return;}
-  tb.innerHTML = data.map(u=>{
-    const roleClass = u.role==='admin'?'b-admin':'b-user';
-    const emp = u.empId ? en(u.empId) : '—';
-    return `<tr>
-      <td><strong>${u.username}</strong></td>
-      <td>${u.firstName} ${u.lastName}</td>
-      <td><span class="badge ${roleClass}">${u.role.toUpperCase()}</span></td>
-      <td>${emp}</td>
-      <td style="font-size:10px;color:var(--muted)">${u.registeredAt||'—'}</td>
-      <td style="font-size:10px;color:var(--muted)">${u.approvedBy||'—'}</td>
-      <td><span class="badge b-active">Active</span></td>
-      <td>
-        <button class="btn btn-block" style="padding:3px 7px;font-size:10px" onclick="deactivateUser(${u.id})">Deactivate</button>
-      </td></tr>`;
-  }).join('');
-}
-function deactivateUser(id){
-  const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  askConfirm('Deactivate User',`Deactivate account "${u.username}"? They will no longer be able to log in.`,()=>{
-    u.deleted=true;
-    logAudit('BLOCK','User',u.username,'User account deactivated');
-    renderUsers(); renderUserStats(); updatePendingBadges();
-  },'Deactivate','btn-block');
 }
 
-/* Pending approval cards */
-function renderPending(){
-  const q = document.getElementById('pending-q').value.toLowerCase();
-  const data = registrations.filter(r=>r.status==='pending' && `${r.username} ${r.firstName} ${r.lastName} ${r.empNo}`.toLowerCase().includes(q));
-  const container = document.getElementById('pending-cards');
-  if(!data.length){
-    container.innerHTML=`<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>`;
+function renderEmployees() {
+  populateDeptFilter();
+  const search  = document.getElementById('emp-search').value.toLowerCase();
+  const deptF   = document.getElementById('emp-filter-dept').value;
+  const statusF = document.getElementById('emp-filter-status').value;
+  const showDel = document.getElementById('show-deleted-emp').checked;
+
+  let data = employees.filter(e => {
+    if (!showDel && statusF !== 'deleted' && e.deleted) return false;
+    if (statusF === 'active'  && e.deleted)  return false;
+    if (statusF === 'deleted' && !e.deleted) return false;
+    if (deptF && String(e.deptId) !== deptF) return false;
+    const q = `${e.username} ${e.firstName} ${e.lastName} ${e.empId} ${deptName(e.deptId)} ${jobTitle(e.jobId)}`.toLowerCase();
+    return q.includes(search);
+  });
+
+  const tbody = document.getElementById('emp-tbody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="tbl-empty">No employees found.</td></tr>`;
+    updateActionBtns('emp');
     return;
   }
-  container.innerHTML = data.map(r=>{
-    const initials = (r.firstName[0]+r.lastName[0]).toUpperCase();
-    const emp = r.empId ? en(r.empId) : '—';
-    return `<div class="reg-card">
-      <div class="reg-avatar">${initials}</div>
-      <div class="reg-info">
-        <div class="reg-name">${r.firstName} ${r.lastName}</div>
-        <div class="reg-meta">@${r.username} · <span class="badge b-pending">Pending</span> · Requested: <strong>${r.requestedRole.toUpperCase()}</strong></div>
-        <div class="reg-detail">Email: ${r.email} &nbsp;|&nbsp; Emp ID: ${r.empNo||'—'} &nbsp;|&nbsp; Linked Employee: ${emp}</div>
-        <div class="reg-note">Submitted: ${r.submittedAt}</div>
+
+  tbody.innerHTML = data.map(e => `
+    <tr class="${e.deleted ? 'deleted-row' : ''}" id="erow-${e.id}">
+      <td><input type="checkbox" class="chk-emp" value="${e.id}" onchange="updateActionBtns('emp')"/></td>
+      <td>${e.empId}</td>
+      <td><strong>${e.username}</strong></td>
+      <td>${e.firstName} ${e.lastName}</td>
+      <td><span class="badge badge-dept">${deptCode(e.deptId)}</span> ${deptName(e.deptId)}</td>
+      <td>${jobTitle(e.jobId)}</td>
+      <td><span class="badge ${e.deleted ? 'badge-deleted' : 'badge-active'}">${e.deleted ? 'Deleted' : 'Active'}</span></td>
+      <td class="no-strike">
+        <button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="viewProfile(${e.id})">View</button>
+        <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-left:3px" onclick="openEditEmployee(${e.id})">Edit</button>
+      </td>
+    </tr>
+  `).join('');
+  updateActionBtns('emp');
+}
+
+function getCheckedEmp() {
+  return [...document.querySelectorAll('.chk-emp:checked')].map(c => +c.value);
+}
+function toggleAllEmp(cb) {
+  document.querySelectorAll('.chk-emp').forEach(c => c.checked = cb.checked);
+  updateActionBtns('emp');
+}
+
+function updateActionBtns(scope) {
+  if (scope === 'emp') {
+    const ids = getCheckedEmp();
+    const hasActive  = ids.some(id => { const e = getEmp(id); return e && !e.deleted; });
+    const hasDeleted = ids.some(id => { const e = getEmp(id); return e && e.deleted; });
+    document.getElementById('btn-delete-emp').disabled  = !hasActive;
+    document.getElementById('btn-restore-emp').disabled = !hasDeleted;
+  }
+  if (scope === 'hist') {
+    const ids = getCheckedHist();
+    const hasActive  = ids.some(id => { const h = jobHistory.find(x=>x.id===id); return h && !h.deleted; });
+    const hasDeleted = ids.some(id => { const h = jobHistory.find(x=>x.id===id); return h && h.deleted; });
+    document.getElementById('btn-delete-hist').disabled  = !hasActive;
+    document.getElementById('btn-restore-hist').disabled = !hasDeleted;
+  }
+}
+
+function deleteSelected(scope) {
+  if (scope === 'emp') {
+    const ids = getCheckedEmp().filter(id => { const e = getEmp(id); return e && !e.deleted; });
+    if (!ids.length) return;
+    confirm('Delete Employees', `Mark ${ids.length} employee(s) as deleted?`, () => {
+      ids.forEach(id => { const e = getEmp(id); if (e) e.deleted = true; });
+      renderEmployees(); updateEmpStats();
+    }, 'Delete');
+  }
+  if (scope === 'hist') {
+    const ids = getCheckedHist().filter(id => { const h = jobHistory.find(x=>x.id===id); return h && !h.deleted; });
+    if (!ids.length) return;
+    confirm('Delete History', `Mark ${ids.length} history entry(ies) as deleted?`, () => {
+      ids.forEach(id => { const h = jobHistory.find(x=>x.id===id); if (h) h.deleted = true; });
+      renderHistory();
+    }, 'Delete');
+  }
+}
+
+function restoreSelected(scope) {
+  if (scope === 'emp') {
+    const ids = getCheckedEmp().filter(id => { const e = getEmp(id); return e && e.deleted; });
+    if (!ids.length) return;
+    confirm('Restore Employees', `Restore ${ids.length} employee(s)?`, () => {
+      ids.forEach(id => { const e = getEmp(id); if (e) e.deleted = false; });
+      renderEmployees(); updateEmpStats();
+    }, 'Restore');
+  }
+  if (scope === 'hist') {
+    const ids = getCheckedHist().filter(id => { const h = jobHistory.find(x=>x.id===id); return h && h.deleted; });
+    if (!ids.length) return;
+    confirm('Restore History', `Restore ${ids.length} history entry(ies)?`, () => {
+      ids.forEach(id => { const h = jobHistory.find(x=>x.id===id); if (h) h.deleted = false; });
+      renderHistory();
+    }, 'Restore');
+  }
+}
+
+function openAddEmployee() {
+  editingEmpId = null;
+  document.getElementById('modal-emp-title').textContent = 'Add Employee';
+  ['username','empid','firstname','lastname','email','phone'].forEach(f => document.getElementById('f-'+f).value = '');
+  document.getElementById('f-hiredate').value = new Date().toISOString().split('T')[0];
+  populateFormSelects();
+  openModal('modal-employee');
+}
+
+function openEditEmployee(id) {
+  const e = getEmp(id);
+  if (!e) return;
+  editingEmpId = id;
+  document.getElementById('modal-emp-title').textContent = 'Edit Employee';
+  document.getElementById('f-username').value  = e.username;
+  document.getElementById('f-empid').value     = e.empId;
+  document.getElementById('f-firstname').value = e.firstName;
+  document.getElementById('f-lastname').value  = e.lastName;
+  document.getElementById('f-email').value     = e.email;
+  document.getElementById('f-phone').value     = e.phone;
+  document.getElementById('f-hiredate').value  = e.hireDate;
+  populateFormSelects();
+  setTimeout(() => {
+    document.getElementById('f-dept').value = e.deptId;
+    document.getElementById('f-job').value  = e.jobId;
+  }, 10);
+  openModal('modal-employee');
+}
+
+function populateFormSelects() {
+  const deptSels = ['f-dept','f-hist-dept','f-job-dept'];
+  deptSels.forEach(sid => {
+    const sel = document.getElementById(sid);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Select --</option>';
+    departments.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d.id; o.textContent = d.name;
+      sel.appendChild(o);
+    });
+  });
+
+  const jobSels = ['f-job','f-hist-job'];
+  jobSels.forEach(sid => {
+    const sel = document.getElementById(sid);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Select --</option>';
+    jobs.forEach(j => {
+      const o = document.createElement('option');
+      o.value = j.id; o.textContent = j.title;
+      sel.appendChild(o);
+    });
+  });
+
+  const empSels = ['f-dept-mgr','f-hist-emp'];
+  empSels.forEach(sid => {
+    const sel = document.getElementById(sid);
+    if (!sel) return;
+    const isEmp = sid === 'f-hist-emp';
+    sel.innerHTML = isEmp ? '<option value="">-- Select --</option>' : '<option value="">-- None --</option>';
+    employees.filter(e => !e.deleted).forEach(e => {
+      const o = document.createElement('option');
+      o.value = e.id; o.textContent = `${e.username} (${e.firstName} ${e.lastName})`;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function saveEmployee() {
+  const username  = document.getElementById('f-username').value.trim();
+  const empId     = document.getElementById('f-empid').value.trim();
+  const firstName = document.getElementById('f-firstname').value.trim();
+  const lastName  = document.getElementById('f-lastname').value.trim();
+  const deptId    = +document.getElementById('f-dept').value;
+  const jobId     = +document.getElementById('f-job').value;
+  const email     = document.getElementById('f-email').value.trim();
+  const phone     = document.getElementById('f-phone').value.trim();
+  const hireDate  = document.getElementById('f-hiredate').value;
+
+  if (!username || !firstName || !lastName || !deptId || !jobId) {
+    alert('Please fill in all required fields.'); return;
+  }
+
+  if (editingEmpId) {
+    const e = getEmp(editingEmpId);
+    Object.assign(e, { username, empId, firstName, lastName, deptId, jobId, email, phone, hireDate });
+  } else {
+    employees.push({ id: nextEmpId++, empId, username, firstName, lastName, deptId, jobId, email, phone, hireDate, deleted: false });
+  }
+  closeModal('modal-employee');
+  renderEmployees();
+  updateEmpStats();
+}
+
+/* ═══════════════════ JOB HISTORY ═══════════════════ */
+function renderHistory() {
+  const search  = document.getElementById('hist-search').value.toLowerCase();
+  const empF    = document.getElementById('hist-filter-emp').value;
+  const showDel = document.getElementById('show-deleted-hist').checked;
+
+  // populate emp filter
+  const empSel = document.getElementById('hist-filter-emp');
+  const curEmp = empSel.value;
+  empSel.innerHTML = '<option value="">All Employees</option>';
+  employees.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.id; o.textContent = e.username;
+    if (String(e.id) === curEmp) o.selected = true;
+    empSel.appendChild(o);
+  });
+
+  let data = jobHistory.filter(h => {
+    if (!showDel && h.deleted) return false;
+    if (empF && String(h.empId) !== empF) return false;
+    const q = `${empName(h.empId)} ${deptName(h.deptId)} ${jobTitle(h.jobId)}`.toLowerCase();
+    return q.includes(search);
+  });
+
+  const tbody = document.getElementById('hist-tbody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="tbl-empty">No history records found.</td></tr>`;
+    updateActionBtns('hist');
+    return;
+  }
+
+  tbody.innerHTML = data.map(h => `
+    <tr class="${h.deleted ? 'deleted-row' : ''}">
+      <td><input type="checkbox" class="chk-hist" value="${h.id}" onchange="updateActionBtns('hist')"/></td>
+      <td>HIST-${String(h.id).padStart(3,'0')}</td>
+      <td>${empName(h.empId)}</td>
+      <td>${deptName(h.deptId)}</td>
+      <td>${jobTitle(h.jobId)}</td>
+      <td>${formatDate(h.startDate)}</td>
+      <td>${h.endDate ? formatDate(h.endDate) : '<span style="color:var(--success);font-weight:bold">Current</span>'}</td>
+      <td><span class="badge ${h.deleted ? 'badge-deleted' : 'badge-active'}">${h.deleted ? 'Deleted' : 'Active'}</span></td>
+      <td class="no-strike">
+        <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px" onclick="openEditHistory(${h.id})">Edit</button>
+      </td>
+    </tr>
+  `).join('');
+  updateActionBtns('hist');
+}
+
+function getCheckedHist() {
+  return [...document.querySelectorAll('.chk-hist:checked')].map(c => +c.value);
+}
+function toggleAllHist(cb) {
+  document.querySelectorAll('.chk-hist').forEach(c => c.checked = cb.checked);
+  updateActionBtns('hist');
+}
+
+function openAddHistory() {
+  editingHistId = null;
+  document.getElementById('modal-hist-title').textContent = 'Add Job History Entry';
+  populateFormSelects();
+  document.getElementById('f-hist-start').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-hist-end').value = '';
+  openModal('modal-history');
+}
+
+function openEditHistory(id) {
+  const h = jobHistory.find(x => x.id === id);
+  if (!h) return;
+  editingHistId = id;
+  document.getElementById('modal-hist-title').textContent = 'Edit History Entry';
+  populateFormSelects();
+  setTimeout(() => {
+    document.getElementById('f-hist-emp').value  = h.empId;
+    document.getElementById('f-hist-dept').value = h.deptId;
+    document.getElementById('f-hist-job').value  = h.jobId;
+  }, 10);
+  document.getElementById('f-hist-start').value = h.startDate;
+  document.getElementById('f-hist-end').value   = h.endDate;
+  openModal('modal-history');
+}
+
+function saveHistory() {
+  const empId     = +document.getElementById('f-hist-emp').value;
+  const deptId    = +document.getElementById('f-hist-dept').value;
+  const jobId     = +document.getElementById('f-hist-job').value;
+  const startDate = document.getElementById('f-hist-start').value;
+  const endDate   = document.getElementById('f-hist-end').value;
+  if (!empId || !deptId || !jobId || !startDate) { alert('Please fill required fields.'); return; }
+
+  if (editingHistId) {
+    const h = jobHistory.find(x => x.id === editingHistId);
+    Object.assign(h, { empId, deptId, jobId, startDate, endDate });
+  } else {
+    jobHistory.push({ id: nextHistId++, empId, deptId, jobId, startDate, endDate, deleted: false });
+  }
+  closeModal('modal-history');
+  renderHistory();
+}
+
+/* ═══════════════════ DEPARTMENTS ═══════════════════ */
+function renderDepts() {
+  const container = document.getElementById('dept-cards');
+  const empCount  = id => employees.filter(e => e.deptId === id && !e.deleted).length;
+  container.innerHTML = departments.map(d => `
+    <div class="card">
+      <div class="card-title">${d.name}</div>
+      <div class="card-sub">${d.code}</div>
+      <div class="card-meta">
+        ${d.desc}<br/><br/>
+        Employees: <span>${empCount(d.id)}</span><br/>
+        Manager: <span>${d.manager ? empName(+d.manager) : 'Unassigned'}</span>
       </div>
-      <div class="reg-actions">
-        <button class="btn btn-approve" onclick="approveReg(${r.id})">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Approve
-        </button>
-        <button class="btn btn-reject" onclick="openRejectModal(${r.id})">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Reject
-        </button>
+      <div class="card-footer">
+        <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="openEditDept(${d.id})">Edit</button>
+        <button class="btn btn-danger"  style="font-size:11px;padding:5px 10px" onclick="confirmDeleteDept(${d.id})">Delete</button>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+  `).join('');
 }
 
-function approveReg(id){
-  const r = registrations.find(x=>x.id===id);if(!r)return;
-  askConfirm('Approve Registration',
-    `Approve registration for "${r.username}" as ${r.requestedRole.toUpperCase()}? This will create an active system account.`,
-    ()=>{
-      r.status='approved'; r.reviewedBy=CURRENT_USER; r.reviewedAt=now();
-      /* Create the system user */
-      sysUsers.push({id:sysUsers.length+10,username:r.username,firstName:r.firstName,lastName:r.lastName,role:r.requestedRole,empId:r.empId,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false});
-      logAudit('RESTORE','User',r.username,`Registration approved. Role: ${r.requestedRole}`);
-      renderPending(); renderUsers(); renderUserStats(); renderAllReg(); updatePendingBadges();
-    },'Approve','btn-success');
+function openAddDept() {
+  editingDeptId = null;
+  document.getElementById('modal-dept-title').textContent = 'Add Department';
+  ['dept-code','dept-name','dept-desc'].forEach(f => document.getElementById('f-'+f).value = '');
+  populateFormSelects();
+  openModal('modal-dept');
 }
 
-function openRejectModal(id){
-  const r=registrations.find(x=>x.id===id);if(!r)return;
-  pendingRejectId=id;
-  document.getElementById('reject-note').value='';
-  document.getElementById('reject-for').textContent=`Rejecting: ${r.firstName} ${r.lastName} (@${r.username})`;
-  om('mo-reject');
-}
-function confirmReject(){
-  const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;
-  const note=document.getElementById('reject-note').value.trim()||'No reason provided.';
-  r.status='rejected'; r.reviewedBy=CURRENT_USER; r.reviewedAt=now(); r.note=note;
-  logAudit('BLOCK','User',r.username,`Registration rejected: ${note}`);
-  cm('mo-reject');
-  renderPending(); renderUserStats(); renderAllReg(); updatePendingBadges();
+function openEditDept(id) {
+  const d = getDept(id);
+  if (!d) return;
+  editingDeptId = id;
+  document.getElementById('modal-dept-title').textContent = 'Edit Department';
+  document.getElementById('f-dept-code').value = d.code;
+  document.getElementById('f-dept-name').value = d.name;
+  document.getElementById('f-dept-desc').value = d.desc;
+  populateFormSelects();
+  setTimeout(() => { document.getElementById('f-dept-mgr').value = d.manager || ''; }, 10);
+  openModal('modal-dept');
 }
 
-/* All registrations table */
-function renderAllReg(){
-  const q  = document.getElementById('allreg-q').value.toLowerCase();
-  const fs = document.getElementById('allreg-fs').value;
-  let data = registrations.filter(r=>{
-    if(fs&&r.status!==fs)return false;
-    return `${r.username} ${r.firstName} ${r.lastName} ${r.empNo} ${r.status}`.toLowerCase().includes(q);
-  }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
-  const tb = document.getElementById('allreg-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="9" class="tbl-empty">No registrations found.</td></tr>`;return;}
-  tb.innerHTML = data.map(r=>{
-    const sb = r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':'<span class="badge b-pending">Pending</span>';
-    const emp = r.empId ? en(r.empId) : '—';
-    const actions = r.status==='pending'
-      ? `<button class="btn btn-approve" style="padding:3px 7px;font-size:10px" onclick="approveReg(${r.id})">Approve</button>
-         <button class="btn btn-reject"  style="padding:3px 7px;font-size:10px" onclick="openRejectModal(${r.id})">Reject</button>`
-      : r.status==='rejected'
-        ? `<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="reconsiderReg(${r.id})">Reconsider</button>`
-        : '—';
-    return `<tr class="${r.status==='pending'?'pending-row':''}">
-      <td><strong>${r.username}</strong></td>
-      <td>${r.firstName} ${r.lastName}</td>
-      <td><span class="badge ${r.requestedRole==='admin'?'b-admin':'b-user'}">${r.requestedRole.toUpperCase()}</span></td>
-      <td>${emp}</td>
-      <td style="font-size:10px;color:var(--muted)">${r.submittedAt}</td>
-      <td class="ns">${sb}</td>
-      <td style="font-size:10px;color:var(--muted)">${r.reviewedBy||'—'}</td>
-      <td style="font-size:10px;color:var(--muted);max-width:140px">${r.note||'—'}</td>
-      <td class="ns" style="white-space:nowrap">${actions}</td>
-    </tr>`;
-  }).join('');
-}
-function reconsiderReg(id){
-  const r=registrations.find(x=>x.id===id);if(!r)return;
-  askConfirm('Reconsider Application',`Move "${r.username}" back to Pending for review?`,()=>{
-    r.status='pending'; r.reviewedBy=null; r.reviewedAt=null; r.note='';
-    renderAllReg(); renderPending(); renderUserStats(); updatePendingBadges();
-  },'Reconsider','btn-primary');
+function saveDept() {
+  const code    = document.getElementById('f-dept-code').value.trim();
+  const name    = document.getElementById('f-dept-name').value.trim();
+  const desc    = document.getElementById('f-dept-desc').value.trim();
+  const manager = document.getElementById('f-dept-mgr').value;
+  if (!code || !name) { alert('Code and name are required.'); return; }
+
+  if (editingDeptId) {
+    const d = getDept(editingDeptId);
+    Object.assign(d, { code, name, desc, manager });
+  } else {
+    departments.push({ id: nextDeptId++, code, name, desc, manager });
+  }
+  closeModal('modal-dept');
+  renderDepts();
 }
 
-/* ════════════════════════════════════
-   PROFILE VIEW
-════════════════════════════════════ */
-const actionDot={ADD:'dot-add',EDIT:'dot-edit',BLOCK:'dot-block',RESTORE:'dot-restore',VIEW:'dot-add'};
-const actionColor={ADD:'#1E3A5F',EDIT:'#1a73e8',BLOCK:'#92400e',RESTORE:'#27ae60',VIEW:'#6b7280'};
-
-function viewEmpAudit(id){
-  const e=gE(id);if(!e)return;
-  logAudit('VIEW','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Audit log viewed');
-  const logs=auditLog.filter(a=>a.record.includes(e.empNo)||a.record.includes(`${e.lastName}, ${e.firstName}`));
-  document.getElementById('mo-ad-title').textContent=`Change History: ${e.lastName}, ${e.firstName}`;
-  document.getElementById('mo-ad-body').innerHTML=logs.length
-    ?`<div class="tw">${logs.map(a=>`<div class="audit-entry"><span class="audit-dot ${actionDot[a.action]||'dot-add'}"></span><span class="audit-time">${a.timestamp}</span><span class="audit-who">${a.user}</span><span class="audit-action"><span style="font-weight:bold;color:${actionColor[a.action]||'#333'}">[${a.action}]</span> ${a.note||'—'}</span></div>`).join('')}</div>`
-    :`<p style="color:var(--muted);font-size:12px;padding:8px">No change history found.</p>`;
-  om('mo-audit-detail');
+function confirmDeleteDept(id) {
+  const d = getDept(id);
+  confirm('Delete Department', `Delete "${d.name}"? Employees assigned here will need to be reassigned.`, () => {
+    departments = departments.filter(x => x.id !== id);
+    renderDepts();
+  }, 'Delete');
 }
 
-function viewProf(id){
-  const e=gE(id);if(!e)return;
-  logAudit('VIEW','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Profile viewed');
-  const hist=jobHistory.filter(h=>h.empId===id).sort((a,b)=>b.effDate.localeCompare(a.effDate));
-  const rows=hist.length?hist.map(h=>`<tr><td>${jc(h.jobId)}</td><td>${jd(h.jobId)}</td><td>${dc(h.deptId)}</td><td>${dn(h.deptId)}</td><td>${fmt(h.effDate)}</td><td>${fmtSal(h.salary)}</td><td><span class="badge ${h.deleted?'b-del':'b-active'}">${h.deleted?'Blocked':'Active'}</span></td><td><button class="btn btn-white" style="padding:2px 6px;font-size:10px" onclick="openEditHist(${h.id})">Edit</button><button class="btn btn-block" style="padding:2px 6px;font-size:10px;margin-left:3px" onclick="blockHistRow(${h.id},${id})">Block</button></td></tr>`).join(''):`<tr><td colspan="8" class="tbl-empty">No history.</td></tr>`;
-  const sb=e.deleted?'<span class="badge b-del" style="font-size:11px">Inactive</span>':e.blocked?'<span class="badge b-blk" style="font-size:11px">Blocked</span>':'<span class="badge b-active" style="font-size:11px">Active</span>';
-  document.getElementById('profile-content').innerHTML=`
-    <div class="pp">
-      <div class="pp-head">
-        <div class="ava">${ini(e)}</div>
-        <div class="pp-info"><div class="pname">${e.lastName}, ${e.firstName}</div><div class="prole">${jd(e.jobId)} · ${dn(e.deptId)}</div><div class="pid">${e.empNo}</div></div>
-        <div style="margin-left:auto">${sb}</div>
+/* ═══════════════════ JOB POSITIONS ═══════════════════ */
+function renderJobs() {
+  const container = document.getElementById('job-cards');
+  const empCount  = id => employees.filter(e => e.jobId === id && !e.deleted).length;
+  container.innerHTML = jobs.map(j => `
+    <div class="card">
+      <div class="card-title">${j.title}</div>
+      <div class="card-sub">${j.code} · <span class="badge badge-dept">${deptCode(j.deptId)}</span></div>
+      <div class="card-meta">
+        ${j.desc}<br/><br/>
+        Department: <span>${deptName(j.deptId)}</span><br/>
+        Employees: <span>${empCount(j.id)}</span>
       </div>
-      <div class="pp-body">
-        <div class="pst">Personal Information</div>
-        <div class="pg">
-          <div class="pf"><label>Emp No</label><div class="v">${e.empNo}</div></div>
-          <div class="pf"><label>Username</label><div class="v">${e.username||'—'}</div></div>
-          <div class="pf"><label>Last Name</label><div class="v">${e.lastName}</div></div>
-          <div class="pf"><label>First Name</label><div class="v">${e.firstName}</div></div>
-          <div class="pf"><label>Gender</label><div class="v">${e.gender||'—'}</div></div>
-          <div class="pf"><label>Hire Date</label><div class="v">${fmt(e.hireDate)}</div></div>
-          <div class="pf"><label>Sep Date</label><div class="v">${e.sepDate?fmt(e.sepDate):'—'}</div></div>
-          <div class="pf"><label>Salary</label><div class="v">${fmtSal(e.salary)}</div></div>
-          <div class="pf"><label>Email</label><div class="v">${e.email||'—'}</div></div>
-          <div class="pf"><label>Phone</label><div class="v">${e.phone||'—'}</div></div>
+      <div class="card-footer">
+        <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="openEditJob(${j.id})">Edit</button>
+        <button class="btn btn-danger"  style="font-size:11px;padding:5px 10px" onclick="confirmDeleteJob(${j.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddJob() {
+  editingJobId = null;
+  document.getElementById('modal-job-title').textContent = 'Add Job Position';
+  ['job-code','job-title','job-desc'].forEach(f => document.getElementById('f-'+f).value = '');
+  populateFormSelects();
+  openModal('modal-job');
+}
+
+function openEditJob(id) {
+  const j = getJob(id);
+  if (!j) return;
+  editingJobId = id;
+  document.getElementById('modal-job-title').textContent = 'Edit Job Position';
+  document.getElementById('f-job-code').value  = j.code;
+  document.getElementById('f-job-title').value = j.title;
+  document.getElementById('f-job-desc').value  = j.desc;
+  populateFormSelects();
+  setTimeout(() => { document.getElementById('f-job-dept').value = j.deptId; }, 10);
+  openModal('modal-job');
+}
+
+function saveJob() {
+  const code   = document.getElementById('f-job-code').value.trim();
+  const title  = document.getElementById('f-job-title').value.trim();
+  const deptId = +document.getElementById('f-job-dept').value;
+  const desc   = document.getElementById('f-job-desc').value.trim();
+  if (!code || !title || !deptId) { alert('Code, title, and department are required.'); return; }
+
+  if (editingJobId) {
+    const j = getJob(editingJobId);
+    Object.assign(j, { code, title, deptId, desc });
+  } else {
+    jobs.push({ id: nextJobId++, code, title, deptId, desc });
+  }
+  closeModal('modal-job');
+  renderJobs();
+}
+
+function confirmDeleteJob(id) {
+  const j = getJob(id);
+  confirm('Delete Job Position', `Delete "${j.title}"?`, () => {
+    jobs = jobs.filter(x => x.id !== id);
+    renderJobs();
+  }, 'Delete');
+}
+
+/* ═══════════════════ PROFILE VIEW ═══════════════════ */
+function viewProfile(id) {
+  const e = getEmp(id);
+  if (!e) return;
+  const history = jobHistory.filter(h => h.empId === id).sort((a,b) => b.startDate.localeCompare(a.startDate));
+
+  const histRows = history.length
+    ? history.map(h => `
+        <tr>
+          <td>${deptName(h.deptId)}</td>
+          <td>${jobTitle(h.jobId)}</td>
+          <td>${formatDate(h.startDate)}</td>
+          <td>${h.endDate ? formatDate(h.endDate) : '<span style="color:var(--success);font-weight:bold;font-size:11px">Current</span>'}</td>
+          <td><span class="badge ${h.deleted ? 'badge-deleted' : 'badge-active'}">${h.deleted ? 'Deleted' : 'Active'}</span></td>
+        </tr>
+      `).join('')
+    : `<tr><td colspan="5" class="tbl-empty">No history records.</td></tr>`;
+
+  document.getElementById('profile-content').innerHTML = `
+    <div class="profile-panel">
+      <div class="profile-header">
+        <div class="avatar">${initials(e)}</div>
+        <div class="profile-header-info">
+          <div class="name">${e.firstName} ${e.lastName}</div>
+          <div class="role">${jobTitle(e.jobId)} · ${deptName(e.deptId)}</div>
+          <div class="emp-id">${e.empId} &nbsp;|&nbsp; @${e.username}</div>
         </div>
-        ${e.meta?`<div class="audit-strip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-right:4px;vertical-align:middle"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Last modified by <strong>${e.meta.by}</strong> on <strong>${e.meta.at}</strong> — <em>${e.meta.note||''}</em></div>`:''}
-        <div class="pst">Current Assignment</div>
-        <div class="pg" style="margin-bottom:18px">
-          <div class="pf"><label>Dept Code</label><div class="v">${dc(e.deptId)}</div></div>
-          <div class="pf"><label>Department</label><div class="v">${dn(e.deptId)}</div></div>
-          <div class="pf"><label>Job Code</label><div class="v">${jc(e.jobId)}</div></div>
-          <div class="pf"><label>Job Description</label><div class="v">${jd(e.jobId)}</div></div>
+        <div style="margin-left:auto">
+          <span class="badge ${e.deleted ? 'badge-deleted' : 'badge-active'}" style="font-size:12px">
+            ${e.deleted ? 'Deleted' : 'Active'}
+          </span>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div class="pst" style="margin-bottom:0">Job History</div>
-          <button class="btn btn-primary" style="font-size:10px;padding:4px 9px" onclick="openAddHistFor(${id})">+ Add Entry</button>
+      </div>
+      <div class="profile-body">
+        <div class="profile-section-title">Personal Information</div>
+        <div class="profile-grid">
+          <div class="profile-field"><label>Username</label><div class="val">${e.username}</div></div>
+          <div class="profile-field"><label>Employee ID</label><div class="val">${e.empId}</div></div>
+          <div class="profile-field"><label>Email</label><div class="val">${e.email || '—'}</div></div>
+          <div class="profile-field"><label>Phone</label><div class="val">${e.phone || '—'}</div></div>
+          <div class="profile-field"><label>Hire Date</label><div class="val">${formatDate(e.hireDate)}</div></div>
+          <div class="profile-field"><label>Status</label><div class="val">${e.deleted ? 'Deleted' : 'Active'}</div></div>
         </div>
-        <div class="tw">
-          <table class="ht">
-            <thead><tr><th>Job Code</th><th>Job Desc</th><th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>${rows}</tbody>
+
+        <div class="profile-section-title">Current Assignment</div>
+        <div class="profile-grid" style="margin-bottom:20px">
+          <div class="profile-field"><label>Department</label><div class="val">${deptName(e.deptId)}</div></div>
+          <div class="profile-field"><label>Job Position</label><div class="val">${jobTitle(e.jobId)}</div></div>
+        </div>
+
+        <div class="profile-section-title">Job History</div>
+        <div class="table-wrap" style="margin-top:8px">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th>Job Position</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>${histRows}</tbody>
           </table>
         </div>
-        <div style="margin-top:14px;display:flex;gap:7px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="openEditEmp(${e.id})">Edit Profile</button>
-          <button class="btn btn-audit"   onclick="viewEmpAudit(${e.id})">View Audit Log</button>
-          ${(e.deleted||e.blocked)?`<button class="btn btn-restore" onclick="recoverProfEmp(${e.id})">Restore Employee</button>`:`<button class="btn btn-block" onclick="blockProfEmp(${e.id})">Block Employee</button>`}
+
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="openEditEmployee(${e.id});navigate(document.querySelector('.nav-item[data-page=employees]'),'employees')">Edit Profile</button>
+          ${e.deleted
+            ? `<button class="btn btn-success" onclick="restoreOneEmp(${e.id})">Restore Employee</button>`
+            : `<button class="btn btn-danger"  onclick="deleteOneEmp(${e.id})">Delete Employee</button>`
+          }
         </div>
       </div>
-    </div>`;
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    </div>
+  `;
+
+  // navigate to profile page
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-profile').classList.add('active');
-  document.getElementById('topbar-title').textContent='Employee Profile';
+  document.getElementById('topbar-title').textContent = 'Employee Profile';
 }
-function openAddHistFor(empId){editId.hist=null;document.getElementById('mo-hist-title').textContent='Add Job History';popFormSelects();setTimeout(()=>{document.getElementById('fh-emp').value=empId;},10);document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];document.getElementById('fh-sal').value='';window._profileEmpId=empId;om('mo-hist');}
-function blockHistRow(hid,empId){askConfirm('Block History Entry','Block this history record?',()=>{const h=jobHistory.find(x=>x.id===hid);h.deleted=true;h.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};logAudit('BLOCK','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Blocked via profile');viewProf(empId);},'Block','btn-block');}
-function blockProfEmp(id){askConfirm('Block Employee','Block this employee from user view?',()=>{const e=gE(id);e.blocked=true;e.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};logAudit('BLOCK','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Blocked via profile');viewProf(id);renderStats();},'Block','btn-block');}
-function recoverProfEmp(id){askConfirm('Restore Employee','Restore employee to active?',()=>{const e=gE(id);e.deleted=false;e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Restored via profile'};logAudit('RESTORE','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Restored via profile');viewProf(id);renderStats();},'Restore','btn-success');}
 
-/* ════════════════════════════════════
-   LOGOUT
-════════════════════════════════════ */
-function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',()=>{alert('Logged out. (Demo mode – page will reload)');location.reload();},'Log Out','btn-danger');}
+function deleteOneEmp(id) {
+  const e = getEmp(id);
+  confirm('Delete Employee', `Mark ${e.firstName} ${e.lastName} as deleted?`, () => {
+    e.deleted = true;
+    viewProfile(id);
+    updateEmpStats();
+  }, 'Delete');
+}
+function restoreOneEmp(id) {
+  const e = getEmp(id);
+  confirm('Restore Employee', `Restore ${e.firstName} ${e.lastName}?`, () => {
+    e.deleted = false;
+    viewProfile(id);
+    updateEmpStats();
+  }, 'Restore');
+}
 
-/* ════════════════════════════════════
-   INIT
-════════════════════════════════════ */
-renderEmp();
-renderStats();
-updatePendingBadges();
+/* ═══════════════════ INIT ═══════════════════ */
+renderEmployees();
+updateEmpStats();
 </script>
 </body>
 </html>
