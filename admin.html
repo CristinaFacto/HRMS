@@ -647,6 +647,14 @@ tbody td{padding:8px 12px;vertical-align:middle}
 </div>
 
 <script>
+
+ // ── Supabase init ──────────────────────────────────────────────
+  const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
+  const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+  
+  
 /* ════════════════════════════════════
    DATA STORE
 ════════════════════════════════════ */
