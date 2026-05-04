@@ -502,6 +502,14 @@ tbody td{padding:8px 12px;vertical-align:middle}
 </div>
 
 <script>
+  
+  // ── Supabase init ──────────────────────────────────────────────
+   const SUPABASE_URL  = 'https://cuifjbmpgztjwqepfkvf.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWZqYm1wZ3p0andxZXBma3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTA1MjcsImV4cCI6MjA5MDg4NjUyN30.sB7eN054Nt-xvv30jFBjhVoZV5Q6VIW-MiKQyZ1m1fg';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  
 /* ═══ DATA ═══ */
 const ROLE = 'superadmin';
 
