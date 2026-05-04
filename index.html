@@ -187,34 +187,45 @@
   }
 
   // ── Login ──────────────────────────────────────────────────────
-  async function handleLogin(email, password) {
-    setLoading(true);
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+async function handleLogin(email, password) {
+  setLoading(true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-    if (error) { setLoading(false); showMessage(error.message); return; }
+  if (error) { setLoading(false); showMessage(error.message); return; }
 
-    // ── Fetch role from profiles table ──
-    const { data: profile, error: profileError } = await sb
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single();
+  // Fetch role and status from profiles table
+  const { data: profile, error: profileError } = await sb
+    .from('profiles')
+    .select('role, status')
+    .eq('id', data.user.id)
+    .single();
 
-    setLoading(false);
+  setLoading(false);
 
-    if (profileError || !profile) { showMessage('Could not load user role.'); return; }
-
-    // ── Redirect based on role ──
-    const role = profile.role?.toLowerCase();
-
-    if (role === 'superadmin') {
-      window.location.href = 'superAdmin.html';
-    } else if (role === 'admin') {
-      window.location.href = 'admin.html';
-    } else {
-      window.location.href = 'user.html';
-    }
+  if (profileError || !profile) { 
+    await sb.auth.signOut();
+    showMessage('Account not found. Please contact the administrator.'); 
+    return; 
   }
+
+  // Block inactive users
+  if (profile.status === 'inactive') {
+    await sb.auth.signOut();
+    showMessage('Your account is inactive. Please wait for the administrator to activate your account.');
+    return;
+  }
+
+  // Redirect based on role
+  const role = profile.role?.toLowerCase();
+
+  if (role === 'superadmin') {
+    window.location.href = 'superAdmin.html';
+  } else if (role === 'admin') {
+    window.location.href = 'admin.html';
+  } else {
+    window.location.href = 'user.html';
+  }
+}
 
   // ── Forgot password ────────────────────────────────────────────
   document.getElementById('forgotBtn').addEventListener('click', async () => {
