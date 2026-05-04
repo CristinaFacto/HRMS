@@ -3,753 +3,1428 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin — HR Management System</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>HR Management – Admin</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --primary:#1E3A5F;--primary-dark:#162d4a;--secondary:#F2C94C;--secondary-dark:#d9b132;
-  --white:#FFFFFF;--bg:#F4F5F7;--border:#DDE1E9;--text:#1A2336;--muted:#6B7A99;
-  --sidebar-w:240px;--radius:2px;--green:#1A7A4A;--green-bg:#E6F5EE;--yellow:#A07000;
-  --yellow-bg:#FEF9E7;--red:#B91C1C;--red-bg:#FEE2E2;--blue:#1D4ED8;--blue-bg:#EFF6FF;
+  --primary:#1E3A5F;--secondary:#F2C94C;--white:#fff;
+  --bg:#F5F7FA;--text:#1a1a2e;--muted:#6b7280;--border:#d1d5db;
+  --danger:#c0392b;--success:#27ae60;--warn:#e67e22;--block:#7f1d1d;
+  --sw:230px;--r:2px;--hover:#EAF0F9;
+  --del-bg:#fdf0f0;--del-text:#c0392b;
+  --blk-bg:#fef3c7;--blk-text:#92400e;
 }
-body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:13px}
-.sidebar{width:var(--sidebar-w);background:var(--primary);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:200}
-.sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.1)}
-.sidebar-logo .lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--secondary);text-transform:uppercase}
-.sidebar-logo .sub{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:0.5px}
-.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
-.nav-section{font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:14px 20px 5px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:12.5px;color:rgba(255,255,255,0.65);cursor:pointer;border-left:3px solid transparent;transition:all 0.15s;user-select:none}
-.nav-item:hover{background:rgba(255,255,255,0.07);color:var(--white)}
-.nav-item.active{background:rgba(242,201,76,0.1);color:var(--secondary);border-left-color:var(--secondary);font-weight:700}
-.nav-item svg{width:15px;height:15px;flex-shrink:0}
-.sidebar-footer{padding:12px 0;border-top:1px solid rgba(255,255,255,0.1)}
-.user-card{display:flex;align-items:center;gap:10px;padding:10px 20px}
-.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--secondary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--primary);flex-shrink:0;position:relative}
-.user-avatar::after{content:'';position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--primary)}
-.user-name{font-size:12.5px;font-weight:700;color:var(--white)}
-.user-role{font-size:10px;font-weight:700;color:var(--secondary);letter-spacing:0.5px;text-transform:uppercase}
-.nav-item.logout{color:rgba(255,255,255,0.75)}
-.nav-item.logout:hover{background:rgba(185,28,28,0.15);color:#FCA5A5}
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.page-title{font-size:14px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.8px}
-.topbar-right{display:flex;align-items:center;gap:12px}
-.icon-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s;position:relative}
-.icon-btn:hover{border-color:var(--primary);color:var(--primary)}
-.notif-dot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid var(--white)}
-.content{padding:24px 28px;flex:1}
-.section{display:none}
-.section.active{display:block}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color,var(--primary))}
-.stat-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.stat-val{font-size:28px;font-weight:700;color:var(--primary);line-height:1}
-.stat-sub{font-size:11.5px;color:var(--muted);margin-top:6px}
-.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
-.panel-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.panel-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--primary)}
-.panel-action{font-size:11.5px;font-weight:700;color:var(--primary);background:rgba(30,58,95,0.06);border:1px solid var(--border);border-radius:var(--radius);padding:5px 11px;cursor:pointer;transition:background .15s;font-family:Arial,sans-serif}
-.panel-action:hover{background:rgba(30,58,95,0.12)}
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-thead th{background:var(--primary);color:var(--white);padding:10px 14px;text-align:left;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap}
-tbody tr{border-bottom:1px solid var(--border)}
-tbody tr:hover{background:rgba(30,58,95,0.025)}
-tbody td{padding:10px 14px;color:var(--text)}
-.avatar-cell{display:flex;align-items:center;gap:8px}
-.mini-avatar{width:28px;height:28px;border-radius:50%;background:rgba(30,58,95,0.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--primary);flex-shrink:0}
-.emp-name{font-weight:700;font-size:12.5px}
-.emp-sub{font-size:10.5px;color:var(--muted)}
-.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--radius);border:1.5px solid}
-.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.badge-success{color:var(--green);border-color:var(--green);background:var(--green-bg)}
-.badge-danger{color:var(--red);border-color:var(--red);background:var(--red-bg)}
-.badge-warning{color:var(--yellow);border-color:var(--yellow);background:var(--yellow-bg)}
-.badge-info{color:var(--blue);border-color:var(--blue);background:var(--blue-bg)}
-.badge-gray{color:var(--muted);border-color:var(--border);background:var(--bg)}
-.btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--border);border-radius:var(--radius);padding:5px 11px;font-family:Arial,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
-.btn-ghost:hover{border-color:var(--primary)}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
 
-/* ── Scrollable leave list (dashboard pending leaves) ── */
-.leave-scroll{max-height:260px;overflow-y:auto}
-.leave-scroll::-webkit-scrollbar{width:4px}
-.leave-scroll::-webkit-scrollbar-track{background:var(--bg)}
-.leave-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+/* ── SIDEBAR ── */
+#sidebar{width:var(--sw);background:var(--primary);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-logo .lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--secondary);display:block;margin-bottom:2px}
+.sb-logo .ttl{font-size:14px;font-weight:bold;color:#fff}
+.sb-logo .role-chip{display:inline-block;margin-top:6px;background:var(--secondary);color:var(--primary);font-size:10px;font-weight:bold;padding:2px 7px;border-radius:var(--r);letter-spacing:.5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;color:rgba(255,255,255,.75);font-size:12px;border-left:3px solid transparent;transition:background .15s,color .15s;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(242,201,76,.13);border-left-color:var(--secondary);color:var(--secondary);font-weight:bold}
+.nav-item svg{flex-shrink:0}
+.sb-footer{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.sb-footer .name{font-size:12px;font-weight:bold;color:rgba(255,255,255,.8)}
+.sb-footer .sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.sb-logout{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 0;cursor:pointer;color:var(--secondary);font-size:12px;font-weight:bold;letter-spacing:.3px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-logout:hover{color:#fff}
 
-/* ── Scrollable dashboard employee status table ── */
-.dash-emp-scroll{max-height:260px;overflow-y:auto}
-.dash-emp-scroll::-webkit-scrollbar{width:4px}
-.dash-emp-scroll::-webkit-scrollbar-track{background:var(--bg)}
-.dash-emp-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+/* ── TOPBAR ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:14px;font-weight:bold;color:var(--primary)}
+.topbar-right{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.role-badge{background:var(--primary);color:#fff;font-size:10px;padding:2px 7px;border-radius:var(--r);font-weight:bold;letter-spacing:.5px}
+.content-area{flex:1;overflow-y:auto;padding:22px 24px}
 
-.leave-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s}
-.leave-item:last-child{border-bottom:none}
-.leave-item:hover{background:var(--bg)}
-.leave-info{flex:1;min-width:0}
-.leave-name{font-weight:700;font-size:12.5px}
-.leave-detail{font-size:11px;color:var(--muted);margin-top:1px}
-.leave-actions{display:flex;gap:6px;flex-shrink:0}
-.btn-approve{padding:5px 12px;border-radius:var(--radius);border:1.5px solid var(--green);background:var(--green-bg);color:var(--green);font-size:11.5px;font-weight:700;cursor:pointer;transition:background .15s;font-family:Arial,sans-serif}
-.btn-approve:hover{background:#c8edd9}
-.btn-reject{padding:5px 12px;border-radius:var(--radius);border:1.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11.5px;font-weight:700;cursor:pointer;transition:background .15s;font-family:Arial,sans-serif}
-.btn-reject:hover{background:#fecaca}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
-.bar-chart-wrap{display:flex;align-items:flex-end;gap:5px;padding:16px 20px 20px;height:110px}
-.bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;height:100%;justify-content:flex-end}
-.bar{width:100%;border-radius:var(--radius) var(--radius) 0 0;min-height:4px}
-.bar.primary-bar{background:var(--primary)}
-.bar.accent-bar{background:var(--secondary)}
-.bar.dim-bar{background:var(--primary);opacity:0.15}
-.bar-lbl{font-size:9.5px;color:var(--muted);font-weight:700}
-.payroll-banner{background:var(--primary);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
-.pb-title{font-size:18px;font-weight:700;color:var(--white)}
-.pb-sub{font-size:11.5px;color:rgba(255,255,255,0.5);margin-top:3px}
-.reports-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 20px 20px}
-.report-card{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:all .15s;background:var(--bg)}
-.report-card:hover{border-color:var(--primary);background:rgba(30,58,95,0.03)}
-.report-card.loading{opacity:0.6;pointer-events:none}
-.report-icon{font-size:20px;margin-bottom:6px}
-.report-name{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:2px}
-.report-desc{font-size:11px;color:var(--muted)}
-.report-export{margin-top:8px;font-size:10.5px;font-weight:700;color:var(--secondary-dark)}
-.empty-msg{padding:20px;color:var(--muted);font-size:12px;text-align:center}
-.toast{position:fixed;bottom:28px;right:28px;background:var(--primary);color:var(--white);padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:700;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.25s;pointer-events:none}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast.success{background:var(--green)}
-.toast.error{background:var(--red)}
+/* ── LAYOUT ── */
+.page{display:none}.page.active{display:block}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.ph-left h2{font-size:17px;color:var(--primary)}
+.ph-left p{font-size:11px;color:var(--muted);margin-top:2px}
+.btn-group{display:flex;gap:7px;flex-wrap:wrap}
 
-/* ── Notification Panel ── */
-.notif-panel{position:absolute;top:46px;right:0;width:320px;background:var(--white);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(16,24,40,0.12);z-index:300;display:none}
-.notif-panel.open{display:block}
-.notif-panel-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.notif-panel-title{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.8px}
-.notif-mark-all{font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;background:none;border:none;font-family:Arial,sans-serif}
-.notif-list{max-height:340px;overflow-y:auto}
-.notif-list::-webkit-scrollbar{width:4px}
-.notif-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-.notif-item{display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
-.notif-item:last-child{border-bottom:none}
-.notif-item:hover{background:var(--bg)}
-.notif-item.unread{background:#F0F5FF}
-.notif-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px}
-.notif-body{flex:1;min-width:0}
-.notif-text{font-size:12px;font-weight:700;color:var(--text);line-height:1.4}
-.notif-subtext{font-size:11px;color:var(--muted);margin-top:2px}
-.notif-time{font-size:10.5px;color:var(--muted);margin-top:3px}
-.notif-empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:12px}
-.notif-footer{padding:10px 16px;border-top:1px solid var(--border);text-align:center;font-size:11.5px;font-weight:700;color:var(--primary);cursor:pointer}
-.notif-footer:hover{background:var(--bg)}
-.notif-wrap{position:relative}
-.notif-count{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--white);padding:0 3px}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px;font-family:Arial,sans-serif;font-weight:bold;border:none;border-radius:var(--r);cursor:pointer;transition:opacity .15s;text-transform:uppercase;letter-spacing:.5px}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+.btn-white{background:#fff;color:var(--primary);border:1px solid var(--border)}
+.btn-block{background:#92400e;color:#fff}
+.btn-restore{background:var(--success);color:#fff}
+.btn-audit{background:#e8f0fe;color:#1a73e8;border:1px solid #c5d4f5}
+
+/* ── FILTERS ── */
+.filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.filter-row input,.filter-row select{font-family:Arial,sans-serif;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--text);outline:none}
+.filter-row input:focus,.filter-row select:focus{border-color:var(--primary)}
+.filter-row input{min-width:190px}
+.del-toggle{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}
+
+/* ── TABLE ── */
+.tw{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--primary);color:#fff}
+thead th{padding:9px 12px;text-align:left;font-size:10px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap}
+th.cc{width:34px}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--hover)}
+tbody tr.del-row{background:var(--del-bg);color:var(--del-text);opacity:.72}
+tbody tr.del-row td{text-decoration:line-through}
+tbody tr.del-row td.ns{text-decoration:none}
+tbody tr.blk-row{background:var(--blk-bg)}
+tbody td{padding:8px 12px;vertical-align:middle}
+.tbl-empty{text-align:center;padding:28px;color:var(--muted);font-size:12px}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 7px;border-radius:var(--r);font-size:10px;font-weight:bold}
+.b-active{background:#e6f4ea;color:var(--success)}
+.b-del{background:#fce8e6;color:var(--danger)}
+.b-dept{background:#e8f0fe;color:#1a73e8}
+.b-blk{background:#fef3c7;color:#92400e}
+.b-admin{background:#e8f0fe;color:#1a73e8}
+
+/* ── STATS ── */
+.stats{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.sc{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 18px;min-width:120px}
+.sc.ac{border-left:3px solid var(--secondary)}
+.sc .n{font-size:20px;font-weight:bold;color:var(--primary)}
+.sc .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* ── MODAL ── */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.modal{background:#fff;border-radius:var(--r);width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;border:1px solid var(--border)}
+.modal-wide{width:700px}
+.mh{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-size:14px;color:var(--primary)}
+.mc-btn{background:none;border:none;font-size:17px;cursor:pointer;color:var(--muted);line-height:1}
+.mc-btn:hover{color:var(--text)}
+.mb{padding:18px}
+.mf{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px}
+.fr{margin-bottom:12px}
+.fr label{display:block;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
+.fr input,.fr select,.fr textarea{width:100%;padding:7px 9px;font-family:Arial,sans-serif;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--text);outline:none}
+.fr input:focus,.fr select:focus,.fr textarea:focus{border-color:var(--primary)}
+.fr textarea{resize:vertical;min-height:64px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── PROFILE ── */
+.pp{background:#fff;border:1px solid var(--border);border-radius:var(--r);max-width:760px}
+.pp-head{background:var(--primary);padding:20px 22px;display:flex;align-items:center;gap:16px;border-radius:var(--r) var(--r) 0 0}
+.ava{width:52px;height:52px;background:var(--secondary);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:var(--primary);flex-shrink:0}
+.pp-info .pname{font-size:16px;font-weight:bold;color:#fff}
+.pp-info .prole{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.pp-info .pid{font-size:10px;color:var(--secondary);margin-top:3px;letter-spacing:.5px}
+.pp-body{padding:18px 22px}
+.pst{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:var(--secondary);background:var(--primary);display:inline-block;padding:2px 7px;border-radius:var(--r);margin-bottom:10px}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-bottom:18px}
+.pf label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);display:block;margin-bottom:1px}
+.pf .v{font-size:12px;color:var(--text)}
+.ht{width:100%;border-collapse:collapse;font-size:11px}
+.ht th{text-align:left;padding:5px 9px;background:var(--bg);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border)}
+.ht td{padding:7px 9px;border-bottom:1px solid var(--border)}
+.ht tr:last-child td{border-bottom:none}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab-btn{padding:7px 16px;font-size:12px;font-family:Arial,sans-serif;background:none;border:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:bold}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── AUDIT LOG ── */
+.audit-strip{background:#f0f4ff;border:1px solid #c5d4f5;border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:11px;color:#1a3a6e}
+.audit-strip strong{font-weight:bold}
+.audit-entry{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:11px}
+.audit-entry:last-child{border-bottom:none}
+.audit-time{color:var(--muted);min-width:130px;flex-shrink:0;font-size:10px;padding-top:1px}
+.audit-who{font-weight:bold;color:var(--primary);min-width:90px;flex-shrink:0}
+.audit-action{color:var(--text);flex:1}
+.audit-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.dot-edit{background:#1a73e8}
+.dot-block{background:#92400e}
+.dot-restore{background:var(--success)}
+.dot-add{background:var(--primary)}
+.audit-badge-wrap{display:flex;justify-content:flex-end;margin-bottom:10px}
+
+/* ── PERMISSION NOTICE ── */
+.perm-notice{background:#fff8e1;border:1px solid #f2c94c;border-radius:var(--r);padding:9px 14px;font-size:11px;color:#78540a;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#c1c8d0;border-radius:3px}
 </style>
 </head>
 <body>
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="lbl">HRM System</div>
-    <div class="sub">Admin Portal</div>
-  </div>
-  <nav class="sidebar-nav">
-    <div class="nav-section">Overview</div>
-    <div class="nav-item active" onclick="navigate('dashboard',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
-    </div>
-    <div class="nav-section">People</div>
-    <div class="nav-item" onclick="navigate('employees',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Employees
-    </div>
-    <div class="nav-item" onclick="navigate('attendance',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Attendance
-    </div>
-    <div class="nav-item" onclick="navigate('leave',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Leave
-    </div>
-    <div class="nav-section">Finance</div>
-    <div class="nav-item" onclick="navigate('payroll',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Payroll
-    </div>
-    <div class="nav-section">Insights</div>
-    <div class="nav-item" onclick="navigate('reports',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>Reports
-    </div>
-  </nav>
-  <div class="sidebar-footer">
-    <div class="user-card">
-      <div class="user-avatar" id="adminAvatar">A</div>
-      <div>
-        <div class="user-name" id="adminName">Admin User</div>
-        <div class="user-role">Administrator</div>
-      </div>
-    </div>
-    <div class="nav-item logout" onclick="logout()">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Logout
-    </div>
-  </div>
-</aside>
 
-<main class="main">
-  <header class="topbar">
-    <div class="page-title" id="pageTitle">Dashboard</div>
+<!-- ════════ SIDEBAR ════════ -->
+<nav id="sidebar">
+  <div class="sb-logo">
+    <span class="lbl">HR System</span>
+    <span class="ttl">HR Management</span>
+    <span class="role-chip">ADMIN</span>
+  </div>
+
+  <div class="nav-item active" data-page="employees" onclick="nav(this,'employees')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Employees
+  </div>
+  <div class="nav-item" data-page="job-history" onclick="nav(this,'job-history')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Job History
+  </div>
+  <div class="nav-item" data-page="departments" onclick="nav(this,'departments')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    Departments
+  </div>
+  <div class="nav-item" data-page="jobs" onclick="nav(this,'jobs')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 21 12"/></svg>
+    Job Positions
+  </div>
+  <div class="nav-item" data-page="deleted" onclick="nav(this,'deleted')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+    Hidden Records
+  </div>
+  <div class="nav-item" data-page="audit" onclick="nav(this,'audit')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Audit Log
+  </div>
+
+  <div class="sb-footer">
+    <div class="name">admin1</div>
+    <div class="sub">Administrator</div>
+    <div class="sb-logout" onclick="doLogout()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Log Out
+    </div>
+  </div>
+</nav>
+
+<!-- ════════ MAIN ════════ -->
+<div id="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">Employees</span>
     <div class="topbar-right">
-      <div id="datetime-display" style="font-size:12px;font-weight:700;color:var(--primary);text-align:right;line-height:1.4">
-        <div id="dt-date" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)"></div>
-        <div id="dt-time"></div>
-      </div>
-      <div class="notif-wrap">
-        <div class="icon-btn" id="notifBtn" onclick="toggleNotifPanel()">
-          <i class="fa-solid fa-bell"></i>
-          <span class="notif-count" id="notifCount" style="display:none">0</span>
-        </div>
-        <div class="notif-panel" id="notifPanel">
-          <div class="notif-panel-head">
-            <span class="notif-panel-title">Notifications</span>
-            <button class="notif-mark-all" onclick="markAllRead()">Mark all read</button>
-          </div>
-          <div class="notif-list" id="notifList"><div class="notif-empty">Loading...</div></div>
-          <div class="notif-footer" onclick="navigateTo('leave')">View all leave requests →</div>
-        </div>
-      </div>
+      <span>admin1</span>
+      <span class="role-badge">ADMIN</span>
     </div>
-  </header>
-  <div class="content">
-
-    <!-- DASHBOARD -->
-    <div class="section active" id="sec-dashboard">
-      <div class="stats-grid">
-        <div class="stat-card" style="--card-color:var(--primary)"><div class="stat-lbl">Total Employees</div><div class="stat-val" id="statTotal">—</div><div class="stat-sub">registered users</div></div>
-        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Present Today</div><div class="stat-val" id="statPresent">—</div><div class="stat-sub">attendance today</div></div>
-        <div class="stat-card" style="--card-color:var(--secondary)"><div class="stat-lbl">Pending Leaves</div><div class="stat-val" id="statLeaves">—</div><div class="stat-sub">awaiting approval</div></div>
-        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Absent Today</div><div class="stat-val" id="statAbsent">—</div><div class="stat-sub">not present today</div></div>
-      </div>
-
-      <!-- Employee Status Overview — sticky header + scrollable body -->
-      <div class="panel" style="margin-bottom:16px">
-        <div class="panel-head">
-          <span class="panel-title">Employee Status Overview</span>
-          <div style="display:flex;gap:8px;align-items:center">
-            <select id="dashStatusFilter" onchange="filterDashEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-        </div>
-        <div class="tbl-wrap">
-          <table><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Joined</th></tr></thead></table>
-        </div>
-        <div class="dash-emp-scroll">
-          <div class="tbl-wrap">
-            <table><tbody id="dashEmpTable"><tr><td colspan="4" class="empty-msg">Loading...</td></tr></tbody></table>
-          </div>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-head"><span class="panel-title">Attendance This Week</span><button class="panel-action" onclick="navigateTo('attendance')">View Logs →</button></div>
-          <div class="bar-chart-wrap" id="weekBars">
-            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Mon</div></div>
-            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Tue</div></div>
-            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Wed</div></div>
-            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Thu</div></div>
-            <div class="bar-col"><div class="bar primary-bar" style="height:0%"></div><div class="bar-lbl">Fri</div></div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><span class="panel-title">Pending Leave Requests</span><button class="panel-action" onclick="navigateTo('leave')">Manage →</button></div>
-          <div class="leave-scroll" id="dashLeaveList"><div class="empty-msg">Loading...</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- EMPLOYEES -->
-    <div class="section" id="sec-employees">
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Employee Directory</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input type="text" id="empSearch" placeholder="Search employees…" oninput="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif"/>
-            <select id="empDeptFilter" onchange="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
-              <option value="all">All Departments</option>
-            </select>
-            <select id="empStatusFilter" onchange="filterEmployees()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-        </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Status</th><th>Joined</th></tr></thead>
-        <tbody id="empTable"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table></div>
-      </div>
-    </div>
-
-    <!-- ATTENDANCE -->
-    <div class="section" id="sec-attendance">
-      <div class="three-col">
-        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Present</div><div class="stat-val" id="attPresent">—</div></div>
-        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Absent</div><div class="stat-val" id="attAbsent">—</div></div>
-        <div class="stat-card" style="--card-color:var(--yellow)"><div class="stat-lbl">Late</div><div class="stat-val" id="attLate">—</div></div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Attendance Logs</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input type="date" id="attDate" onchange="loadAttendance()" style="border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;font-size:12.5px;font-family:Arial,sans-serif;outline:none"/>
-            <select id="attDeptFilter" onchange="loadAttendance()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif">
-              <option value="all">All Departments</option>
-            </select>
-          </div>
-        </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Time In</th><th>Time Out</th><th>Hours</th><th>Status</th></tr></thead>
-        <tbody id="attTable"><tr><td colspan="6" class="empty-msg">Loading...</td></tr></tbody></table></div>
-      </div>
-    </div>
-
-    <!-- LEAVE — no scroll on leaveList -->
-    <div class="section" id="sec-leave">
-      <div class="three-col">
-        <div class="stat-card" style="--card-color:var(--yellow)"><div class="stat-lbl">Pending</div><div class="stat-val" id="lvPending">—</div></div>
-        <div class="stat-card" style="--card-color:var(--green)"><div class="stat-lbl">Approved</div><div class="stat-val" id="lvApproved">—</div></div>
-        <div class="stat-card" style="--card-color:var(--red)"><div class="stat-lbl">Rejected</div><div class="stat-val" id="lvRejected">—</div></div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Leave Requests</span>
-          <input type="text" id="leaveSearch" placeholder="Search leave requests…" oninput="loadLeave()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;margin-left:auto;min-width:220px"/>
-        </div>
-        <div id="leaveList"><div class="empty-msg">Loading...</div></div>
-      </div>
-    </div>
-
-    <!-- PAYROLL -->
-    <div class="section" id="sec-payroll">
-      <div class="payroll-banner">
-        <div class="pb-title">Payroll Overview</div>
-        <div class="pb-sub">View-only access — contact Super Admin to make changes</div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Payroll Records</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
-            <input type="text" id="payrollSearch" placeholder="Search payroll…" oninput="loadPayroll()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;min-width:220px;margin-left:auto"/>
-            <select id="payrollDeptFilter" onchange="loadPayroll()" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px 11px;font-size:12.5px;outline:none;font-family:Arial,sans-serif;min-width:180px">
-              <option value="all">All Departments</option>
-            </select>
-          </div>
-        </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Basic Pay</th><th>Deductions</th><th>Net Pay</th><th>Status</th></tr></thead>
-        <tbody id="payrollTable"><tr><td colspan="6" class="empty-msg">Loading...</td></tr></tbody></table></div>
-      </div>
-    </div>
-
-    <!-- REPORTS -->
-    <div class="section" id="sec-reports">
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Generate & Export Reports</span></div>
-        <div class="reports-grid">
-          <div class="report-card" id="rc-employee" onclick="exportReport('employee')"><div class="report-icon">👥</div><div class="report-name">Employee Report</div><div class="report-desc">Full employee directory</div><div class="report-export">↓ Export CSV</div></div>
-          <div class="report-card" id="rc-attendance" onclick="exportReport('attendance')"><div class="report-icon">🕐</div><div class="report-name">Attendance Report</div><div class="report-desc">Monthly attendance logs</div><div class="report-export">↓ Export CSV</div></div>
-          <div class="report-card" id="rc-leave" onclick="exportReport('leave')"><div class="report-icon">📅</div><div class="report-name">Leave Report</div><div class="report-desc">Leave usage per employee</div><div class="report-export">↓ Export CSV</div></div>
-          <div class="report-card" id="rc-payroll" onclick="exportReport('payroll')"><div class="report-icon">💰</div><div class="report-name">Payroll Summary</div><div class="report-desc">Payroll totals and deductions</div><div class="report-export">↓ Export CSV</div></div>
-          <div class="report-card" id="rc-department" onclick="exportReport('department')"><div class="report-icon">📈</div><div class="report-name">Department Report</div><div class="report-desc">Headcount per department</div><div class="report-export">↓ Export CSV</div></div>
-          <div class="report-card" id="rc-compliance" onclick="exportReport('compliance')"><div class="report-icon">📋</div><div class="report-name">Compliance Report</div><div class="report-desc">HR compliance summary</div><div class="report-export">↓ Export CSV</div></div>
-        </div>
-      </div>
-    </div>
-
   </div>
-</main>
 
-<div class="toast" id="toast"></div>
+  <div class="content-area">
+
+    <!-- ══ EMPLOYEES ══ -->
+    <div id="page-employees" class="page active">
+      <div class="perm-notice">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Admin role: You can <strong>view, edit, block, and restore</strong> employees. Hard deletion is restricted to Super Admin.
+      </div>
+      <div class="ph">
+        <div class="ph-left"><h2>Employee Records</h2><p>Manage employee profiles. Blocked employees are hidden from users.</p></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="openAddEmp()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Employee
+          </button>
+          <button class="btn btn-block" id="btn-blk-emp" onclick="bulkBlock('emp')" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            Block
+          </button>
+          <button class="btn btn-restore" id="btn-rst-emp" onclick="bulkRestore('emp')" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+            Restore
+          </button>
+        </div>
+      </div>
+      <div class="stats" id="emp-stats"></div>
+      <div class="filter-row">
+        <input type="text" id="emp-q" placeholder="Search employees…" oninput="renderEmp()"/>
+        <select id="emp-fd" onchange="renderEmp()"><option value="">All Departments</option></select>
+        <select id="emp-fs" onchange="renderEmp()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="blocked">Blocked</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <label class="del-toggle"><input type="checkbox" id="emp-show-all" onchange="renderEmp()"/> Show blocked/inactive</label>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th class="cc"><input type="checkbox" id="chk-emp-all" onchange="toggleAll('emp',this)"/></th>
+            <th>Emp No</th><th>Last Name</th><th>First Name</th><th>Gender</th>
+            <th>Hire Date</th><th>Sep Date</th><th>Current Job</th><th>Dept</th>
+            <th>Salary</th><th>Status</th><th>Last Modified</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="emp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ JOB HISTORY ══ -->
+    <div id="page-job-history" class="page">
+      <div class="ph">
+        <div class="ph-left"><h2>Job History</h2><p>All employment history records.</p></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="openAddHist()">Add Entry</button>
+          <button class="btn btn-block" id="btn-blk-hist" onclick="bulkBlock('hist')" disabled>Block</button>
+          <button class="btn btn-restore" id="btn-rst-hist" onclick="bulkRestore('hist')" disabled>Restore</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <input type="text" id="hist-q" placeholder="Search…" oninput="renderHist()"/>
+        <select id="hist-fe" onchange="renderHist()"><option value="">All Employees</option></select>
+        <label class="del-toggle"><input type="checkbox" id="hist-show-all" onchange="renderHist()"/> Show blocked</label>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th class="cc"><input type="checkbox" id="chk-hist-all" onchange="toggleAll('hist',this)"/></th>
+            <th>ID</th><th>Employee</th><th>Job Code</th><th>Job Desc</th>
+            <th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Last Modified</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="hist-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ DEPARTMENTS ══ -->
+    <div id="page-departments" class="page">
+      <div class="ph">
+        <div class="ph-left"><h2>Departments</h2><p>Manage organizational departments.</p></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="openAddDept()">Add Department</button>
+        </div>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Description</th><th>Employees</th><th>Last Modified</th><th>Actions</th></tr></thead>
+          <tbody id="dept-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ JOB POSITIONS ══ -->
+    <div id="page-jobs" class="page">
+      <div class="ph">
+        <div class="ph-left"><h2>Job Positions</h2><p>Define and manage job roles.</p></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="openAddJob()">Add Job Position</button>
+        </div>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Employees</th><th>Status</th><th>Last Modified</th><th>Actions</th></tr></thead>
+          <tbody id="job-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ HIDDEN RECORDS (soft-deleted view) ══ -->
+    <div id="page-deleted" class="page">
+      <div class="ph">
+        <div class="ph-left"><h2>Hidden Records</h2><p>Records blocked or soft-deleted by admin. Use Recover to restore visibility.</p></div>
+      </div>
+      <div class="perm-notice">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        These records are <strong>hidden from regular users</strong> but not permanently deleted. Only Super Admin can permanently delete from the database.
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchDelTab(this,'del-emp')">Employees</button>
+        <button class="tab-btn" onclick="switchDelTab(this,'del-hist')">Job History</button>
+        <button class="tab-btn" onclick="switchDelTab(this,'del-jobs')">Jobs</button>
+        <button class="tab-btn" onclick="switchDelTab(this,'del-depts')">Departments</button>
+      </div>
+      <div id="del-emp" class="tab-panel active">
+        <div class="tw"><table>
+          <thead><tr><th>Emp No</th><th>Last Name</th><th>First Name</th><th>Department</th><th>Job</th><th>Status</th><th>Hidden By</th><th>Hidden At</th><th>Action</th></tr></thead>
+          <tbody id="del-emp-tbody"></tbody>
+        </table></div>
+      </div>
+      <div id="del-hist" class="tab-panel">
+        <div class="tw"><table>
+          <thead><tr><th>ID</th><th>Employee</th><th>Job Code</th><th>Dept Code</th><th>Eff Date</th><th>Status</th><th>Hidden By</th><th>Action</th></tr></thead>
+          <tbody id="del-hist-tbody"></tbody>
+        </table></div>
+      </div>
+      <div id="del-jobs" class="tab-panel">
+        <div class="tw"><table>
+          <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Status</th><th>Hidden By</th><th>Action</th></tr></thead>
+          <tbody id="del-jobs-tbody"></tbody>
+        </table></div>
+      </div>
+      <div id="del-depts" class="tab-panel">
+        <div class="tw"><table>
+          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Status</th><th>Hidden By</th><th>Action</th></tr></thead>
+          <tbody id="del-depts-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ══ AUDIT LOG ══ -->
+    <div id="page-audit" class="page">
+      <div class="ph">
+        <div class="ph-left"><h2>Audit Log</h2><p>Track all changes made by system users.</p></div>
+        <div class="btn-group">
+          <button class="btn btn-outline" onclick="renderAudit()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <input type="text" id="audit-q" placeholder="Search logs…" oninput="renderAudit()"/>
+        <select id="audit-fu" onchange="renderAudit()"><option value="">All Users</option></select>
+        <select id="audit-fa" onchange="renderAudit()">
+          <option value="">All Actions</option>
+          <option value="ADD">Add</option>
+          <option value="EDIT">Edit</option>
+          <option value="BLOCK">Block</option>
+          <option value="RESTORE">Restore</option>
+          <option value="VIEW">View</option>
+        </select>
+      </div>
+      <div class="tw" id="audit-wrap">
+        <div id="audit-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ PROFILE ══ -->
+    <div id="page-profile" class="page">
+      <div class="ph">
+        <div class="ph-left"><h2>Employee Profile</h2><p>Detailed employee view.</p></div>
+        <button class="btn btn-outline" onclick="nav(document.querySelector('[data-page=employees]'),'employees')">← Back</button>
+      </div>
+      <div id="profile-content"></div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main -->
+
+<!-- ════════ MODALS ════════ -->
+
+<!-- ADD / EDIT EMPLOYEE -->
+<div class="mo" id="mo-emp">
+  <div class="modal">
+    <div class="mh"><h3 id="mo-emp-title">Add Employee</h3><button class="mc-btn" onclick="cm('mo-emp')">×</button></div>
+    <div class="mb">
+      <div class="f2">
+        <div class="fr"><label>Emp No</label><input id="fe-empno" placeholder="EMP-001"/></div>
+        <div class="fr"><label>Username</label><input id="fe-user" placeholder="employee1"/></div>
+      </div>
+      <div class="f2">
+        <div class="fr"><label>Last Name</label><input id="fe-ln" placeholder="Last name"/></div>
+        <div class="fr"><label>First Name</label><input id="fe-fn" placeholder="First name"/></div>
+      </div>
+      <div class="f2">
+        <div class="fr"><label>Gender</label>
+          <select id="fe-gender"><option value="">-- Select --</option><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <div class="fr"><label>Hire Date</label><input type="date" id="fe-hire"/></div>
+      </div>
+      <div class="f2">
+        <div class="fr"><label>Sep Date (if any)</label><input type="date" id="fe-sep"/></div>
+        <div class="fr"><label>Salary</label><input type="number" id="fe-sal" placeholder="0.00"/></div>
+      </div>
+      <div class="f2">
+        <div class="fr"><label>Department</label><select id="fe-dept"></select></div>
+        <div class="fr"><label>Job Position</label><select id="fe-job"></select></div>
+      </div>
+      <div class="f2">
+        <div class="fr"><label>Email</label><input type="email" id="fe-email" placeholder="email@company.com"/></div>
+        <div class="fr"><label>Phone</label><input id="fe-phone" placeholder="+63 9XX XXX XXXX"/></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="cm('mo-emp')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEmp()">Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT JOB HISTORY -->
+<div class="mo" id="mo-hist">
+  <div class="modal">
+    <div class="mh"><h3 id="mo-hist-title">Add Job History</h3><button class="mc-btn" onclick="cm('mo-hist')">×</button></div>
+    <div class="mb">
+      <div class="fr"><label>Employee</label><select id="fh-emp"></select></div>
+      <div class="f2">
+        <div class="fr"><label>Job Position</label><select id="fh-job"></select></div>
+        <div class="fr"><label>Department</label><select id="fh-dept"></select></div>
+      </div>
+      <div class="f2">
+        <div class="fr"><label>Effective Date</label><input type="date" id="fh-eff"/></div>
+        <div class="fr"><label>Salary</label><input type="number" id="fh-sal" placeholder="0.00"/></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="cm('mo-hist')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHist()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT DEPT -->
+<div class="mo" id="mo-dept">
+  <div class="modal" style="width:420px">
+    <div class="mh"><h3 id="mo-dept-title">Add Department</h3><button class="mc-btn" onclick="cm('mo-dept')">×</button></div>
+    <div class="mb">
+      <div class="f2">
+        <div class="fr"><label>Dept Code</label><input id="fd-code" placeholder="IT"/></div>
+        <div class="fr"><label>Dept Name</label><input id="fd-name" placeholder="Information Technology"/></div>
+      </div>
+      <div class="fr"><label>Description</label><textarea id="fd-desc"></textarea></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="cm('mo-dept')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDept()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT JOB -->
+<div class="mo" id="mo-job">
+  <div class="modal" style="width:420px">
+    <div class="mh"><h3 id="mo-job-title">Add Job Position</h3><button class="mc-btn" onclick="cm('mo-job')">×</button></div>
+    <div class="mb">
+      <div class="f2">
+        <div class="fr"><label>Job Code</label><input id="fj-code" placeholder="DEV"/></div>
+        <div class="fr"><label>Job Description</label><input id="fj-desc" placeholder="Software Developer"/></div>
+      </div>
+      <div class="fr"><label>Department</label><select id="fj-dept"></select></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="cm('mo-job')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJob()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUDIT DETAIL MODAL -->
+<div class="mo" id="mo-audit-detail">
+  <div class="modal modal-wide">
+    <div class="mh"><h3 id="mo-ad-title">Change History</h3><button class="mc-btn" onclick="cm('mo-audit-detail')">×</button></div>
+    <div class="mb" id="mo-ad-body"></div>
+    <div class="mf"><button class="btn btn-outline" onclick="cm('mo-audit-detail')">Close</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="mo" id="mo-confirm">
+  <div class="modal" style="width:370px">
+    <div class="mh"><h3 id="conf-title">Confirm</h3><button class="mc-btn" onclick="cm('mo-confirm')">×</button></div>
+    <div class="mb"><p id="conf-msg" style="font-size:13px;line-height:1.6;color:var(--text)"></p></div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="cm('mo-confirm')">Cancel</button>
+      <button class="btn btn-danger" id="conf-ok" onclick="doConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const SUPABASE_URL  = 'https://cuifjbmpgztjwqepfkvf.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWZqYm1wZ3p0andxZXBma3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTA1MjcsImV4cCI6MjA5MDg4NjUyN30.sB7eN054Nt-xvv30jFBjhVoZV5Q6VIW-MiKQyZ1m1fg';
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+/* ════════════════════════════════════
+   DATA STORE
+════════════════════════════════════ */
+const CURRENT_USER = 'admin1';
 
-let allEmployees = [];
-let departmentOptions = [];
-let notifications = [];
+let departments = [
+  {id:1,code:'IT', name:'Information Technology',desc:'Tech infrastructure.',deleted:false,meta:null},
+  {id:2,code:'HR', name:'Human Resources',       desc:'Employee relations.',deleted:false,meta:null},
+  {id:3,code:'FIN',name:'Finance',               desc:'Financial management.',deleted:false,meta:null},
+  {id:4,code:'OPS',name:'Operations',            desc:'Day-to-day operations.',deleted:false,meta:null},
+];
+let jobs = [
+  {id:1,code:'DEV', desc:'Software Developer',   deptId:1,deleted:false,meta:null},
+  {id:2,code:'SA',  desc:'System Administrator', deptId:1,deleted:false,meta:null},
+  {id:3,code:'HRO', desc:'HR Officer',           deptId:2,deleted:false,meta:null},
+  {id:4,code:'RECR',desc:'Recruiter',            deptId:2,deleted:false,meta:null},
+  {id:5,code:'ACCT',desc:'Accountant',           deptId:3,deleted:false,meta:null},
+  {id:6,code:'OPMG',desc:'Operations Manager',   deptId:4,deleted:false,meta:null},
+];
+let employees = [
+  {id:1,empNo:'EMP-001',username:'admin1',    lastName:'One',   firstName:'Admin',    gender:'Male',  hireDate:'2020-01-15',sepDate:'',  salary:75000,deptId:2,jobId:3,email:'admin1@co.com',  phone:'+63 912 000 0001',deleted:false,blocked:false,meta:null},
+  {id:2,empNo:'EMP-002',username:'employee1', lastName:'One',   firstName:'Employee', gender:'Female',hireDate:'2021-03-01',sepDate:'',  salary:55000,deptId:1,jobId:1,email:'emp1@co.com',    phone:'+63 912 000 0002',deleted:false,blocked:false,meta:null},
+  {id:3,empNo:'EMP-003',username:'employee2', lastName:'Two',   firstName:'Employee', gender:'Male',  hireDate:'2021-06-15',sepDate:'',  salary:52000,deptId:1,jobId:2,email:'emp2@co.com',    phone:'+63 912 000 0003',deleted:false,blocked:false,meta:null},
+  {id:4,empNo:'EMP-004',username:'employee3', lastName:'Three', firstName:'Employee', gender:'Female',hireDate:'2022-02-10',sepDate:'',  salary:60000,deptId:3,jobId:5,email:'emp3@co.com',    phone:'+63 912 000 0004',deleted:false,blocked:false,meta:null},
+  {id:5,empNo:'EMP-005',username:'employee4', lastName:'Four',  firstName:'Employee', gender:'Male',  hireDate:'2022-08-20',sepDate:'',  salary:65000,deptId:4,jobId:6,email:'emp4@co.com',    phone:'+63 912 000 0005',deleted:false,blocked:false,meta:null},
+  {id:6,empNo:'EMP-006',username:'employee5', lastName:'Five',  firstName:'Employee', gender:'Female',hireDate:'2023-01-05',sepDate:'2024-12-31',salary:48000,deptId:2,jobId:4,email:'emp5@co.com',phone:'+63 912 000 0006',deleted:true,blocked:false,meta:{by:'superadmin1',at:'2024-12-31 08:00',action:'BLOCK',note:'Separated'}},
+];
+let jobHistory = [
+  {id:1,empId:1,jobId:3,deptId:2,effDate:'2020-01-15',salary:75000,deleted:false,meta:null},
+  {id:2,empId:2,jobId:1,deptId:1,effDate:'2021-03-01',salary:55000,deleted:false,meta:null},
+  {id:3,empId:3,jobId:2,deptId:1,effDate:'2021-06-15',salary:52000,deleted:false,meta:null},
+  {id:4,empId:4,jobId:5,deptId:3,effDate:'2022-02-10',salary:60000,deleted:false,meta:null},
+  {id:5,empId:5,jobId:6,deptId:4,effDate:'2022-08-20',salary:65000,deleted:false,meta:null},
+  {id:6,empId:6,jobId:4,deptId:2,effDate:'2023-01-05',salary:48000,deleted:true, meta:{by:'admin1',at:'2025-01-02 09:15',action:'BLOCK',note:'Employee separated'}},
+  {id:7,empId:2,jobId:2,deptId:1,effDate:'2020-05-01',salary:50000,deleted:false,meta:null},
+];
 
-function getDepartments(records) {
-  return [...new Set((records || []).map(r => (r.department || '').trim()).filter(Boolean))].sort();
+/* ── Audit log (pre-seeded sample entries) ── */
+let auditLog = [
+  {id:1, timestamp:'2025-01-02 09:15',user:'admin1',   action:'BLOCK',  entity:'Employee',  record:'EMP-006 (Employee Five)', note:'Employee separated from company.'},
+  {id:2, timestamp:'2025-01-02 09:16',user:'admin1',   action:'BLOCK',  entity:'JobHistory',record:'JH-006',                  note:'History blocked with employee.'},
+  {id:3, timestamp:'2025-01-10 14:30',user:'admin1',   action:'EDIT',   entity:'Employee',  record:'EMP-002 (Employee One)',  note:'Updated salary to ₱55,000.'},
+  {id:4, timestamp:'2025-02-01 10:00',user:'admin1',   action:'ADD',    entity:'Employee',  record:'EMP-005 (Employee Four)', note:'New employee added.'},
+  {id:5, timestamp:'2025-02-14 11:22',user:'user1',    action:'VIEW',   entity:'Employee',  record:'EMP-003 (Employee Two)',  note:'Profile viewed.'},
+  {id:6, timestamp:'2025-03-05 08:45',user:'admin1',   action:'EDIT',   entity:'Department',record:'IT – Information Technology',note:'Updated description.'},
+  {id:7, timestamp:'2025-03-15 15:10',user:'admin1',   action:'ADD',    entity:'JobHistory',record:'JH-007 (Employee One)',   note:'New job history entry added.'},
+  {id:8, timestamp:'2025-04-20 09:00',user:'user1',    action:'VIEW',   entity:'Employee',  record:'EMP-001 (Admin One)',     note:'Profile viewed.'},
+  {id:9, timestamp:'2025-04-22 13:00',user:'admin1',   action:'RESTORE',entity:'Employee',  record:'EMP-006 (Employee Five)', note:'Restored at HR request.'},
+  {id:10,timestamp:'2025-05-01 08:30',user:'admin1',   action:'EDIT',   entity:'Employee',  record:'EMP-004 (Employee Three)',note:'Updated phone number.'},
+];
+let nextAuditId = 11;
+
+let nE=7,nD=5,nJ=7,nH=8;
+let editId={emp:null,dept:null,job:null,hist:null};
+let pendingFn=null;
+
+/* ════════════════════════════════════
+   HELPERS
+════════════════════════════════════ */
+const gD  = id => departments.find(d=>d.id===id);
+const gJ  = id => jobs.find(j=>j.id===id);
+const gE  = id => employees.find(e=>e.id===id);
+const dn  = id => { const d=gD(id); return d?d.name:'—'; };
+const dc  = id => { const d=gD(id); return d?d.code:'—'; };
+const jd  = id => { const j=gJ(id); return j?j.desc:'—'; };
+const jc  = id => { const j=gJ(id); return j?j.code:'—'; };
+const en  = id => { const e=gE(id); return e?`${e.lastName}, ${e.firstName}`:'—'; };
+const ini = e  => (e.firstName[0]+e.lastName[0]).toUpperCase();
+const fmt = d  => d ? d : '—';
+const fmtSal = s => s ? '₱'+Number(s).toLocaleString() : '—';
+const now  = () => {
+  const d=new Date();
+  return d.getFullYear()+'-'
+    +String(d.getMonth()+1).padStart(2,'0')+'-'
+    +String(d.getDate()).padStart(2,'0')+' '
+    +String(d.getHours()).padStart(2,'0')+':'
+    +String(d.getMinutes()).padStart(2,'0');
+};
+
+function logAudit(action, entity, record, note=''){
+  auditLog.unshift({id:nextAuditId++, timestamp:now(), user:CURRENT_USER, action, entity, record, note});
 }
-function renderDepartmentFilter(selectId, departments) {
-  const select = document.getElementById(selectId);
-  if (!select) return;
-  const currentValue = select.value || 'all';
-  select.innerHTML = '';
-  const allOption = document.createElement('option');
-  allOption.value = 'all'; allOption.textContent = 'All Departments';
-  select.appendChild(allOption);
-  departments.forEach(dept => {
-    const option = document.createElement('option');
-    option.value = dept; option.textContent = dept;
-    select.appendChild(option);
+
+function metaTag(meta){
+  if(!meta) return '<span style="color:var(--muted);font-size:10px">—</span>';
+  return `<span style="font-size:10px;color:var(--muted)">${meta.by} · ${meta.at}</span>`;
+}
+
+/* ════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════ */
+function nav(el, page){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const t={employees:'Employees','job-history':'Job History',departments:'Departments',jobs:'Job Positions',deleted:'Hidden Records',audit:'Audit Log',profile:'Employee Profile'};
+  document.getElementById('topbar-title').textContent = t[page]||page;
+  if(page==='employees')   { renderEmp(); renderStats(); }
+  if(page==='job-history') renderHist();
+  if(page==='departments') renderDepts();
+  if(page==='jobs')        renderJobs();
+  if(page==='deleted')     renderDeleted();
+  if(page==='audit')       renderAudit();
+}
+
+/* ════════════════════════════════════
+   MODALS
+════════════════════════════════════ */
+const om = id => document.getElementById(id).classList.add('open');
+const cm = id => document.getElementById(id).classList.remove('open');
+function doConfirm(){ if(pendingFn) pendingFn(); cm('mo-confirm'); }
+function askConfirm(title, msg, fn, btn='Confirm', btnClass='btn-danger'){
+  document.getElementById('conf-title').textContent = title;
+  document.getElementById('conf-msg').textContent   = msg;
+  const okBtn = document.getElementById('conf-ok');
+  okBtn.textContent  = btn;
+  okBtn.className    = 'btn ' + btnClass;
+  pendingFn = fn;
+  om('mo-confirm');
+}
+
+/* ════════════════════════════════════
+   STATS
+════════════════════════════════════ */
+function renderStats(){
+  const a = employees.filter(e=>!e.deleted&&!e.blocked).length;
+  const b = employees.filter(e=>e.blocked).length;
+  const d = employees.filter(e=>e.deleted).length;
+  const dp= new Set(employees.filter(e=>!e.deleted&&!e.blocked).map(e=>e.deptId)).size;
+  document.getElementById('emp-stats').innerHTML=`
+    <div class="sc ac"><div class="n">${a}</div><div class="l">Active</div></div>
+    <div class="sc"><div class="n">${b}</div><div class="l">Blocked</div></div>
+    <div class="sc"><div class="n">${d}</div><div class="l">Inactive</div></div>
+    <div class="sc"><div class="n">${dp}</div><div class="l">Departments</div></div>
+    <div class="sc"><div class="n">${employees.length}</div><div class="l">Total</div></div>`;
+}
+
+/* ════════════════════════════════════
+   EMPLOYEES
+════════════════════════════════════ */
+function popDeptFilter(){
+  const s=document.getElementById('emp-fd'), v=s.value;
+  s.innerHTML='<option value="">All Departments</option>';
+  departments.forEach(d=>{
+    const o=document.createElement('option');
+    o.value=d.id; o.textContent=d.name;
+    if(String(d.id)===v) o.selected=true;
+    s.appendChild(o);
   });
-  if ([...select.options].some(o => o.value === currentValue)) select.value = currentValue;
-}
-function initDepartmentFilters(records) {
-  departmentOptions = getDepartments(records);
-  ['empDeptFilter', 'attDeptFilter', 'payrollDeptFilter'].forEach(id => renderDepartmentFilter(id, departmentOptions));
 }
 
-function toast(msg, type = 'success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = `toast ${type} show`;
-  setTimeout(() => el.classList.remove('show'), 3000);
-}
+function renderEmp(){
+  popDeptFilter();
+  const q   = document.getElementById('emp-q').value.toLowerCase();
+  const fd  = document.getElementById('emp-fd').value;
+  const fs  = document.getElementById('emp-fs').value;
+  const all = document.getElementById('emp-show-all').checked;
 
-function initials(name) { return name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?'; }
-function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-PH') : '—'; }
-function timeAgo(ts) {
-  if (!ts) return '';
-  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-  return `${Math.floor(diff/86400)}d ago`;
-}
-function badgeHtml(status) {
-  const map = {
-    active:'badge-success', present:'badge-success', processed:'badge-success', approved:'badge-success',
-    pending:'badge-warning', 'on leave':'badge-warning', late:'badge-warning',
-    absent:'badge-danger', rejected:'badge-danger', inactive:'badge-gray'
-  };
-  const cls = map[status?.toLowerCase()] || 'badge-gray';
-  return `<span class="badge ${cls}"><span class="dot"></span>${status}</span>`;
-}
+  let data = employees.filter(e=>{
+    const hidden = e.deleted || e.blocked;
+    if(!all && fs!=='blocked' && fs!=='inactive' && hidden) return false;
+    if(fs==='active'   && (e.deleted||e.blocked))  return false;
+    if(fs==='blocked'  && !e.blocked)              return false;
+    if(fs==='inactive' && !e.deleted)              return false;
+    if(fd && String(e.deptId)!==fd)                return false;
+    return `${e.empNo} ${e.lastName} ${e.firstName} ${jd(e.jobId)} ${dn(e.deptId)}`
+      .toLowerCase().includes(q);
+  }).sort((a,b)=>a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName));
 
-function updateDateTime() {
-  const now = new Date();
-  document.getElementById('dt-date').textContent = now.toLocaleDateString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  document.getElementById('dt-time').textContent = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
-}
-updateDateTime();
-setInterval(updateDateTime, 1000);
+  const tb = document.getElementById('emp-tbody');
+  if(!data.length){
+    tb.innerHTML=`<tr><td colspan="13" class="tbl-empty">No employees found.</td></tr>`;
+    upBtns('emp'); return;
+  }
 
-async function loadNotifications() {
-  const { data: leaves } = await sb.from('leave_requests').select('*, profiles(first_name, last_name)').order('filed_at', { ascending: false }).limit(20);
-  notifications = (leaves || []).map(l => ({
-    id: l.id, type: l.status,
-    text: `${l.profiles?.first_name||''} ${l.profiles?.last_name||''} filed a ${l.leave_type} leave`,
-    subtext: `${l.start_date} – ${l.end_date} · ${l.num_days} day(s)`,
-    time: l.filed_at, unread: l.status === 'pending'
-  }));
-  renderNotifications();
-}
-
-function renderNotifications() {
-  const unreadCount = notifications.filter(n => n.unread).length;
-  const countEl = document.getElementById('notifCount');
-  if (unreadCount > 0) { countEl.textContent = unreadCount > 9 ? '9+' : unreadCount; countEl.style.display = 'flex'; }
-  else { countEl.style.display = 'none'; }
-  const list = document.getElementById('notifList');
-  if (!notifications.length) { list.innerHTML = '<div class="notif-empty">No notifications yet.</div>'; return; }
-  const iconMap = { pending: { bg:'#FEF9E7', icon:'🕐' }, approved: { bg:'#E6F5EE', icon:'✅' }, rejected: { bg:'#FEE2E2', icon:'❌' } };
-  list.innerHTML = notifications.map(n => {
-    const ic = iconMap[n.type] || { bg:'#EFF6FF', icon:'📋' };
-    return `<div class="notif-item ${n.unread ? 'unread' : ''}" onclick="markRead('${n.id}')">
-      <div class="notif-icon" style="background:${ic.bg}">${ic.icon}</div>
-      <div class="notif-body">
-        <div class="notif-text">${n.text}</div>
-        <div class="notif-subtext">${n.subtext}</div>
-        <div class="notif-time">${timeAgo(n.time)}</div>
-      </div>
-      ${n.unread ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:6px"></div>' : ''}
-    </div>`;
+  tb.innerHTML = data.map(e => {
+    const rowCls = e.deleted?'del-row': e.blocked?'blk-row':'';
+    const statusBadge = e.deleted
+      ? '<span class="badge b-del">Inactive</span>'
+      : e.blocked
+        ? '<span class="badge b-blk">Blocked</span>'
+        : '<span class="badge b-active">Active</span>';
+    return `
+    <tr class="${rowCls}">
+      <td><input type="checkbox" class="chk-emp" value="${e.id}" onchange="upBtns('emp')"/></td>
+      <td>${e.empNo}</td>
+      <td><strong>${e.lastName}</strong></td>
+      <td>${e.firstName}</td>
+      <td>${e.gender||'—'}</td>
+      <td>${fmt(e.hireDate)}</td>
+      <td>${e.sepDate?fmt(e.sepDate):'—'}</td>
+      <td>${jd(e.jobId)}</td>
+      <td><span class="badge b-dept">${dc(e.deptId)}</span></td>
+      <td>${fmtSal(e.salary)}</td>
+      <td class="ns">${statusBadge}</td>
+      <td class="ns">${metaTag(e.meta)}</td>
+      <td class="ns" style="white-space:nowrap">
+        <button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf(${e.id})">View</button>
+        <button class="btn btn-white"   style="padding:3px 7px;font-size:10px" onclick="openEditEmp(${e.id})">Edit</button>
+        <button class="btn btn-audit"   style="padding:3px 7px;font-size:10px" onclick="viewEmpAudit(${e.id})">Log</button>
+      </td>
+    </tr>`;
   }).join('');
-}
-function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
-function markRead(id) { const n = notifications.find(n => n.id === id); if (n) n.unread = false; renderNotifications(); }
-function markAllRead() { notifications.forEach(n => n.unread = false); renderNotifications(); }
-document.addEventListener('click', (e) => {
-  const wrap = document.querySelector('.notif-wrap');
-  if (wrap && !wrap.contains(e.target)) document.getElementById('notifPanel').classList.remove('open');
-});
-
-function navigateTo(section) {
-  const el = document.querySelector(`.nav-item[onclick*="'${section}'"]`);
-  navigate(section, el);
-}
-function navigate(section, el) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const target = document.getElementById('sec-' + section);
-  if (target) target.classList.add('active');
-  if (el) el.classList.add('active');
-  const titles = {dashboard:'Dashboard',employees:'Employees',attendance:'Attendance',leave:'Leave Management',payroll:'Payroll',reports:'Reports'};
-  document.getElementById('pageTitle').textContent = titles[section] || section;
-  if (section === 'employees') loadEmployees();
-  if (section === 'attendance') loadAttendance();
-  if (section === 'leave') loadLeave();
-  if (section === 'payroll') loadPayroll();
+  upBtns('emp');
 }
 
-let dashAllEmployees = [];
-async function loadDashboard() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    const { data: me } = await sb.from('profiles').select('first_name,last_name').eq('id', session.user.id).single();
-    if (me) {
-      const name = `${me.first_name||''} ${me.last_name||''}`.trim();
-      document.getElementById('adminName').textContent = name || 'Admin User';
-      document.getElementById('adminAvatar').textContent = initials(name || 'AU');
-    }
+function getChk(cls){ return [...document.querySelectorAll('.'+cls+':checked')].map(c=>+c.value); }
+function toggleAll(scope, cb){
+  document.querySelectorAll(`.chk-${scope}`).forEach(c=>c.checked=cb.checked);
+  upBtns(scope);
+}
+function upBtns(scope){
+  if(scope==='emp'){
+    const ids = getChk('chk-emp');
+    const hasActive  = ids.some(id=>{ const e=gE(id); return e&&!e.deleted&&!e.blocked; });
+    const hasHidden  = ids.some(id=>{ const e=gE(id); return e&&(e.deleted||e.blocked); });
+    document.getElementById('btn-blk-emp').disabled = !hasActive;
+    document.getElementById('btn-rst-emp').disabled = !hasHidden;
   }
-  const { data: profiles } = await sb.from('profiles').select('*').order('first_name');
-  allEmployees = profiles || [];
-  dashAllEmployees = allEmployees.filter(p => p.role === 'user');
-  initDepartmentFilters(allEmployees);
-  document.getElementById('statTotal').textContent = dashAllEmployees.length;
-  renderDashEmployeeTable(dashAllEmployees);
-
-  const today = new Date().toISOString().split('T')[0];
-  const { data: attToday } = await sb.from('attendance').select('status').eq('date', today);
-  const att = attToday || [];
-  document.getElementById('statPresent').textContent = att.filter(a => a.status === 'present').length;
-  document.getElementById('statAbsent').textContent  = att.filter(a => a.status === 'absent').length;
-
-  await loadWeekBars();
-
-  const { data: pendingLeaves } = await sb.from('leave_requests').select('*, profiles(first_name, last_name)').eq('status', 'pending').order('filed_at', { ascending: false });
-  const leaves = pendingLeaves || [];
-  document.getElementById('statLeaves').textContent = leaves.length;
-
-  const leaveDiv = document.getElementById('dashLeaveList');
-  if (!leaves.length) {
-    leaveDiv.innerHTML = '<div class="empty-msg">No pending leave requests.</div>';
-  } else {
-    leaveDiv.innerHTML = leaves.map(l => `
-      <div class="leave-item">
-        <div class="mini-avatar">${initials((l.profiles?.first_name||'')+' '+(l.profiles?.last_name||''))}</div>
-        <div class="leave-info">
-          <div class="leave-name">${l.profiles?.first_name||''} ${l.profiles?.last_name||''}</div>
-          <div class="leave-detail">${l.leave_type} · ${l.start_date} – ${l.end_date}</div>
-        </div>
-        <div class="leave-actions" id="dla-${l.id}">
-          <button class="btn-approve" onclick="approveLeave('${l.id}')">✓</button>
-          <button class="btn-reject" onclick="rejectLeave('${l.id}')">✗</button>
-        </div>
-      </div>`).join('');
+  if(scope==='hist'){
+    const ids = getChk('chk-hist');
+    const hasActive = ids.some(id=>{ const h=jobHistory.find(x=>x.id===id); return h&&!h.deleted; });
+    const hasHidden = ids.some(id=>{ const h=jobHistory.find(x=>x.id===id); return h&&h.deleted; });
+    document.getElementById('btn-blk-hist').disabled = !hasActive;
+    document.getElementById('btn-rst-hist').disabled = !hasHidden;
   }
-  await loadNotifications();
 }
 
-function renderDashEmployeeTable(emps) {
-  const tbody = document.getElementById('dashEmpTable');
-  if (!emps.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No employees found.</td></tr>'; return; }
-  tbody.innerHTML = emps.map(e => `
-    <tr>
-      <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
-        <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
-      <td>${e.department||'—'}</td>
-      <td>${badgeHtml(e.status||'active')}</td>
-      <td>${fmtDate(e.date_hired)}</td>
-    </tr>`).join('');
-}
-function filterDashEmployees() {
-  const statusFilter = document.getElementById('dashStatusFilter').value;
-  let filtered = dashAllEmployees;
-  if (statusFilter !== 'all') filtered = filtered.filter(e => (e.status || 'active').toLowerCase() === statusFilter);
-  renderDashEmployeeTable(filtered);
-}
-
-async function loadWeekBars() {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-  const days = ['Mon','Tue','Wed','Thu','Fri'];
-  const counts = [];
-  for (let i = 0; i < 5; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    const { data } = await sb.from('attendance').select('status').eq('date', d.toISOString().split('T')[0]).eq('status', 'present');
-    counts.push((data || []).length);
+function bulkBlock(scope){
+  if(scope==='emp'){
+    const ids = getChk('chk-emp').filter(id=>{ const e=gE(id); return e&&!e.deleted&&!e.blocked; });
+    if(!ids.length) return;
+    askConfirm('Block Employees',
+      `Block ${ids.length} employee(s)? They will be hidden from regular users but remain in the database.`,
+      ()=>{
+        ids.forEach(id=>{
+          const e=gE(id);
+          if(e){
+            e.blocked=true;
+            e.meta={by:CURRENT_USER, at:now(), action:'BLOCK', note:'Blocked by admin'};
+            logAudit('BLOCK','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Blocked by admin');
+          }
+        });
+        renderEmp(); renderStats();
+      },'Block','btn-block');
   }
-  const max = Math.max(...counts, 1);
-  document.getElementById('weekBars').innerHTML = counts.map((c, i) => `
-    <div class="bar-col">
-      <div class="bar ${i === dayOfWeek - 1 ? 'accent-bar' : 'primary-bar'}" style="height:${Math.round((c/max)*100)}%"></div>
-      <div class="bar-lbl">${days[i]}</div>
-    </div>`).join('');
+  if(scope==='hist'){
+    const ids = getChk('chk-hist').filter(id=>{ const h=jobHistory.find(x=>x.id===id); return h&&!h.deleted; });
+    if(!ids.length) return;
+    askConfirm('Block History Records',
+      `Block ${ids.length} history record(s)?`,
+      ()=>{
+        ids.forEach(id=>{
+          const h=jobHistory.find(x=>x.id===id);
+          if(h){
+            h.deleted=true;
+            h.meta={by:CURRENT_USER, at:now(), action:'BLOCK', note:'Blocked by admin'};
+            logAudit('BLOCK','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Blocked by admin');
+          }
+        });
+        renderHist();
+      },'Block','btn-block');
+  }
 }
 
-async function loadEmployees() {
-  document.getElementById('empTable').innerHTML = '<tr><td colspan="5" class="empty-msg">Loading...</td></tr>';
-  const { data, error } = await sb.from('profiles').select('*').order('first_name');
-  if (error) { toast('Failed to load employees', 'error'); return; }
-  allEmployees = data || [];
-  initDepartmentFilters(allEmployees);
-  renderEmployeeTable(allEmployees);
-}
-function renderEmployeeTable(emps) {
-  const tbody = document.getElementById('empTable');
-  if (!emps.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">No employees found.</td></tr>'; return; }
-  tbody.innerHTML = emps.map(e => `
-    <tr>
-      <td><div class="avatar-cell"><div class="mini-avatar">${initials((e.first_name||'')+' '+(e.last_name||''))}</div>
-        <div><div class="emp-name">${e.first_name||''} ${e.last_name||''}</div><div class="emp-sub">${e.email||''}</div></div></div></td>
-      <td>${e.department||'—'}</td><td>${e.position||'—'}</td>
-      <td>${badgeHtml(e.status||'active')}</td><td>${fmtDate(e.date_hired)}</td>
-    </tr>`).join('');
-}
-function filterEmployees() {
-  const q = document.getElementById('empSearch').value.toLowerCase();
-  const selectedDept = document.getElementById('empDeptFilter')?.value || 'all';
-  const selectedStatus = document.getElementById('empStatusFilter')?.value || 'all';
-  renderEmployeeTable(allEmployees.filter(e => {
-    const matchesSearch = `${e.first_name} ${e.last_name} ${e.email} ${e.department}`.toLowerCase().includes(q);
-    const matchesDept = selectedDept === 'all' || (e.department || '').toLowerCase() === selectedDept.toLowerCase();
-    const matchesStatus = selectedStatus === 'all' || (e.status || 'active').toLowerCase() === selectedStatus;
-    return matchesSearch && matchesDept && matchesStatus;
-  }));
-}
-
-async function loadAttendance() {
-  const dateInput = document.getElementById('attDate');
-  if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-  document.getElementById('attTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
-  const { data, error } = await sb.from('attendance').select('*, profiles(first_name, last_name, department)').eq('date', dateInput.value);
-  if (error) { toast('Failed to load attendance', 'error'); return; }
-  let att = data || [];
-  const selectedDept = document.getElementById('attDeptFilter')?.value || 'all';
-  if (selectedDept !== 'all') att = att.filter(a => (a.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
-  document.getElementById('attPresent').textContent = att.filter(a => a.status === 'present').length;
-  document.getElementById('attAbsent').textContent  = att.filter(a => a.status === 'absent').length;
-  document.getElementById('attLate').textContent    = att.filter(a => a.status === 'late').length;
-  const tbody = document.getElementById('attTable');
-  if (!att.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No attendance records for this date.</td></tr>'; return; }
-  tbody.innerHTML = att.map(a => `
-    <tr>
-      <td><div class="avatar-cell"><div class="mini-avatar">${initials((a.profiles?.first_name||'')+' '+(a.profiles?.last_name||''))}</div>
-        <div class="emp-name">${a.profiles?.first_name||''} ${a.profiles?.last_name||''}</div></div></td>
-      <td>${a.profiles?.department||'—'}</td><td>${a.time_in||'—'}</td><td>${a.time_out||'—'}</td>
-      <td>${a.total_hours != null ? a.total_hours+'h' : '—'}</td><td>${badgeHtml(a.status)}</td>
-    </tr>`).join('');
+function bulkRestore(scope){
+  if(scope==='emp'){
+    const ids = getChk('chk-emp').filter(id=>{ const e=gE(id); return e&&(e.deleted||e.blocked); });
+    if(!ids.length) return;
+    askConfirm('Restore Employees',`Restore ${ids.length} employee(s) to active?`,()=>{
+      ids.forEach(id=>{
+        const e=gE(id);
+        if(e){
+          e.deleted=false; e.blocked=false;
+          e.meta={by:CURRENT_USER, at:now(), action:'RESTORE', note:'Restored by admin'};
+          logAudit('RESTORE','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Restored by admin');
+        }
+      });
+      renderEmp(); renderStats();
+    },'Restore','btn-success');
+  }
+  if(scope==='hist'){
+    const ids = getChk('chk-hist').filter(id=>{ const h=jobHistory.find(x=>x.id===id); return h&&h.deleted; });
+    if(!ids.length) return;
+    askConfirm('Restore History',`Restore ${ids.length} record(s)?`,()=>{
+      ids.forEach(id=>{
+        const h=jobHistory.find(x=>x.id===id);
+        if(h){
+          h.deleted=false;
+          h.meta={by:CURRENT_USER, at:now(), action:'RESTORE', note:'Restored by admin'};
+          logAudit('RESTORE','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Restored by admin');
+        }
+      });
+      renderHist();
+    },'Restore','btn-success');
+  }
 }
 
-async function loadLeave() {
-  document.getElementById('leaveList').innerHTML = '<div class="empty-msg">Loading...</div>';
-  const { data, error } = await sb.from('leave_requests').select('*, profiles(first_name, last_name)').order('filed_at', { ascending: false });
-  if (error) { toast('Failed to load leave requests', 'error'); return; }
-  let leaves = data || [];
-  const query = (document.getElementById('leaveSearch')?.value || '').trim().toLowerCase();
-  if (query) {
-    leaves = leaves.filter(l => {
-      const name = `${l.profiles?.first_name||''} ${l.profiles?.last_name||''}`.toLowerCase();
-      return name.includes(query) || (l.leave_type||'').toLowerCase().includes(query) || (l.reason||'').toLowerCase().includes(query) || (l.status||'').toLowerCase().includes(query);
+/* ── Form Selects ── */
+function popFormSelects(){
+  const ds=['fe-dept','fh-dept','fj-dept'];
+  ds.forEach(sid=>{
+    const s=document.getElementById(sid); if(!s) return;
+    s.innerHTML='<option value="">-- Select --</option>';
+    departments.filter(d=>!d.deleted).forEach(d=>{
+      const o=document.createElement('option');
+      o.value=d.id; o.textContent=d.name; s.appendChild(o);
     });
-  }
-  document.getElementById('lvPending').textContent  = leaves.filter(l => l.status === 'pending').length;
-  document.getElementById('lvApproved').textContent = leaves.filter(l => l.status === 'approved').length;
-  document.getElementById('lvRejected').textContent = leaves.filter(l => l.status === 'rejected').length;
-  const div = document.getElementById('leaveList');
-  if (!leaves.length) { div.innerHTML = '<div class="empty-msg">No leave requests found.</div>'; return; }
-  div.innerHTML = leaves.map(l => `
-    <div class="leave-item">
-      <div class="mini-avatar">${initials((l.profiles?.first_name||'')+' '+(l.profiles?.last_name||''))}</div>
-      <div class="leave-info">
-        <div class="leave-name">${l.profiles?.first_name||''} ${l.profiles?.last_name||''} — <span style="font-weight:400;color:var(--muted)">${l.leave_type}</span></div>
-        <div class="leave-detail">${l.start_date} – ${l.end_date} · ${l.num_days} day(s)${l.reason ? ' · "'+l.reason+'"' : ''}</div>
-      </div>
-      <div class="leave-actions" id="la-${l.id}">
-        ${l.status === 'pending'
-          ? `<button class="btn-approve" onclick="approveLeave('${l.id}')">✓ Approve</button><button class="btn-reject" onclick="rejectLeave('${l.id}')">✗ Reject</button>`
-          : badgeHtml(l.status)}
-      </div>
-    </div>`).join('');
-}
-async function approveLeave(id) {
-  const { error } = await sb.from('leave_requests').update({ status: 'approved' }).eq('id', id);
-  if (error) { toast('Failed to approve leave', 'error'); return; }
-  toast('Leave approved!', 'success');
-  const el = document.getElementById(`la-${id}`); if (el) el.innerHTML = badgeHtml('approved');
-  const el2 = document.getElementById(`dla-${id}`); if (el2) el2.innerHTML = badgeHtml('approved');
-  loadLeave(); loadDashboard();
-}
-async function rejectLeave(id) {
-  const { error } = await sb.from('leave_requests').update({ status: 'rejected' }).eq('id', id);
-  if (error) { toast('Failed to reject leave', 'error'); return; }
-  toast('Leave rejected.', 'success');
-  const el = document.getElementById(`la-${id}`); if (el) el.innerHTML = badgeHtml('rejected');
-  const el2 = document.getElementById(`dla-${id}`); if (el2) el2.innerHTML = badgeHtml('rejected');
-  loadLeave(); loadDashboard();
+  });
+  const js=['fe-job','fh-job'];
+  js.forEach(sid=>{
+    const s=document.getElementById(sid); if(!s) return;
+    s.innerHTML='<option value="">-- Select --</option>';
+    jobs.filter(j=>!j.deleted).forEach(j=>{
+      const o=document.createElement('option');
+      o.value=j.id; o.textContent=`${j.code} – ${j.desc}`; s.appendChild(o);
+    });
+  });
+  const s=document.getElementById('fh-emp'); if(!s) return;
+  s.innerHTML='<option value="">-- Select --</option>';
+  employees.filter(e=>!e.deleted&&!e.blocked).forEach(e=>{
+    const o=document.createElement('option');
+    o.value=e.id; o.textContent=`${e.empNo} – ${e.lastName}, ${e.firstName}`; s.appendChild(o);
+  });
 }
 
-async function loadPayroll() {
-  document.getElementById('payrollTable').innerHTML = '<tr><td colspan="6" class="empty-msg">Loading...</td></tr>';
-  const { data, error } = await sb.from('payroll').select('*, profiles(first_name, last_name, department)');
-  if (error) { toast('Failed to load payroll', 'error'); return; }
-  let payroll = data || [];
-  const query = (document.getElementById('payrollSearch')?.value || '').trim().toLowerCase();
-  const selectedDept = document.getElementById('payrollDeptFilter')?.value || 'all';
-  if (selectedDept !== 'all') payroll = payroll.filter(p => (p.profiles?.department || '').toLowerCase() === selectedDept.toLowerCase());
-  if (query) payroll = payroll.filter(p => `${p.profiles?.first_name||''} ${p.profiles?.last_name||''} ${p.profiles?.department||''} ${p.status||''}`.toLowerCase().includes(query));
-  const tbody = document.getElementById('payrollTable');
-  if (!payroll.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No payroll records found.</td></tr>'; return; }
-  tbody.innerHTML = payroll.map(p => `
+function openAddEmp(){
+  editId.emp=null;
+  document.getElementById('mo-emp-title').textContent='Add Employee';
+  ['fe-empno','fe-user','fe-ln','fe-fn','fe-email','fe-phone','fe-sal'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('fe-hire').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fe-sep').value='';
+  document.getElementById('fe-gender').value='';
+  popFormSelects(); om('mo-emp');
+}
+function openEditEmp(id){
+  const e=gE(id); if(!e) return;
+  editId.emp=id;
+  document.getElementById('mo-emp-title').textContent='Edit Employee';
+  document.getElementById('fe-empno').value = e.empNo;
+  document.getElementById('fe-user').value  = e.username;
+  document.getElementById('fe-ln').value    = e.lastName;
+  document.getElementById('fe-fn').value    = e.firstName;
+  document.getElementById('fe-gender').value= e.gender||'';
+  document.getElementById('fe-hire').value  = e.hireDate;
+  document.getElementById('fe-sep').value   = e.sepDate||'';
+  document.getElementById('fe-sal').value   = e.salary||'';
+  document.getElementById('fe-email').value = e.email||'';
+  document.getElementById('fe-phone').value = e.phone||'';
+  popFormSelects();
+  setTimeout(()=>{ document.getElementById('fe-dept').value=e.deptId; document.getElementById('fe-job').value=e.jobId; }, 10);
+  om('mo-emp');
+}
+function saveEmp(){
+  const empNo    = document.getElementById('fe-empno').value.trim();
+  const username = document.getElementById('fe-user').value.trim();
+  const lastName = document.getElementById('fe-ln').value.trim();
+  const firstName= document.getElementById('fe-fn').value.trim();
+  const gender   = document.getElementById('fe-gender').value;
+  const hireDate = document.getElementById('fe-hire').value;
+  const sepDate  = document.getElementById('fe-sep').value;
+  const salary   = +document.getElementById('fe-sal').value||0;
+  const deptId   = +document.getElementById('fe-dept').value;
+  const jobId    = +document.getElementById('fe-job').value;
+  const email    = document.getElementById('fe-email').value.trim();
+  const phone    = document.getElementById('fe-phone').value.trim();
+  if(!empNo||!lastName||!firstName||!deptId||!jobId){ alert('Fill required fields.'); return; }
+  const metaInfo = {by:CURRENT_USER, at:now(), action: editId.emp?'EDIT':'ADD', note: editId.emp?'Profile updated':'New employee added'};
+  if(editId.emp){
+    const e=gE(editId.emp);
+    const prev = JSON.stringify({empNo:e.empNo,lastName:e.lastName,firstName:e.firstName,salary:e.salary});
+    Object.assign(e, {empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta:metaInfo});
+    logAudit('EDIT','Employee',`${empNo} (${lastName}, ${firstName})`,'Profile updated');
+  } else {
+    employees.push({id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta:metaInfo});
+    logAudit('ADD','Employee',`${empNo} (${lastName}, ${firstName})`,'New employee added');
+  }
+  cm('mo-emp'); renderEmp(); renderStats();
+}
+
+/* ════════════════════════════════════
+   JOB HISTORY
+════════════════════════════════════ */
+function renderHist(){
+  const q   = document.getElementById('hist-q').value.toLowerCase();
+  const fe  = document.getElementById('hist-fe').value;
+  const all = document.getElementById('hist-show-all').checked;
+  const sel = document.getElementById('hist-fe'), cv=sel.value;
+  sel.innerHTML='<option value="">All Employees</option>';
+  employees.forEach(e=>{
+    const o=document.createElement('option');
+    o.value=e.id; o.textContent=`${e.empNo} – ${e.lastName}, ${e.firstName}`;
+    if(String(e.id)===cv) o.selected=true; sel.appendChild(o);
+  });
+  let data=jobHistory.filter(h=>{
+    if(!all&&h.deleted) return false;
+    if(fe&&String(h.empId)!==fe) return false;
+    return `${en(h.empId)} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)}`.toLowerCase().includes(q);
+  }).sort((a,b)=>b.effDate.localeCompare(a.effDate));
+  const tb=document.getElementById('hist-tbody');
+  if(!data.length){ tb.innerHTML=`<tr><td colspan="12" class="tbl-empty">No records.</td></tr>`; upBtns('hist'); return; }
+  tb.innerHTML=data.map(h=>`
+    <tr class="${h.deleted?'del-row':''}">
+      <td><input type="checkbox" class="chk-hist" value="${h.id}" onchange="upBtns('hist')"/></td>
+      <td>JH-${String(h.id).padStart(3,'0')}</td>
+      <td>${en(h.empId)}</td>
+      <td>${jc(h.jobId)}</td><td>${jd(h.jobId)}</td>
+      <td>${dc(h.deptId)}</td><td>${dn(h.deptId)}</td>
+      <td>${fmt(h.effDate)}</td><td>${fmtSal(h.salary)}</td>
+      <td><span class="badge ${h.deleted?'b-del':'b-active'}">${h.deleted?'Blocked':'Active'}</span></td>
+      <td class="ns">${metaTag(h.meta)}</td>
+      <td class="ns">
+        <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditHist(${h.id})">Edit</button>
+      </td>
+    </tr>`).join('');
+  upBtns('hist');
+}
+
+function openAddHist(){
+  editId.hist=null;
+  document.getElementById('mo-hist-title').textContent='Add Job History';
+  popFormSelects();
+  document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fh-sal').value='';
+  om('mo-hist');
+}
+function openEditHist(id){
+  const h=jobHistory.find(x=>x.id===id); if(!h) return;
+  editId.hist=id;
+  document.getElementById('mo-hist-title').textContent='Edit Job History';
+  popFormSelects();
+  setTimeout(()=>{ document.getElementById('fh-emp').value=h.empId; document.getElementById('fh-job').value=h.jobId; document.getElementById('fh-dept').value=h.deptId; },10);
+  document.getElementById('fh-eff').value=h.effDate;
+  document.getElementById('fh-sal').value=h.salary||'';
+  om('mo-hist');
+}
+function saveHist(){
+  const empId   = +document.getElementById('fh-emp').value;
+  const jobId   = +document.getElementById('fh-job').value;
+  const deptId  = +document.getElementById('fh-dept').value;
+  const effDate = document.getElementById('fh-eff').value;
+  const salary  = +document.getElementById('fh-sal').value||0;
+  if(!empId||!jobId||!deptId||!effDate){ alert('Fill required fields.'); return; }
+  const metaInfo={by:CURRENT_USER, at:now(), action: editId.hist?'EDIT':'ADD', note: editId.hist?'History updated':'New history entry'};
+  if(editId.hist){
+    Object.assign(jobHistory.find(x=>x.id===editId.hist),{empId,jobId,deptId,effDate,salary,meta:metaInfo});
+    logAudit('EDIT','JobHistory',`JH-${String(editId.hist).padStart(3,'0')}`,'History updated');
+  } else {
+    jobHistory.push({id:nH++,empId,jobId,deptId,effDate,salary,deleted:false,meta:metaInfo});
+    logAudit('ADD','JobHistory',`JH-${String(nH-1).padStart(3,'0')} (${en(empId)})`,'New entry added');
+  }
+  cm('mo-hist'); renderHist();
+}
+
+/* ════════════════════════════════════
+   DEPARTMENTS
+════════════════════════════════════ */
+function renderDepts(){
+  const ec=id=>employees.filter(e=>e.deptId===id&&!e.deleted&&!e.blocked).length;
+  const tb=document.getElementById('dept-tbody');
+  const data=departments.filter(d=>!d.deleted);
+  if(!data.length){ tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No departments.</td></tr>`; return; }
+  tb.innerHTML=data.map(d=>`
     <tr>
-      <td><div class="avatar-cell"><div class="mini-avatar">${initials((p.profiles?.first_name||'')+' '+(p.profiles?.last_name||''))}</div>
-        <div class="emp-name">${p.profiles?.first_name||''} ${p.profiles?.last_name||''}</div></div></td>
-      <td>${p.profiles?.department||'—'}</td>
-      <td>₱${Number(p.basic_pay||0).toLocaleString('en-PH')}</td>
-      <td>₱${Number((p.tax||0)+(p.late_deduction||0)+(p.absence_deduction||0)).toLocaleString('en-PH')}</td>
-      <td><strong>₱${Number(p.net_pay||0).toLocaleString('en-PH')}</strong></td>
-      <td>${badgeHtml(p.status||'pending')}</td>
+      <td><strong>${d.code}</strong></td>
+      <td>${d.name}</td>
+      <td style="max-width:200px;color:var(--muted)">${d.desc||'—'}</td>
+      <td>${ec(d.id)}</td>
+      <td class="ns">${metaTag(d.meta)}</td>
+      <td>
+        <button class="btn btn-white"  style="padding:3px 7px;font-size:10px" onclick="openEditDept(${d.id})">Edit</button>
+        <button class="btn btn-block"  style="padding:3px 7px;font-size:10px" onclick="blockDept(${d.id})">Block</button>
+      </td>
     </tr>`).join('');
 }
+function openAddDept(){
+  editId.dept=null;
+  document.getElementById('mo-dept-title').textContent='Add Department';
+  ['fd-code','fd-name','fd-desc'].forEach(f=>document.getElementById(f).value='');
+  om('mo-dept');
+}
+function openEditDept(id){
+  const d=gD(id); if(!d) return;
+  editId.dept=id;
+  document.getElementById('mo-dept-title').textContent='Edit Department';
+  document.getElementById('fd-code').value=d.code;
+  document.getElementById('fd-name').value=d.name;
+  document.getElementById('fd-desc').value=d.desc||'';
+  om('mo-dept');
+}
+function saveDept(){
+  const code=document.getElementById('fd-code').value.trim();
+  const name=document.getElementById('fd-name').value.trim();
+  const desc=document.getElementById('fd-desc').value.trim();
+  if(!code||!name){ alert('Code and name required.'); return; }
+  const metaInfo={by:CURRENT_USER, at:now(), action: editId.dept?'EDIT':'ADD', note: editId.dept?'Dept updated':'New dept added'};
+  if(editId.dept){
+    Object.assign(gD(editId.dept),{code,name,desc,meta:metaInfo});
+    logAudit('EDIT','Department',`${code} – ${name}`,'Department updated');
+  } else {
+    departments.push({id:nD++,code,name,desc,deleted:false,meta:metaInfo});
+    logAudit('ADD','Department',`${code} – ${name}`,'New department added');
+  }
+  cm('mo-dept'); renderDepts();
+}
+function blockDept(id){
+  const d=gD(id);
+  askConfirm('Block Department',`Block "${d.name}"? It will be hidden from regular users.`,()=>{
+    d.deleted=true;
+    d.meta={by:CURRENT_USER, at:now(), action:'BLOCK', note:'Blocked by admin'};
+    logAudit('BLOCK','Department',`${d.code} – ${d.name}`,'Blocked by admin');
+    renderDepts();
+  },'Block','btn-block');
+}
 
-function downloadCSV(data, columns, filename) {
-  if (!data || !data.length) { toast('No data to export', 'error'); return; }
-  const csv = [columns.join(','), ...data.map(row => columns.map(col => `"${(row[col]??'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  toast(`${filename}.csv downloaded!`, 'success');
+/* ════════════════════════════════════
+   JOB POSITIONS
+════════════════════════════════════ */
+function renderJobs(){
+  const ec=id=>employees.filter(e=>e.jobId===id&&!e.deleted&&!e.blocked).length;
+  const tb=document.getElementById('job-tbody');
+  const data=jobs.filter(j=>!j.deleted);
+  if(!data.length){ tb.innerHTML=`<tr><td colspan="7" class="tbl-empty">No jobs.</td></tr>`; return; }
+  tb.innerHTML=data.map(j=>`
+    <tr>
+      <td><strong>${j.code}</strong></td>
+      <td>${j.desc}</td>
+      <td>${dn(j.deptId)}</td>
+      <td>${ec(j.id)}</td>
+      <td><span class="badge b-active">Active</span></td>
+      <td class="ns">${metaTag(j.meta)}</td>
+      <td>
+        <button class="btn btn-white"  style="padding:3px 7px;font-size:10px" onclick="openEditJob(${j.id})">Edit</button>
+        <button class="btn btn-block"  style="padding:3px 7px;font-size:10px" onclick="blockJob(${j.id})">Block</button>
+      </td>
+    </tr>`).join('');
 }
-async function exportReport(type) {
-  const card = document.getElementById(`rc-${type}`);
-  if (card) { card.classList.add('loading'); card.querySelector('.report-export').textContent = 'Generating...'; }
-  try {
-    if (type === 'employee') {
-      const { data } = await sb.from('profiles').select('first_name,last_name,gender,department,position,status,date_hired,separation_date').order('first_name');
-      downloadCSV(data, ['first_name','last_name','gender','department','position','status','date_hired','separation_date'], 'employee_report');
-    } else if (type === 'attendance') {
-      const { data } = await sb.from('attendance').select('*, profiles(first_name,last_name,department)').order('date', { ascending: false });
-      downloadCSV((data||[]).map(a => ({first_name:a.profiles?.first_name||'',last_name:a.profiles?.last_name||'',department:a.profiles?.department||'',date:a.date,time_in:a.time_in||'',time_out:a.time_out||'',total_hours:a.total_hours||'',status:a.status})), ['first_name','last_name','department','date','time_in','time_out','total_hours','status'], 'attendance_report');
-    } else if (type === 'leave') {
-      const { data } = await sb.from('leave_requests').select('*, profiles(first_name,last_name)').order('filed_at', { ascending: false });
-      downloadCSV((data||[]).map(l => ({first_name:l.profiles?.first_name||'',last_name:l.profiles?.last_name||'',leave_type:l.leave_type,num_days:l.num_days,start_date:l.start_date,end_date:l.end_date,reason:l.reason||'',status:l.status,filed_at:l.filed_at?l.filed_at.split('T')[0]:''})), ['first_name','last_name','leave_type','num_days','start_date','end_date','reason','status','filed_at'], 'leave_report');
-    } else if (type === 'payroll') {
-      const { data } = await sb.from('payroll').select('*, profiles(first_name,last_name,department)');
-      downloadCSV((data||[]).map(p => ({first_name:p.profiles?.first_name||'',last_name:p.profiles?.last_name||'',department:p.profiles?.department||'',pay_period_start:p.pay_period_start,pay_period_end:p.pay_period_end,basic_pay:p.basic_pay,overtime:p.overtime||0,bonus:p.bonus||0,tax:p.tax||0,late_deduction:p.late_deduction||0,absence_deduction:p.absence_deduction||0,net_pay:p.net_pay,status:p.status})), ['first_name','last_name','department','pay_period_start','pay_period_end','basic_pay','overtime','bonus','tax','late_deduction','absence_deduction','net_pay','status'], 'payroll_summary');
-    } else if (type === 'department') {
-      const { data } = await sb.from('profiles').select('department,status');
-      const counts = {};
-      (data||[]).forEach(p => { const d = p.department||'Unknown'; if (!counts[d]) counts[d]={department:d,total:0,active:0,inactive:0}; counts[d].total++; if (p.status==='active') counts[d].active++; else counts[d].inactive++; });
-      downloadCSV(Object.values(counts), ['department','total','active','inactive'], 'department_report');
-    } else if (type === 'compliance') {
-      const { data } = await sb.from('profiles').select('first_name,last_name,department,position,status,date_hired,separation_date,gender,birthdate').order('first_name');
-      downloadCSV(data, ['first_name','last_name','gender','birthdate','department','position','status','date_hired','separation_date'], 'compliance_report');
-    }
-  } catch(e) { toast('Export failed', 'error'); }
-  finally { if (card) { card.classList.remove('loading'); card.querySelector('.report-export').textContent = '↓ Export CSV'; } }
+function openAddJob(){
+  editId.job=null;
+  document.getElementById('mo-job-title').textContent='Add Job Position';
+  ['fj-code','fj-desc'].forEach(f=>document.getElementById(f).value='');
+  popFormSelects(); om('mo-job');
+}
+function openEditJob(id){
+  const j=gJ(id); if(!j) return;
+  editId.job=id;
+  document.getElementById('mo-job-title').textContent='Edit Job Position';
+  document.getElementById('fj-code').value=j.code;
+  document.getElementById('fj-desc').value=j.desc;
+  popFormSelects();
+  setTimeout(()=>{ document.getElementById('fj-dept').value=j.deptId; },10);
+  om('mo-job');
+}
+function saveJob(){
+  const code=document.getElementById('fj-code').value.trim();
+  const desc=document.getElementById('fj-desc').value.trim();
+  const deptId=+document.getElementById('fj-dept').value;
+  if(!code||!desc||!deptId){ alert('All fields required.'); return; }
+  const metaInfo={by:CURRENT_USER, at:now(), action: editId.job?'EDIT':'ADD', note: editId.job?'Job updated':'New job added'};
+  if(editId.job){
+    Object.assign(gJ(editId.job),{code,desc,deptId,meta:metaInfo});
+    logAudit('EDIT','Job',`${code} – ${desc}`,'Job position updated');
+  } else {
+    jobs.push({id:nJ++,code,desc,deptId,deleted:false,meta:metaInfo});
+    logAudit('ADD','Job',`${code} – ${desc}`,'New job position added');
+  }
+  cm('mo-job'); renderJobs();
+}
+function blockJob(id){
+  const j=gJ(id);
+  askConfirm('Block Job Position',`Block "${j.desc}"? It will be hidden from regular users.`,()=>{
+    j.deleted=true;
+    j.meta={by:CURRENT_USER, at:now(), action:'BLOCK', note:'Blocked by admin'};
+    logAudit('BLOCK','Job',`${j.code} – ${j.desc}`,'Blocked by admin');
+    renderJobs();
+  },'Block','btn-block');
 }
 
-async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { window.location.href = 'index.html'; return; }
-  await loadDashboard();
+/* ════════════════════════════════════
+   HIDDEN RECORDS
+════════════════════════════════════ */
+function switchDelTab(btn, panel){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panel).classList.add('active');
+  if(panel==='del-emp')   renderHidEmp();
+  if(panel==='del-hist')  renderHidHist();
+  if(panel==='del-jobs')  renderHidJobs();
+  if(panel==='del-depts') renderHidDepts();
 }
-async function logout() { await sb.auth.signOut(); window.location.href = 'index.html#login'; }
-init();
+function renderDeleted(){ renderHidEmp(); }
+
+function renderHidEmp(){
+  const data=employees.filter(e=>e.deleted||e.blocked);
+  const tb=document.getElementById('del-emp-tbody');
+  if(!data.length){ tb.innerHTML=`<tr><td colspan="9" class="tbl-empty">No hidden employees.</td></tr>`; return; }
+  tb.innerHTML=data.map(e=>`
+    <tr class="${e.deleted?'del-row':'blk-row'}">
+      <td class="ns">${e.empNo}</td>
+      <td class="ns"><strong>${e.lastName}</strong></td>
+      <td class="ns">${e.firstName}</td>
+      <td class="ns">${dn(e.deptId)}</td>
+      <td class="ns">${jd(e.jobId)}</td>
+      <td class="ns"><span class="badge ${e.deleted?'b-del':'b-blk'}">${e.deleted?'Inactive':'Blocked'}</span></td>
+      <td class="ns" style="font-size:10px">${e.meta?e.meta.by:'—'}</td>
+      <td class="ns" style="font-size:10px">${e.meta?e.meta.at:'—'}</td>
+      <td class="ns">
+        <button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverEmp(${e.id})">Recover</button>
+      </td>
+    </tr>`).join('');
+}
+function recoverEmp(id){
+  askConfirm('Recover Employee','Restore this employee to active status?',()=>{
+    const e=gE(id);
+    e.deleted=false; e.blocked=false;
+    e.meta={by:CURRENT_USER, at:now(), action:'RESTORE', note:'Recovered by admin'};
+    logAudit('RESTORE','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Recovered from hidden records');
+    renderHidEmp(); renderStats();
+  },'Recover','btn-success');
+}
+
+function renderHidHist(){
+  const data=jobHistory.filter(h=>h.deleted);
+  const tb=document.getElementById('del-hist-tbody');
+  if(!data.length){ tb.innerHTML=`<tr><td colspan="8" class="tbl-empty">No hidden history.</td></tr>`; return; }
+  tb.innerHTML=data.map(h=>`
+    <tr class="del-row">
+      <td class="ns">JH-${String(h.id).padStart(3,'0')}</td>
+      <td class="ns">${en(h.empId)}</td>
+      <td class="ns">${jc(h.jobId)}</td>
+      <td class="ns">${dc(h.deptId)}</td>
+      <td class="ns">${fmt(h.effDate)}</td>
+      <td class="ns"><span class="badge b-blk">Blocked</span></td>
+      <td class="ns" style="font-size:10px">${h.meta?h.meta.by:'—'}</td>
+      <td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverHist(${h.id})">Recover</button></td>
+    </tr>`).join('');
+}
+function recoverHist(id){
+  askConfirm('Recover History','Restore this history entry?',()=>{
+    const h=jobHistory.find(x=>x.id===id);
+    h.deleted=false;
+    h.meta={by:CURRENT_USER, at:now(), action:'RESTORE', note:'Recovered by admin'};
+    logAudit('RESTORE','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Recovered from hidden records');
+    renderHidHist();
+  },'Recover','btn-success');
+}
+
+function renderHidJobs(){
+  const data=jobs.filter(j=>j.deleted);
+  const tb=document.getElementById('del-jobs-tbody');
+  if(!data.length){ tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No hidden jobs.</td></tr>`; return; }
+  tb.innerHTML=data.map(j=>`
+    <tr class="del-row">
+      <td class="ns">${j.code}</td><td class="ns">${j.desc}</td><td class="ns">${dn(j.deptId)}</td>
+      <td class="ns"><span class="badge b-blk">Blocked</span></td>
+      <td class="ns" style="font-size:10px">${j.meta?j.meta.by:'—'}</td>
+      <td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverJob(${j.id})">Recover</button></td>
+    </tr>`).join('');
+}
+function recoverJob(id){
+  askConfirm('Recover Job','Restore this job position?',()=>{
+    const j=gJ(id); j.deleted=false;
+    j.meta={by:CURRENT_USER, at:now(), action:'RESTORE', note:'Recovered by admin'};
+    logAudit('RESTORE','Job',`${j.code} – ${j.desc}`,'Recovered');
+    renderHidJobs();
+  },'Recover','btn-success');
+}
+
+function renderHidDepts(){
+  const data=departments.filter(d=>d.deleted);
+  const tb=document.getElementById('del-depts-tbody');
+  if(!data.length){ tb.innerHTML=`<tr><td colspan="5" class="tbl-empty">No hidden departments.</td></tr>`; return; }
+  tb.innerHTML=data.map(d=>`
+    <tr class="del-row">
+      <td class="ns">${d.code}</td><td class="ns">${d.name}</td>
+      <td class="ns"><span class="badge b-blk">Blocked</span></td>
+      <td class="ns" style="font-size:10px">${d.meta?d.meta.by:'—'}</td>
+      <td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverDept(${d.id})">Recover</button></td>
+    </tr>`).join('');
+}
+function recoverDept(id){
+  askConfirm('Recover Department','Restore this department?',()=>{
+    const d=gD(id); d.deleted=false;
+    d.meta={by:CURRENT_USER, at:now(), action:'RESTORE', note:'Recovered by admin'};
+    logAudit('RESTORE','Department',`${d.code} – ${d.name}`,'Recovered');
+    renderHidDepts();
+  },'Recover','btn-success');
+}
+
+/* ════════════════════════════════════
+   AUDIT LOG
+════════════════════════════════════ */
+const actionDot={ADD:'dot-add',EDIT:'dot-edit',BLOCK:'dot-block',RESTORE:'dot-restore',VIEW:'dot-add'};
+const actionColor={ADD:'#1E3A5F',EDIT:'#1a73e8',BLOCK:'#92400e',RESTORE:'#27ae60',VIEW:'#6b7280'};
+
+function renderAudit(){
+  const q  = document.getElementById('audit-q').value.toLowerCase();
+  const fu = document.getElementById('audit-fu').value;
+  const fa = document.getElementById('audit-fa').value;
+
+  // populate user filter
+  const uSel=document.getElementById('audit-fu'), uv=uSel.value;
+  const users=[...new Set(auditLog.map(a=>a.user))];
+  uSel.innerHTML='<option value="">All Users</option>';
+  users.forEach(u=>{ const o=document.createElement('option'); o.value=u; o.textContent=u; if(u===uv)o.selected=true; uSel.appendChild(o); });
+
+  let data=auditLog.filter(a=>{
+    if(fu&&a.user!==fu) return false;
+    if(fa&&a.action!==fa) return false;
+    return `${a.user} ${a.action} ${a.entity} ${a.record} ${a.note}`.toLowerCase().includes(q);
+  });
+
+  const list=document.getElementById('audit-list');
+  if(!data.length){ list.innerHTML=`<div class="tbl-empty">No audit entries found.</div>`; return; }
+
+  list.innerHTML = data.map(a=>`
+    <div class="audit-entry">
+      <span class="audit-dot ${actionDot[a.action]||'dot-add'}"></span>
+      <span class="audit-time">${a.timestamp}</span>
+      <span class="audit-who">${a.user}</span>
+      <span class="audit-action">
+        <span style="font-weight:bold;color:${actionColor[a.action]||'#333'}">[${a.action}]</span>
+        <span style="color:var(--muted)">${a.entity}</span> ·
+        <strong>${a.record}</strong>
+        ${a.note?`<span style="color:var(--muted);margin-left:6px">— ${a.note}</span>`:''}
+      </span>
+    </div>`).join('');
+}
+
+/* ── Per-employee audit ── */
+function viewEmpAudit(id){
+  const e=gE(id); if(!e) return;
+  logAudit('VIEW','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Audit log viewed by admin');
+  const logs=auditLog.filter(a=>a.record.includes(e.empNo)||a.record.includes(`${e.lastName}, ${e.firstName}`));
+  document.getElementById('mo-ad-title').textContent=`Change History: ${e.lastName}, ${e.firstName}`;
+  document.getElementById('mo-ad-body').innerHTML = logs.length
+    ? `<div class="tw">${logs.map(a=>`
+        <div class="audit-entry">
+          <span class="audit-dot ${actionDot[a.action]||'dot-add'}"></span>
+          <span class="audit-time">${a.timestamp}</span>
+          <span class="audit-who">${a.user}</span>
+          <span class="audit-action">
+            <span style="font-weight:bold;color:${actionColor[a.action]||'#333'}">[${a.action}]</span>
+            ${a.note||'—'}
+          </span>
+        </div>`).join('')}</div>`
+    : `<p style="color:var(--muted);font-size:12px;padding:8px">No change history for this employee.</p>`;
+  om('mo-audit-detail');
+}
+
+/* ════════════════════════════════════
+   PROFILE VIEW
+════════════════════════════════════ */
+function viewProf(id){
+  const e=gE(id); if(!e) return;
+  logAudit('VIEW','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Profile viewed');
+
+  const hist=jobHistory.filter(h=>h.empId===id).sort((a,b)=>b.effDate.localeCompare(a.effDate));
+  const rows=hist.length?hist.map(h=>`
+    <tr>
+      <td>${jc(h.jobId)}</td><td>${jd(h.jobId)}</td>
+      <td>${dc(h.deptId)}</td><td>${dn(h.deptId)}</td>
+      <td>${fmt(h.effDate)}</td><td>${fmtSal(h.salary)}</td>
+      <td><span class="badge ${h.deleted?'b-del':'b-active'}">${h.deleted?'Blocked':'Active'}</span></td>
+      <td>
+        <button class="btn btn-white"  style="padding:2px 6px;font-size:10px" onclick="openEditHist(${h.id})">Edit</button>
+        <button class="btn btn-block"  style="padding:2px 6px;font-size:10px" onclick="blockHistRow(${h.id},${id})">Block</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="8" class="tbl-empty">No history.</td></tr>`;
+
+  const statusBadge = e.deleted
+    ? '<span class="badge b-del" style="font-size:11px">Inactive</span>'
+    : e.blocked
+      ? '<span class="badge b-blk" style="font-size:11px">Blocked</span>'
+      : '<span class="badge b-active" style="font-size:11px">Active</span>';
+
+  document.getElementById('profile-content').innerHTML=`
+    <div class="pp">
+      <div class="pp-head">
+        <div class="ava">${ini(e)}</div>
+        <div class="pp-info">
+          <div class="pname">${e.lastName}, ${e.firstName}</div>
+          <div class="prole">${jd(e.jobId)} · ${dn(e.deptId)}</div>
+          <div class="pid">${e.empNo}</div>
+        </div>
+        <div style="margin-left:auto">${statusBadge}</div>
+      </div>
+      <div class="pp-body">
+        <div class="pst">Personal Information</div>
+        <div class="pg">
+          <div class="pf"><label>Emp No</label><div class="v">${e.empNo}</div></div>
+          <div class="pf"><label>Username</label><div class="v">${e.username||'—'}</div></div>
+          <div class="pf"><label>Last Name</label><div class="v">${e.lastName}</div></div>
+          <div class="pf"><label>First Name</label><div class="v">${e.firstName}</div></div>
+          <div class="pf"><label>Gender</label><div class="v">${e.gender||'—'}</div></div>
+          <div class="pf"><label>Hire Date</label><div class="v">${fmt(e.hireDate)}</div></div>
+          <div class="pf"><label>Sep Date</label><div class="v">${e.sepDate?fmt(e.sepDate):'—'}</div></div>
+          <div class="pf"><label>Salary</label><div class="v">${fmtSal(e.salary)}</div></div>
+          <div class="pf"><label>Email</label><div class="v">${e.email||'—'}</div></div>
+          <div class="pf"><label>Phone</label><div class="v">${e.phone||'—'}</div></div>
+        </div>
+
+        ${e.meta?`
+        <div class="audit-strip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-right:4px;vertical-align:middle"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Last modified by <strong>${e.meta.by}</strong> on <strong>${e.meta.at}</strong>
+          — <em>${e.meta.note||''}</em>
+        </div>`:''}
+
+        <div class="pst">Current Assignment</div>
+        <div class="pg" style="margin-bottom:18px">
+          <div class="pf"><label>Dept Code</label><div class="v">${dc(e.deptId)}</div></div>
+          <div class="pf"><label>Department</label><div class="v">${dn(e.deptId)}</div></div>
+          <div class="pf"><label>Job Code</label><div class="v">${jc(e.jobId)}</div></div>
+          <div class="pf"><label>Job Description</label><div class="v">${jd(e.jobId)}</div></div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="pst" style="margin-bottom:0">Job History</div>
+          <button class="btn btn-primary" style="font-size:10px;padding:4px 9px" onclick="openAddHistFor(${id})">+ Add Entry</button>
+        </div>
+        <div class="tw">
+          <table class="ht">
+            <thead><tr><th>Job Code</th><th>Job Desc</th><th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="openEditEmp(${e.id})">Edit Profile</button>
+          <button class="btn btn-audit"   onclick="viewEmpAudit(${e.id})">View Audit Log</button>
+          ${(e.deleted||e.blocked)
+            ? `<button class="btn btn-restore" onclick="recoverProfEmp(${e.id})">Restore Employee</button>`
+            : `<button class="btn btn-block"   onclick="blockProfEmp(${e.id})">Block Employee</button>`}
+        </div>
+      </div>
+    </div>`;
+
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-profile').classList.add('active');
+  document.getElementById('topbar-title').textContent='Employee Profile';
+}
+
+function openAddHistFor(empId){
+  editId.hist=null;
+  document.getElementById('mo-hist-title').textContent='Add Job History';
+  popFormSelects();
+  setTimeout(()=>{ document.getElementById('fh-emp').value=empId; },10);
+  document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fh-sal').value='';
+  window._profileEmpId=empId;
+  om('mo-hist');
+}
+function blockHistRow(hid, empId){
+  askConfirm('Block History Entry','Block this history record from user view?',()=>{
+    const h=jobHistory.find(x=>x.id===hid);
+    h.deleted=true;
+    h.meta={by:CURRENT_USER, at:now(), action:'BLOCK', note:'Blocked via profile view'};
+    logAudit('BLOCK','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Blocked via profile');
+    viewProf(empId);
+  },'Block','btn-block');
+}
+function blockProfEmp(id){
+  askConfirm('Block Employee','Block this employee? They will be hidden from regular users.',()=>{
+    const e=gE(id);
+    e.blocked=true;
+    e.meta={by:CURRENT_USER, at:now(), action:'BLOCK', note:'Blocked via profile'};
+    logAudit('BLOCK','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Blocked via profile view');
+    viewProf(id); renderStats();
+  },'Block','btn-block');
+}
+function recoverProfEmp(id){
+  askConfirm('Restore Employee','Restore this employee to active?',()=>{
+    const e=gE(id);
+    e.deleted=false; e.blocked=false;
+    e.meta={by:CURRENT_USER, at:now(), action:'RESTORE', note:'Restored via profile'};
+    logAudit('RESTORE','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Restored via profile view');
+    viewProf(id); renderStats();
+  },'Restore','btn-success');
+}
+
+/* ════════════════════════════════════
+   LOGOUT
+════════════════════════════════════ */
+function doLogout(){
+  askConfirm('Log Out','Are you sure you want to log out?',()=>{
+    alert('Logged out. (Demo mode – page will reload)');
+    location.reload();
+  },'Log Out','btn-danger');
+}
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+renderEmp();
+renderStats();
 </script>
 </body>
 </html>
