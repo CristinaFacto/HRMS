@@ -646,6 +646,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
  // ── Supabase init ──────────────────────────────────────────────
@@ -653,85 +654,207 @@ tbody td{padding:8px 12px;vertical-align:middle}
   const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-  
-  
+
+  // Sign in anonymously to access data
+  sb.auth.signInAnonymously().then(() => {
+    console.log('✅ Signed in anonymously to Supabase');
+  }).catch(err => {
+    console.warn('Anonymous sign-in not available, using public access:', err.message);
+  });
+
+
 /* ════════════════════════════════════
    DATA STORE
 ════════════════════════════════════ */
 const CURRENT_USER = 'admin1';
 
-let departments = [
-  {id:1,code:'IT', name:'Information Technology',desc:'Tech infrastructure.',deleted:false,meta:null},
-  {id:2,code:'HR', name:'Human Resources',       desc:'Employee relations.',deleted:false,meta:null},
-  {id:3,code:'FIN',name:'Finance',               desc:'Financial management.',deleted:false,meta:null},
-  {id:4,code:'OPS',name:'Operations',            desc:'Day-to-day operations.',deleted:false,meta:null},
-];
-let jobs = [
-  {id:1,code:'DEV', desc:'Software Developer',   deptId:1,deleted:false,meta:null},
-  {id:2,code:'SA',  desc:'System Administrator', deptId:1,deleted:false,meta:null},
-  {id:3,code:'HRO', desc:'HR Officer',           deptId:2,deleted:false,meta:null},
-  {id:4,code:'RECR',desc:'Recruiter',            deptId:2,deleted:false,meta:null},
-  {id:5,code:'ACCT',desc:'Accountant',           deptId:3,deleted:false,meta:null},
-  {id:6,code:'OPMG',desc:'Operations Manager',   deptId:4,deleted:false,meta:null},
-];
-let employees = [
-  {id:1,empNo:'EMP-001',username:'admin1',    lastName:'One',   firstName:'Admin',    gender:'Male',  hireDate:'2020-01-15',sepDate:'',  salary:75000,deptId:2,jobId:3,email:'admin1@co.com',  phone:'+63 912 000 0001',deleted:false,blocked:false,meta:null},
-  {id:2,empNo:'EMP-002',username:'employee1', lastName:'One',   firstName:'Employee', gender:'Female',hireDate:'2021-03-01',sepDate:'',  salary:55000,deptId:1,jobId:1,email:'emp1@co.com',    phone:'+63 912 000 0002',deleted:false,blocked:false,meta:null},
-  {id:3,empNo:'EMP-003',username:'employee2', lastName:'Two',   firstName:'Employee', gender:'Male',  hireDate:'2021-06-15',sepDate:'',  salary:52000,deptId:1,jobId:2,email:'emp2@co.com',    phone:'+63 912 000 0003',deleted:false,blocked:false,meta:null},
-  {id:4,empNo:'EMP-004',username:'employee3', lastName:'Three', firstName:'Employee', gender:'Female',hireDate:'2022-02-10',sepDate:'',  salary:60000,deptId:3,jobId:5,email:'emp3@co.com',    phone:'+63 912 000 0004',deleted:false,blocked:false,meta:null},
-  {id:5,empNo:'EMP-005',username:'employee4', lastName:'Four',  firstName:'Employee', gender:'Male',  hireDate:'2022-08-20',sepDate:'',  salary:65000,deptId:4,jobId:6,email:'emp4@co.com',    phone:'+63 912 000 0005',deleted:false,blocked:false,meta:null},
-  {id:6,empNo:'EMP-006',username:'employee5', lastName:'Five',  firstName:'Employee', gender:'Female',hireDate:'2023-01-05',sepDate:'2024-12-31',salary:48000,deptId:2,jobId:4,email:'emp5@co.com',phone:'+63 912 000 0006',deleted:true,blocked:false,meta:{by:'superadmin1',at:'2024-12-31 08:00',action:'BLOCK',note:'Separated'}},
-];
-let jobHistory = [
-  {id:1,empId:1,jobId:3,deptId:2,effDate:'2020-01-15',salary:75000,deleted:false,meta:null},
-  {id:2,empId:2,jobId:1,deptId:1,effDate:'2021-03-01',salary:55000,deleted:false,meta:null},
-  {id:3,empId:3,jobId:2,deptId:1,effDate:'2021-06-15',salary:52000,deleted:false,meta:null},
-  {id:4,empId:4,jobId:5,deptId:3,effDate:'2022-02-10',salary:60000,deleted:false,meta:null},
-  {id:5,empId:5,jobId:6,deptId:4,effDate:'2022-08-20',salary:65000,deleted:false,meta:null},
-  {id:6,empId:6,jobId:4,deptId:2,effDate:'2023-01-05',salary:48000,deleted:true, meta:{by:'admin1',at:'2025-01-02 09:15',action:'BLOCK',note:'Employee separated'}},
-  {id:7,empId:2,jobId:2,deptId:1,effDate:'2020-05-01',salary:50000,deleted:false,meta:null},
-];
-
-/* ── System users (approved, active accounts) ── */
-let sysUsers = [
-  {id:1,username:'admin1',    firstName:'Admin',    lastName:'One',   role:'admin',empId:1, registeredAt:'2020-01-10',approvedBy:'superadmin1',deleted:false},
-  {id:2,username:'employee1', firstName:'Employee', lastName:'One',   role:'user', empId:2, registeredAt:'2021-03-01',approvedBy:'admin1',     deleted:false},
-  {id:3,username:'employee2', firstName:'Employee', lastName:'Two',   role:'user', empId:3, registeredAt:'2021-06-15',approvedBy:'admin1',     deleted:false},
-  {id:4,username:'employee3', firstName:'Employee', lastName:'Three', role:'user', empId:4, registeredAt:'2022-02-10',approvedBy:'admin1',     deleted:false},
-  {id:5,username:'employee4', firstName:'Employee', lastName:'Four',  role:'user', empId:5, registeredAt:'2022-08-20',approvedBy:'admin1',     deleted:false},
-];
-
-/* ── Registration requests (pending, approved, rejected) ── */
-let registrations = [
-  {id:1, username:'newuser1',  firstName:'New',      lastName:'User',    requestedRole:'user', empId:3, empNo:'EMP-003', email:'newuser1@co.com',  submittedAt:'2025-05-01 09:00', status:'pending',  reviewedBy:null, reviewedAt:null, note:''},
-  {id:2, username:'newuser2',  firstName:'Another',  lastName:'User',    requestedRole:'user', empId:4, empNo:'EMP-004', email:'newuser2@co.com',  submittedAt:'2025-05-02 10:15', status:'pending',  reviewedBy:null, reviewedAt:null, note:''},
-  {id:3, username:'hradmin2',  firstName:'HR',       lastName:'Admin',   requestedRole:'admin',empId:1, empNo:'EMP-001', email:'hradmin2@co.com',  submittedAt:'2025-05-03 08:30', status:'pending',  reviewedBy:null, reviewedAt:null, note:''},
-  {id:4, username:'olduser1',  firstName:'Old',      lastName:'User',    requestedRole:'user', empId:2, empNo:'EMP-002', email:'olduser1@co.com',  submittedAt:'2025-04-10 14:00', status:'approved', reviewedBy:'admin1', reviewedAt:'2025-04-11 09:00', note:''},
-  {id:5, username:'badactor1', firstName:'Bad',      lastName:'Actor',   requestedRole:'admin',empId:null,empNo:'',     email:'bad@external.com', submittedAt:'2025-04-15 11:00', status:'rejected', reviewedBy:'admin1', reviewedAt:'2025-04-15 14:30', note:'No matching employee record.'},
-];
-
+let departments = [];
+let jobs = [];
+let employees = [];
+let jobHistory = [];
+let sysUsers = [];
+let registrations = [];
+let auditLog = [];
 let nextRegId = 6;
 let pendingRejectId = null;
-let auditLog = [
-  {id:1, timestamp:'2025-01-02 09:15',user:'admin1',action:'BLOCK',  entity:'Employee',  record:'EMP-006 (Employee Five)',          note:'Employee separated from company.'},
-  {id:2, timestamp:'2025-01-02 09:16',user:'admin1',action:'BLOCK',  entity:'JobHistory',record:'JH-006',                           note:'History blocked with employee.'},
-  {id:3, timestamp:'2025-01-10 14:30',user:'admin1',action:'EDIT',   entity:'Employee',  record:'EMP-002 (Employee One)',           note:'Updated salary to ₱55,000.'},
-  {id:4, timestamp:'2025-02-01 10:00',user:'admin1',action:'ADD',    entity:'Employee',  record:'EMP-005 (Employee Four)',          note:'New employee added.'},
-  {id:5, timestamp:'2025-02-14 11:22',user:'user1', action:'VIEW',   entity:'Employee',  record:'EMP-003 (Employee Two)',           note:'Profile viewed.'},
-  {id:6, timestamp:'2025-03-05 08:45',user:'admin1',action:'EDIT',   entity:'Department',record:'IT – Information Technology',      note:'Updated description.'},
-  {id:7, timestamp:'2025-03-15 15:10',user:'admin1',action:'ADD',    entity:'JobHistory',record:'JH-007 (Employee One)',            note:'New job history entry added.'},
-  {id:8, timestamp:'2025-04-20 09:00',user:'user1', action:'VIEW',   entity:'Employee',  record:'EMP-001 (Admin One)',              note:'Profile viewed.'},
-  {id:9, timestamp:'2025-04-22 13:00',user:'admin1',action:'RESTORE',entity:'Employee',  record:'EMP-006 (Employee Five)',          note:'Restored at HR request.'},
-  {id:10,timestamp:'2025-05-01 08:30',user:'admin1',action:'EDIT',   entity:'Employee',  record:'EMP-004 (Employee Three)',         note:'Updated phone number.'},
-];
 let nextAuditId = 11;
-let nE=7,nD=5,nJ=7,nH=8;
-let editId={emp:null,dept:null,job:null,hist:null};
-let pendingFn=null;
+let nE = 1, nH = 1, nD = 1, nJ = 1, nU = 1;
+let editId = { emp: null, hist: null, dept: null, job: null, user: null };
+let pendingFn = null;
+
+async function loadAllData() {
+  console.log("Loading data from Supabase...");
+  console.log("Supabase URL:", SUPABASE_URL);
+
+  try {
+    const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
+      sb.from('employee').select('*'),
+      sb.from('department').select('*'),
+      sb.from('job').select('*'),
+      sb.from('jobhistory').select('*'),
+      sb.from('profiles').select('*'),
+    ]);
+
+    console.log("EMP Response:", empRes);
+    console.log("DEPT Response:", deptRes);
+    console.log("JOBS Response:", jobRes);
+    console.log("HIST Response:", histRes);
+    console.log("USERS Response:", userRes);
+
+    // Debug: Show first record from each table
+    if (empRes.data && empRes.data.length > 0) {
+      console.log("🔍 First employee record:", empRes.data[0]);
+    }
+    if (deptRes.data && deptRes.data.length > 0) {
+      console.log("🔍 First department record:", deptRes.data[0]);
+    }
+    if (jobRes.data && jobRes.data.length > 0) {
+      console.log("🔍 First job record:", jobRes.data[0]);
+    }
+    if (histRes.data && histRes.data.length > 0) {
+      console.log("🔍 First job history record:", histRes.data[0]);
+    }
+
+    if (empRes.error) {
+      console.error("❌ EMP ERROR:", empRes.error);
+      alert("Error loading employees: " + empRes.error.message);
+    }
+    if (deptRes.error) {
+      console.error("❌ DEPT ERROR:", deptRes.error);
+      alert("Error loading departments: " + deptRes.error.message);
+    }
+    if (jobRes.error) {
+      console.error("❌ JOB ERROR:", jobRes.error);
+      alert("Error loading jobs: " + jobRes.error.message);
+    }
+    if (histRes.error) {
+      console.error("❌ HIST ERROR:", histRes.error);
+      alert("Error loading job history: " + histRes.error.message);
+    }
+    if (userRes.error) {
+      console.error("❌ USER ERROR:", userRes.error);
+      alert("Error loading users: " + userRes.error.message);
+    }
+
+    // Map departments - handle both field name variations
+    departments = (deptRes.data || []).map((d, idx) => {
+      console.log(`🔍 Mapping department ${idx}:`, d);
+      const mapped = {
+        id: idx + 1,
+        code: d.deptcode || d.deptCode || d.code || d.dept_code || '',
+        name: d.deptname || d.deptName || d.name || d.dept_name || '',
+        desc: d.description || d.desc || '',
+        deleted: d.deleted || false
+      };
+      console.log(`✅ Mapped department:`, mapped);
+      return mapped;
+    });
+
+    console.log("✅ Departments loaded:", departments.length, departments);
+
+    // Map jobs
+    jobs = (jobRes.data || []).map((j, idx) => ({
+      id: idx + 1,
+      code: j.jobcode || j.jobCode || j.code || j.job_code || '',
+      desc: j.jobdesc || j.jobDesc || j.description || j.desc || j.job_desc || '',
+      deptId: j.deptid || j.deptId || j.dept_id || 1,
+      deleted: j.deleted || false
+    }));
+
+    console.log("✅ Jobs loaded:", jobs.length, jobs);
+
+    // Map job history first to find current job/dept/salary for each employee
+    jobHistory = (histRes.data || []).map((h, idx) => {
+      const jobCode = h.jobcode || h.jobCode || h.job_code || '';
+      const deptCode = h.deptcode || h.deptCode || h.dept_code || '';
+
+      console.log(`Mapping job history ${idx}:`, { jobCode, deptCode, h });
+
+      const jobMatch = jobs.find(j => j.code === jobCode);
+      const deptMatch = departments.find(d => d.code === deptCode);
+
+      console.log(`Job match for ${jobCode}:`, jobMatch);
+      console.log(`Dept match for ${deptCode}:`, deptMatch);
+
+      return {
+        id: idx + 1,
+        empId: h.empno || h.empNo || h.emp_id || '',
+        jobId: jobMatch?.id || 1,
+        deptId: deptMatch?.id || 1,
+        effDate: h.effdate || h.effDate || h.eff_date || '',
+        salary: h.salary || 0,
+        deleted: h.deleted || false
+      };
+    });
+
+    console.log("✅ Job History loaded:", jobHistory.length, jobHistory);
+
+    // Map employees - find their current job/dept from latest history
+    employees = (empRes.data || []).map((e, idx) => {
+      const empNo = e.empno || e.emp_no || '';
+      const hist = jobHistory.filter(h => h.empId === empNo).sort((a, b) =>
+        new Date(b.effDate) - new Date(a.effDate)
+      )[0];
+
+      console.log(`Employee ${empNo} history:`, hist);
+
+      return {
+        id: idx + 1,
+        empNo: empNo,
+        lastName: e.lastname || e.last_name || '',
+        firstName: e.firstname || e.first_name || '',
+        gender: e.gender || '',
+        birthdate: e.birthdate || e.birth_date || '',
+        hireDate: e.hiredate || e.hire_date || '',
+        sepDate: e.sepdate || e.sep_date || null,
+        username: e.username || '',
+        email: e.email || '',
+        phone: e.phone || '',
+        deptId: hist?.deptId || 1,
+        jobId: hist?.jobId || 1,
+        salary: hist?.salary || 0,
+        deleted: e.deleted || (e.sepDate || e.sep_date ? true : false),
+        blocked: e.blocked || false
+      };
+    });
+
+    console.log("✅ Employees loaded:", employees.length, employees);
+
+    // Map system users
+    sysUsers = (userRes.data || []).map((u, idx) => ({
+      id: idx + 1,
+      username: u.username || '',
+      password: u.password || '',
+      firstName: u.first_name || u.firstName || '',
+      lastName: u.last_name || u.lastName || '',
+      role: u.role || 'user',
+      empId: u.emp_id || u.empId || null,
+      registeredAt: u.registered_at || u.registeredAt || '',
+      approvedBy: u.approved_by || u.approvedBy || '',
+      deleted: u.deleted || false
+    }));
+
+    console.log("✅ Users loaded:", sysUsers.length, sysUsers);
+
+    // Update counters
+    nE = (employees.length || 0) + 1;
+    nH = (jobHistory.length || 0) + 1;
+    nD = (departments.length || 0) + 1;
+    nJ = (jobs.length || 0) + 1;
+    nU = (sysUsers.length || 0) + 1;
+
+    console.log("✅ All data loaded successfully!");
+    renderEmp();
+    renderStats();
+  } catch (error) {
+    console.error("❌ FATAL ERROR:", error);
+    alert("Fatal error loading data: " + error.message);
+  }
+}
 
 /* ════════════════════════════════════
    HELPERS
-════════════════════════════════════ */
+════════════════════════════ */
 const gD  = id => departments.find(d=>d.id===id);
 const gJ  = id => jobs.find(j=>j.id===id);
 const gE  = id => employees.find(e=>e.id===id);
@@ -1264,9 +1387,7 @@ function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',()=
 /* ════════════════════════════════════
    INIT
 ════════════════════════════════════ */
-renderEmp();
-renderStats();
-updatePendingBadges();
+loadAllData();
 </script>
 </body>
 </html>
