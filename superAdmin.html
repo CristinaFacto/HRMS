@@ -524,7 +524,7 @@ async function loadAllData() {
   console.log("Loading data...");
 
   const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
-    sb.from('employees').select('*'),
+    sb.from('employee').select('*'),
     sb.from('departments').select('*'),
     sb.from('jobs').select('*'),
     sb.from('job_history').select('*'),
@@ -539,7 +539,17 @@ async function loadAllData() {
 
   if (empRes.error) console.error(empRes.error);
 
-  employees   = empRes.data  || [];
+  employees = (empRes.data || []).map(e => ({
+  id: e.empno,
+  empNo: e.empno,
+  lastName: e.lastname,
+  firstName: e.firstname,
+  gender: e.gender,
+  hireDate: e.hiredate,
+  sepDate: e.sepdate,
+  deleted: false
+}));
+  
   departments = deptRes.data || [];
   jobs        = jobRes.data  || [];
   jobHistory  = histRes.data || [];
