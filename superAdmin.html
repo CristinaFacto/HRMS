@@ -852,7 +852,6 @@ function openEditEmp(id) {
   om('mo-emp');
 }
 
-// ── FIX 1: saveEmp — check raw .value strings, not numeric-cast variables ──
 function saveEmp() {
   const empNo    = document.getElementById('fe-empno').value.trim();
   const username = document.getElementById('fe-user').value.trim();
@@ -867,7 +866,6 @@ function saveEmp() {
   const email    = document.getElementById('fe-email').value.trim();
   const phone    = document.getElementById('fe-phone').value.trim();
 
-  // FIX: check raw string values, not +cast numbers (empty select → 0 which is falsy)
   if (!empNo || !lastName || !firstName || !deptVal || !jobVal) {
     alert('Please fill in all required fields: Emp No, Last Name, First Name, Department, and Job Position.');
     return;
@@ -949,7 +947,6 @@ function openEditHist(id) {
   om('mo-hist');
 }
 
-// ── FIX 2: saveHist — check raw .value strings ──
 function saveHist() {
   const empVal  = document.getElementById('fh-emp').value;
   const jobVal  = document.getElementById('fh-job').value;
@@ -957,7 +954,6 @@ function saveHist() {
   const effDate = document.getElementById('fh-eff').value;
   const salary  = +document.getElementById('fh-sal').value || 0;
 
-  // FIX: check raw string values before casting to numbers
   if (!empVal || !jobVal || !deptVal || !effDate) {
     alert('Please fill in all required fields: Employee, Job Position, Department, and Effective Date.');
     return;
@@ -977,7 +973,6 @@ function saveHist() {
 }
 
 /* ═══ DEPARTMENTS ═══ */
-// ── FIX 3: renderDepts — use array index for onclick to avoid ID injection issues ──
 function renderDepts() {
   const ec = id => employees.filter(e => String(e.deptId) === String(id) && !e.deleted).length;
   const tb = document.getElementById('dept-tbody');
@@ -989,7 +984,6 @@ function renderDepts() {
     return;
   }
 
-  // Store filtered list so index-based onclick can look up the correct record
   renderDepts._data = data;
 
   tb.innerHTML = data.map((d, i) => `
@@ -1048,7 +1042,6 @@ function saveDept() {
 }
 
 /* ═══ JOB POSITIONS ═══ */
-// ── FIX 4: renderJobs — use array index for onclick, same pattern as departments ──
 function renderJobs() {
   const ec = id => employees.filter(e => String(e.jobId) === String(id) && !e.deleted).length;
   const tb = document.getElementById('job-tbody');
@@ -1106,13 +1099,11 @@ function openAddJob() {
   om('mo-job');
 }
 
-// ── FIX 5: saveJob — check raw .value string for dept ──
 function saveJob() {
   const code    = document.getElementById('fj-code').value.trim();
   const desc    = document.getElementById('fj-desc').value.trim();
   const deptVal = document.getElementById('fj-dept').value;
 
-  // FIX: check raw string value before casting to number
   if (!code || !desc || !deptVal) {
     alert('All fields are required: Job Code, Job Description, and Department.');
     return;
