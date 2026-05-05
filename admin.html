@@ -1382,7 +1382,10 @@ function recoverProfEmp(id){askConfirm('Restore Employee','Restore employee to a
 /* ════════════════════════════════════
    LOGOUT
 ════════════════════════════════════ */
-function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',()=>{alert('Logged out. (Demo mode – page will reload)');location.reload();},'Log Out','btn-danger');}
+function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',async ()=>{
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+},'Log Out','btn-danger');}
 
 /* ════════════════════════════════════
    INIT
