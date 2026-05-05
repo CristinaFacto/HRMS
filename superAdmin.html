@@ -504,19 +504,17 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
 <script>
- // ── Supabase init ──────────────────────────────────────────────
+  // ── Supabase init ──────────────────────────────────────────────
   const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
   const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // Sign in anonymously to access data
   sb.auth.signInAnonymously().then(() => {
     console.log('✅ Signed in anonymously to Supabase');
   }).catch(err => {
     console.warn('Anonymous sign-in not available, using public access:', err.message);
   });
-
 
 /* ═══ DATA ═══ */
 const ROLE = 'superadmin';
@@ -532,7 +530,6 @@ let pendingFn = null;
 
 async function loadAllData() {
   console.log("Loading data from Supabase...");
-  console.log("Supabase URL:", SUPABASE_URL);
 
   try {
     const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
@@ -543,65 +540,22 @@ async function loadAllData() {
       sb.from('profiles').select('*'),
     ]);
 
-    console.log("EMP Response:", empRes);
-    console.log("DEPT Response:", deptRes);
-    console.log("JOBS Response:", jobRes);
-    console.log("HIST Response:", histRes);
-    console.log("USERS Response:", userRes);
+    if (empRes.error)  { console.error("❌ EMP ERROR:", empRes.error); }
+    if (deptRes.error) { console.error("❌ DEPT ERROR:", deptRes.error); }
+    if (jobRes.error)  { console.error("❌ JOB ERROR:", jobRes.error); }
+    if (histRes.error) { console.error("❌ HIST ERROR:", histRes.error); }
+    if (userRes.error) { console.error("❌ USER ERROR:", userRes.error); }
 
-    // Debug: Show first record from each table
-    if (empRes.data && empRes.data.length > 0) {
-      console.log("🔍 First employee record:", empRes.data[0]);
-    }
-    if (deptRes.data && deptRes.data.length > 0) {
-      console.log("🔍 First department record:", deptRes.data[0]);
-    }
-    if (jobRes.data && jobRes.data.length > 0) {
-      console.log("🔍 First job record:", jobRes.data[0]);
-    }
-    if (histRes.data && histRes.data.length > 0) {
-      console.log("🔍 First job history record:", histRes.data[0]);
-    }
+    // Map departments
+    departments = (deptRes.data || []).map((d, idx) => ({
+      id: d.id ?? d.deptid ?? d.deptId ?? d.dept_id ?? (idx + 1),
+      code: d.deptcode || d.deptCode || d.code || d.dept_code || '',
+      name: d.deptname || d.deptName || d.name || d.dept_name || '',
+      desc: d.description || d.desc || '',
+      deleted: d.deleted || false
+    }));
 
-    if (empRes.error) {
-      console.error("❌ EMP ERROR:", empRes.error);
-      alert("Error loading employees: " + empRes.error.message);
-    }
-    if (deptRes.error) {
-      console.error("❌ DEPT ERROR:", deptRes.error);
-      alert("Error loading departments: " + deptRes.error.message);
-    }
-    if (jobRes.error) {
-      console.error("❌ JOB ERROR:", jobRes.error);
-      alert("Error loading jobs: " + jobRes.error.message);
-    }
-    if (histRes.error) {
-      console.error("❌ HIST ERROR:", histRes.error);
-      alert("Error loading job history: " + histRes.error.message);
-    }
-    if (userRes.error) {
-      console.error("❌ USER ERROR:", userRes.error);
-      alert("Error loading users: " + userRes.error.message);
-    }
-
-    // Map departments - handle both field name variations and preserve real DB IDs when available
-    departments = (deptRes.data || []).map((d, idx) => {
-      console.log(`🔍 Mapping department ${idx}:`, d);
-      const mappedId = d.id ?? d.deptid ?? d.deptId ?? d.dept_id ?? d.deptcode ?? d.deptCode ?? d.dept_code ?? (idx + 1);
-      const mapped = {
-        id: mappedId,
-        code: d.deptcode || d.deptCode || d.code || d.dept_code || '',
-        name: d.deptname || d.deptName || d.name || d.dept_name || '',
-        desc: d.description || d.desc || '',
-        deleted: d.deleted || false
-      };
-      console.log(`✅ Mapped department:`, mapped);
-      return mapped;
-    });
-
-    console.log("✅ Departments loaded:", departments.length, departments);
-
-    // Map jobs and resolve department references by ID or department code
+    // Map jobs
     jobs = (jobRes.data || []).map((j, idx) => {
       const rawDeptRef = j.deptid || j.deptId || j.dept_id || j.deptcode || j.deptCode || j.dept_code || '';
       const deptMatch = departments.find(d => String(d.id) === String(rawDeptRef) || String(d.code) === String(rawDeptRef));
@@ -614,20 +568,12 @@ async function loadAllData() {
       };
     });
 
-    console.log("✅ Jobs loaded:", jobs.length, jobs);
-
-    // Map job history first to find current job/dept/salary for each employee
+    // Map job history
     jobHistory = (histRes.data || []).map((h, idx) => {
-      const rawJobRef = h.jobcode || h.jobCode || h.job_code || h.jobid || h.jobId || h.job_id || '';
+      const rawJobRef  = h.jobcode || h.jobCode || h.job_code || h.jobid || h.jobId || h.job_id || '';
       const rawDeptRef = h.deptcode || h.deptCode || h.dept_code || h.deptid || h.deptId || h.dept_id || '';
-      console.log(`Mapping job history ${idx}:`, { rawJobRef, rawDeptRef, h });
-
-      const jobMatch = jobs.find(j => String(j.code) === String(rawJobRef) || String(j.id) === String(rawJobRef));
+      const jobMatch  = jobs.find(j => String(j.code) === String(rawJobRef)  || String(j.id) === String(rawJobRef));
       const deptMatch = departments.find(d => String(d.code) === String(rawDeptRef) || String(d.id) === String(rawDeptRef));
-
-      console.log(`Job match for ${rawJobRef}:`, jobMatch);
-      console.log(`Dept match for ${rawDeptRef}:`, deptMatch);
-
       return {
         id: idx + 1,
         empId: h.empno || h.empNo || h.emp_id || h.empId || '',
@@ -639,58 +585,48 @@ async function loadAllData() {
       };
     });
 
-    console.log("✅ Job History loaded:", jobHistory.length, jobHistory);
-
-    // Map employees - find their current job/dept from latest history
+    // Map employees
     employees = (empRes.data || []).map((e, idx) => {
       const empNo = e.empno || e.emp_no || '';
-      const hist = jobHistory.filter(h => String(h.empId) === String(empNo)).sort((a, b) =>
-        new Date(b.effDate) - new Date(a.effDate)
-      )[0];
-
-      console.log(`Employee ${empNo} history:`, hist);
-
+      const hist = jobHistory
+        .filter(h => String(h.empId) === String(empNo))
+        .sort((a, b) => new Date(b.effDate) - new Date(a.effDate))[0];
       return {
         id: e.id ?? e.empid ?? e.empId ?? e.emp_id ?? (idx + 1),
-        empNo: empNo,
-        lastName: e.lastname || e.last_name || '',
+        empNo,
+        lastName:  e.lastname  || e.last_name  || '',
         firstName: e.firstname || e.first_name || '',
-        gender: e.gender || '',
+        gender:    e.gender    || '',
         birthdate: e.birthdate || e.birth_date || '',
-        hireDate: e.hiredate || e.hire_date || '',
-        sepDate: e.sepdate || e.sep_date || null,
-        username: e.username || '',
-        email: e.email || '',
-        phone: e.phone || '',
+        hireDate:  e.hiredate  || e.hire_date  || '',
+        sepDate:   e.sepdate   || e.sep_date   || null,
+        username:  e.username  || '',
+        email:     e.email     || '',
+        phone:     e.phone     || '',
         deptId: hist?.deptId ?? null,
-        jobId: hist?.jobId ?? null,
+        jobId:  hist?.jobId  ?? null,
         salary: hist?.salary || 0,
-        deleted: e.deleted || (e.sepDate || e.sep_date ? true : false)
+        deleted: e.deleted || false
       };
     });
-
-    console.log("✅ Employees loaded:", employees.length, employees);
 
     // Map system users
     sysUsers = (userRes.data || []).map((u, idx) => ({
       id: idx + 1,
-      username: u.username || '',
-      password: u.password || '',
+      username:  u.username   || '',
+      password:  u.password   || '',
       firstName: u.first_name || u.firstName || '',
-      lastName: u.last_name || u.lastName || '',
-      role: u.role || 'user',
-      empId: u.emp_id || u.empId || null,
+      lastName:  u.last_name  || u.lastName  || '',
+      role:   u.role   || 'user',
+      empId:  u.emp_id || u.empId || null,
       deleted: u.deleted || false
     }));
 
-    console.log("✅ Users loaded:", sysUsers.length, sysUsers);
-
-    // Update counters
-    nE = (employees.length || 0) + 1;
+    nE = (employees.length  || 0) + 1;
     nH = (jobHistory.length || 0) + 1;
-    nD = (departments.length || 0) + 1;
-    nJ = (jobs.length || 0) + 1;
-    nU = (sysUsers.length || 0) + 1;
+    nD = (departments.length|| 0) + 1;
+    nJ = (jobs.length       || 0) + 1;
+    nU = (sysUsers.length   || 0) + 1;
 
     console.log("✅ All data loaded successfully!");
     renderEmp();
@@ -702,51 +638,52 @@ async function loadAllData() {
 }
 
 /* ═══ HELPERS ═══ */
-const gD=id=>departments.find(d=>d.id===id || String(d.id)===String(id) || d.code===id || String(d.code)===String(id));
-const gJ=id=>jobs.find(j=>j.id===id || String(j.id)===String(id) || j.code===id || String(j.code)===String(id));
-const gE=id=>employees.find(e=>e.id===id || String(e.id)===String(id) || e.empNo===id || String(e.empNo)===String(id));
-const dn=id=>{const d=gD(id);return d?d.name:'—'};
-const dc=id=>{const d=gD(id);return d?d.code:'—'};
-const jd=id=>{const j=gJ(id);return j?j.desc:'—'};
-const jc=id=>{const j=gJ(id);return j?j.code:'—'};
-const en=id=>{const e=gE(id);return e?`${e.lastName}, ${e.firstName}`:'—'};
-const ini=e=>(e.firstName[0]+e.lastName[0]).toUpperCase();
-const fmt=d=>d?d:'—';
-const fmtSal=s=>s?'₱'+Number(s).toLocaleString():'—';
+const gD = id => departments.find(d => d.id === id || String(d.id) === String(id) || d.code === id || String(d.code) === String(id));
+const gJ = id => jobs.find(j => j.id === id || String(j.id) === String(id) || j.code === id || String(j.code) === String(id));
+const gE = id => employees.find(e => e.id === id || String(e.id) === String(id) || e.empNo === id || String(e.empNo) === String(id));
+const dn  = id => { const d = gD(id); return d ? d.name : '—'; };
+const dc  = id => { const d = gD(id); return d ? d.code : '—'; };
+const jd  = id => { const j = gJ(id); return j ? j.desc : '—'; };
+const jc  = id => { const j = gJ(id); return j ? j.code : '—'; };
+const en  = id => { const e = gE(id); return e ? `${e.lastName}, ${e.firstName}` : '—'; };
+const ini = e  => (e.firstName[0] + e.lastName[0]).toUpperCase();
+const fmt    = d => d ? d : '—';
+const fmtSal = s => s ? '₱' + Number(s).toLocaleString() : '—';
 
 /* ═══ NAVIGATION ═══ */
-function nav(el,page){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+function nav(el, page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  const t={employees:'Employees','job-history':'Job History',departments:'Departments',jobs:'Job Positions',deleted:'Deleted Items',users:'User Management',profile:'Employee Profile'};
-  document.getElementById('topbar-title').textContent=t[page]||page;
-  if(page==='employees'){renderEmp();renderStats();}
-  if(page==='job-history') renderHist();
-  if(page==='departments') renderDepts();
-  if(page==='jobs')        renderJobs();
-  if(page==='deleted')     renderDeleted();
-  if(page==='users')       renderUsers();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const t = { employees:'Employees','job-history':'Job History',departments:'Departments',jobs:'Job Positions',deleted:'Deleted Items',users:'User Management',profile:'Employee Profile' };
+  document.getElementById('topbar-title').textContent = t[page] || page;
+  if (page === 'employees')   { renderEmp(); renderStats(); }
+  if (page === 'job-history')   renderHist();
+  if (page === 'departments')   renderDepts();
+  if (page === 'jobs')          renderJobs();
+  if (page === 'deleted')       renderDeleted();
+  if (page === 'users')         renderUsers();
 }
 
 /* ═══ MODALS ═══ */
-const om=id=>document.getElementById(id).classList.add('open');
-const cm=id=>document.getElementById(id).classList.remove('open');
-function doConfirm(){if(pendingFn)pendingFn();cm('mo-confirm');}
-function askConfirm(title,msg,fn,btn='Confirm'){
-  document.getElementById('conf-title').textContent=title;
-  document.getElementById('conf-msg').textContent=msg;
-  document.getElementById('conf-ok').textContent=btn;
-  pendingFn=fn;om('mo-confirm');
+const om = id => document.getElementById(id).classList.add('open');
+const cm = id => document.getElementById(id).classList.remove('open');
+function doConfirm() { if (pendingFn) pendingFn(); cm('mo-confirm'); }
+function askConfirm(title, msg, fn, btn = 'Confirm') {
+  document.getElementById('conf-title').textContent = title;
+  document.getElementById('conf-msg').textContent   = msg;
+  document.getElementById('conf-ok').textContent    = btn;
+  pendingFn = fn;
+  om('mo-confirm');
 }
 
 /* ═══ STATS ═══ */
-function renderStats(){
-  const a=employees.filter(e=>!e.deleted).length;
-  const d=employees.filter(e=>e.deleted).length;
-  const dp=new Set(employees.filter(e=>!e.deleted).map(e=>e.deptId)).size;
-  document.getElementById('emp-stats').innerHTML=`
+function renderStats() {
+  const a  = employees.filter(e => !e.deleted).length;
+  const d  = employees.filter(e =>  e.deleted).length;
+  const dp = new Set(employees.filter(e => !e.deleted).map(e => e.deptId)).size;
+  document.getElementById('emp-stats').innerHTML = `
     <div class="sc ac"><div class="n">${a}</div><div class="l">Active</div></div>
     <div class="sc"><div class="n">${d}</div><div class="l">Inactive</div></div>
     <div class="sc"><div class="n">${dp}</div><div class="l">Departments</div></div>
@@ -754,157 +691,225 @@ function renderStats(){
 }
 
 /* ═══ EMPLOYEES ═══ */
-function popDeptFilter(){
-  const s=document.getElementById('emp-fd'),v=s.value;
-  s.innerHTML='<option value="">All Departments</option>';
-  departments.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;if(String(d.id)===v)o.selected=true;s.appendChild(o);});
+function popDeptFilter() {
+  const s = document.getElementById('emp-fd'), v = s.value;
+  s.innerHTML = '<option value="">All Departments</option>';
+  departments.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d.id; o.textContent = d.name;
+    if (String(d.id) === v) o.selected = true;
+    s.appendChild(o);
+  });
 }
-function renderEmp(){
+
+function renderEmp() {
   popDeptFilter();
-  const q=document.getElementById('emp-q').value.toLowerCase();
-  const fd=document.getElementById('emp-fd').value;
-  const fs=document.getElementById('emp-fs').value;
-  const sd=document.getElementById('emp-show-del').checked;
-  let data=employees.filter(e=>{
-    if(!sd&&fs!=='inactive'&&e.deleted)return false;
-    if(fs==='active'&&e.deleted)return false;
-    if(fs==='inactive'&&!e.deleted)return false;
-    if(fd&&String(e.deptId)!==fd)return false;
+  const q  = document.getElementById('emp-q').value.toLowerCase();
+  const fd = document.getElementById('emp-fd').value;
+  const fs = document.getElementById('emp-fs').value;
+  const sd = document.getElementById('emp-show-del').checked;
+  let data = employees.filter(e => {
+    if (!sd && fs !== 'inactive' && e.deleted) return false;
+    if (fs === 'active'   &&  e.deleted) return false;
+    if (fs === 'inactive' && !e.deleted) return false;
+    if (fd && String(e.deptId) !== fd) return false;
     return `${e.empNo} ${e.lastName} ${e.firstName} ${jd(e.jobId)} ${dn(e.deptId)}`.toLowerCase().includes(q);
-  }).sort((a,b)=>a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName));
-  const tb=document.getElementById('emp-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="12" class="tbl-empty">No employees found.</td></tr>`;upBtns('emp');return;}
-  tb.innerHTML=data.map(e=>`
-    <tr class="${e.deleted?'del-row':''}" id="er-${e.id}">
+  }).sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+
+  const tb = document.getElementById('emp-tbody');
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="12" class="tbl-empty">No employees found.</td></tr>`; upBtns('emp'); return; }
+  tb.innerHTML = data.map(e => `
+    <tr class="${e.deleted ? 'del-row' : ''}" id="er-${e.id}">
       <td><input type="checkbox" class="chk-emp" value="${e.id}" onchange="upBtns('emp')"/></td>
       <td>${e.empNo}</td>
       <td><strong>${e.lastName}</strong></td>
       <td>${e.firstName}</td>
-      <td>${e.gender||'—'}</td>
+      <td>${e.gender || '—'}</td>
       <td>${fmt(e.hireDate)}</td>
-      <td>${e.sepDate?fmt(e.sepDate):'<span style="color:var(--success);font-size:10px;font-weight:bold">—</span>'}</td>
+      <td>${e.sepDate ? fmt(e.sepDate) : '<span style="color:var(--success);font-size:10px;font-weight:bold">—</span>'}</td>
       <td>${jd(e.jobId)}</td>
       <td><span class="badge b-dept">${dc(e.deptId)}</span></td>
       <td>${fmtSal(e.salary)}</td>
-      <td><span class="badge ${e.deleted?'b-del':'b-active'}">${e.deleted?'Inactive':'Active'}</span></td>
+      <td><span class="badge ${e.deleted ? 'b-del' : 'b-active'}">${e.deleted ? 'Inactive' : 'Active'}</span></td>
       <td class="ns">
         <button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf(${e.id})">View</button>
-        <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditEmp(${e.id})">Edit</button>
+        <button class="btn btn-white"   style="padding:3px 7px;font-size:10px" onclick="openEditEmp(${e.id})">Edit</button>
       </td>
     </tr>`).join('');
   upBtns('emp');
 }
-function getChk(cls){return[...document.querySelectorAll('.'+cls+':checked')].map(c=>+c.value);}
-function toggleAll(scope,cb){
-  document.querySelectorAll(`.chk-${scope}`).forEach(c=>c.checked=cb.checked);
+
+function getChk(cls) { return [...document.querySelectorAll('.' + cls + ':checked')].map(c => +c.value); }
+
+function toggleAll(scope, cb) {
+  document.querySelectorAll(`.chk-${scope}`).forEach(c => c.checked = cb.checked);
   upBtns(scope);
 }
-function upBtns(scope){
-  if(scope==='emp'){
-    const ids=getChk('chk-emp');
-    document.getElementById('btn-del-emp').disabled=!ids.some(id=>{const e=gE(id);return e&&!e.deleted;});
-    document.getElementById('btn-rst-emp').disabled=!ids.some(id=>{const e=gE(id);return e&&e.deleted;});
+
+function upBtns(scope) {
+  if (scope === 'emp') {
+    const ids = getChk('chk-emp');
+    document.getElementById('btn-del-emp').disabled = !ids.some(id => { const e = gE(id); return e && !e.deleted; });
+    document.getElementById('btn-rst-emp').disabled = !ids.some(id => { const e = gE(id); return e &&  e.deleted; });
   }
-  if(scope==='hist'){
-    const ids=getChk('chk-hist');
-    document.getElementById('btn-del-hist').disabled=!ids.some(id=>{const h=jobHistory.find(x=>x.id===id);return h&&!h.deleted;});
-    document.getElementById('btn-rst-hist').disabled=!ids.some(id=>{const h=jobHistory.find(x=>x.id===id);return h&&h.deleted;});
-  }
-}
-function bulkAction(scope,act){
-  if(scope==='emp'){
-    const ids=getChk('chk-emp').filter(id=>{const e=gE(id);return e&&(act==='del'?!e.deleted:e.deleted);});
-    if(!ids.length)return;
-    askConfirm(act==='del'?'Deactivate Employees':'Restore Employees',
-      `${act==='del'?'Deactivate':'Restore'} ${ids.length} employee(s)?`,()=>{
-        ids.forEach(id=>{const e=gE(id);if(e)e.deleted=act==='del';});
-        renderEmp();renderStats();
-      },act==='del'?'Deactivate':'Restore');
-  }
-  if(scope==='hist'){
-    const ids=getChk('chk-hist').filter(id=>{const h=jobHistory.find(x=>x.id===id);return h&&(act==='del'?!h.deleted:h.deleted);});
-    if(!ids.length)return;
-    askConfirm(act==='del'?'Deactivate History':'Restore History',
-      `${act==='del'?'Deactivate':'Restore'} ${ids.length} record(s)?`,()=>{
-        ids.forEach(id=>{const h=jobHistory.find(x=>x.id===id);if(h)h.deleted=act==='del';});
-        renderHist();
-      },act==='del'?'Deactivate':'Restore');
+  if (scope === 'hist') {
+    const ids = getChk('chk-hist');
+    document.getElementById('btn-del-hist').disabled = !ids.some(id => { const h = jobHistory.find(x => x.id === id); return h && !h.deleted; });
+    document.getElementById('btn-rst-hist').disabled = !ids.some(id => { const h = jobHistory.find(x => x.id === id); return h &&  h.deleted; });
   }
 }
 
-function popFormSelects(){
-  ['fe-dept','fh-dept','fj-dept','fd-code'].forEach(()=>{});
-  const ds=['fe-dept','fh-dept','fj-dept'];
-  ds.forEach(sid=>{const s=document.getElementById(sid);if(!s)return;s.innerHTML='<option value="">-- Select --</option>';departments.filter(d=>!d.deleted).forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;s.appendChild(o);});});
-  const js=['fe-job','fh-job'];
-  js.forEach(sid=>{const s=document.getElementById(sid);if(!s)return;s.innerHTML='<option value="">-- Select --</option>';jobs.filter(j=>!j.deleted).forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.code} – ${j.desc}`;s.appendChild(o);});});
-  const es=['fh-emp','fu-emp'];
-  es.forEach(sid=>{const s=document.getElementById(sid);if(!s)return;const isReq=sid==='fh-emp';s.innerHTML=isReq?'<option value="">-- Select --</option>':'<option value="">-- None --</option>';employees.filter(e=>!e.deleted).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=`${e.empNo} – ${e.lastName}, ${e.firstName}`;s.appendChild(o);});});
+function bulkAction(scope, act) {
+  if (scope === 'emp') {
+    const ids = getChk('chk-emp').filter(id => { const e = gE(id); return e && (act === 'del' ? !e.deleted : e.deleted); });
+    if (!ids.length) return;
+    askConfirm(
+      act === 'del' ? 'Deactivate Employees' : 'Restore Employees',
+      `${act === 'del' ? 'Deactivate' : 'Restore'} ${ids.length} employee(s)?`,
+      () => { ids.forEach(id => { const e = gE(id); if (e) e.deleted = act === 'del'; }); renderEmp(); renderStats(); },
+      act === 'del' ? 'Deactivate' : 'Restore'
+    );
+  }
+  if (scope === 'hist') {
+    const ids = getChk('chk-hist').filter(id => { const h = jobHistory.find(x => x.id === id); return h && (act === 'del' ? !h.deleted : h.deleted); });
+    if (!ids.length) return;
+    askConfirm(
+      act === 'del' ? 'Deactivate History' : 'Restore History',
+      `${act === 'del' ? 'Deactivate' : 'Restore'} ${ids.length} record(s)?`,
+      () => { ids.forEach(id => { const h = jobHistory.find(x => x.id === id); if (h) h.deleted = act === 'del'; }); renderHist(); },
+      act === 'del' ? 'Deactivate' : 'Restore'
+    );
+  }
 }
 
-function openAddEmp(){
-  editId.emp=null;
-  document.getElementById('mo-emp-title').textContent='Add Employee';
-  ['fe-empno','fe-user','fe-ln','fe-fn','fe-email','fe-phone','fe-sal'].forEach(f=>document.getElementById(f).value='');
-  document.getElementById('fe-hire').value=new Date().toISOString().split('T')[0];
-  document.getElementById('fe-sep').value='';
-  document.getElementById('fe-gender').value='';
-  popFormSelects();om('mo-emp');
+function popFormSelects() {
+  // Departments dropdowns
+  ['fe-dept', 'fh-dept', 'fj-dept'].forEach(sid => {
+    const s = document.getElementById(sid);
+    if (!s) return;
+    s.innerHTML = '<option value="">-- Select --</option>';
+    departments.filter(d => !d.deleted).forEach(d => {
+      const o = document.createElement('option');
+      o.value = d.id; o.textContent = d.name;
+      s.appendChild(o);
+    });
+  });
+  // Jobs dropdowns
+  ['fe-job', 'fh-job'].forEach(sid => {
+    const s = document.getElementById(sid);
+    if (!s) return;
+    s.innerHTML = '<option value="">-- Select --</option>';
+    jobs.filter(j => !j.deleted).forEach(j => {
+      const o = document.createElement('option');
+      o.value = j.id; o.textContent = `${j.code} – ${j.desc}`;
+      s.appendChild(o);
+    });
+  });
+  // Employee dropdowns
+  ['fh-emp', 'fu-emp'].forEach(sid => {
+    const s = document.getElementById(sid);
+    if (!s) return;
+    const isReq = sid === 'fh-emp';
+    s.innerHTML = isReq ? '<option value="">-- Select --</option>' : '<option value="">-- None --</option>';
+    employees.filter(e => !e.deleted).forEach(e => {
+      const o = document.createElement('option');
+      o.value = e.id; o.textContent = `${e.empNo} – ${e.lastName}, ${e.firstName}`;
+      s.appendChild(o);
+    });
+  });
 }
-function openEditEmp(id){
-  const e=gE(id);if(!e)return;
-  editId.emp=id;
-  document.getElementById('mo-emp-title').textContent='Edit Employee';
-  document.getElementById('fe-empno').value=e.empNo;
-  document.getElementById('fe-user').value=e.username;
-  document.getElementById('fe-ln').value=e.lastName;
-  document.getElementById('fe-fn').value=e.firstName;
-  document.getElementById('fe-gender').value=e.gender||'';
-  document.getElementById('fe-hire').value=e.hireDate;
-  document.getElementById('fe-sep').value=e.sepDate||'';
-  document.getElementById('fe-sal').value=e.salary||'';
-  document.getElementById('fe-email').value=e.email||'';
-  document.getElementById('fe-phone').value=e.phone||'';
+
+function openAddEmp() {
+  editId.emp = null;
+  document.getElementById('mo-emp-title').textContent = 'Add Employee';
+  ['fe-empno','fe-user','fe-ln','fe-fn','fe-email','fe-phone','fe-sal'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('fe-hire').value = new Date().toISOString().split('T')[0];
+  document.getElementById('fe-sep').value  = '';
+  document.getElementById('fe-gender').value = '';
   popFormSelects();
-  setTimeout(()=>{document.getElementById('fe-dept').value=e.deptId;document.getElementById('fe-job').value=e.jobId;},10);
   om('mo-emp');
 }
-function saveEmp(){
-  const empNo=document.getElementById('fe-empno').value.trim();
-  const username=document.getElementById('fe-user').value.trim();
-  const lastName=document.getElementById('fe-ln').value.trim();
-  const firstName=document.getElementById('fe-fn').value.trim();
-  const gender=document.getElementById('fe-gender').value;
-  const hireDate=document.getElementById('fe-hire').value;
-  const sepDate=document.getElementById('fe-sep').value;
-  const salary=+document.getElementById('fe-sal').value||0;
-  const deptId=+document.getElementById('fe-dept').value;
-  const jobId=+document.getElementById('fe-job').value;
-  const email=document.getElementById('fe-email').value.trim();
-  const phone=document.getElementById('fe-phone').value.trim();
-  if(!empNo||!lastName||!firstName||!deptId||!jobId){alert('Fill required fields.');return;}
-  if(editId.emp){Object.assign(gE(editId.emp),{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone});}
-  else{employees.push({id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,deleted:false});}
-  cm('mo-emp');renderEmp();renderStats();
+
+function openEditEmp(id) {
+  const e = gE(id); if (!e) return;
+  editId.emp = id;
+  document.getElementById('mo-emp-title').textContent = 'Edit Employee';
+  document.getElementById('fe-empno').value  = e.empNo;
+  document.getElementById('fe-user').value   = e.username;
+  document.getElementById('fe-ln').value     = e.lastName;
+  document.getElementById('fe-fn').value     = e.firstName;
+  document.getElementById('fe-gender').value = e.gender || '';
+  document.getElementById('fe-hire').value   = e.hireDate;
+  document.getElementById('fe-sep').value    = e.sepDate || '';
+  document.getElementById('fe-sal').value    = e.salary  || '';
+  document.getElementById('fe-email').value  = e.email   || '';
+  document.getElementById('fe-phone').value  = e.phone   || '';
+  popFormSelects();
+  setTimeout(() => {
+    document.getElementById('fe-dept').value = e.deptId;
+    document.getElementById('fe-job').value  = e.jobId;
+  }, 10);
+  om('mo-emp');
+}
+
+// ── FIX 1: saveEmp — check raw .value strings, not numeric-cast variables ──
+function saveEmp() {
+  const empNo    = document.getElementById('fe-empno').value.trim();
+  const username = document.getElementById('fe-user').value.trim();
+  const lastName = document.getElementById('fe-ln').value.trim();
+  const firstName= document.getElementById('fe-fn').value.trim();
+  const gender   = document.getElementById('fe-gender').value;
+  const hireDate = document.getElementById('fe-hire').value;
+  const sepDate  = document.getElementById('fe-sep').value;
+  const salary   = +document.getElementById('fe-sal').value || 0;
+  const deptVal  = document.getElementById('fe-dept').value;
+  const jobVal   = document.getElementById('fe-job').value;
+  const email    = document.getElementById('fe-email').value.trim();
+  const phone    = document.getElementById('fe-phone').value.trim();
+
+  // FIX: check raw string values, not +cast numbers (empty select → 0 which is falsy)
+  if (!empNo || !lastName || !firstName || !deptVal || !jobVal) {
+    alert('Please fill in all required fields: Emp No, Last Name, First Name, Department, and Job Position.');
+    return;
+  }
+
+  const deptId = +deptVal;
+  const jobId  = +jobVal;
+
+  if (editId.emp) {
+    Object.assign(gE(editId.emp), { empNo, username, lastName, firstName, gender, hireDate, sepDate, salary, deptId, jobId, email, phone });
+  } else {
+    employees.push({ id: nE++, empNo, username, lastName, firstName, gender, hireDate, sepDate, salary, deptId, jobId, email, phone, deleted: false });
+  }
+  cm('mo-emp');
+  renderEmp();
+  renderStats();
 }
 
 /* ═══ JOB HISTORY ═══ */
-function renderHist(){
-  const q=document.getElementById('hist-q').value.toLowerCase();
-  const fe=document.getElementById('hist-fe').value;
-  const sd=document.getElementById('hist-show-del').checked;
-  const sel=document.getElementById('hist-fe'),cv=sel.value;
-  sel.innerHTML='<option value="">All Employees</option>';
-  employees.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=`${e.empNo} – ${e.lastName}, ${e.firstName}`;if(String(e.id)===cv)o.selected=true;sel.appendChild(o);});
-  let data=jobHistory.filter(h=>{
-    if(!sd&&h.deleted)return false;
-    if(fe&&String(h.empId)!==fe)return false;
+function renderHist() {
+  const q  = document.getElementById('hist-q').value.toLowerCase();
+  const fe = document.getElementById('hist-fe').value;
+  const sd = document.getElementById('hist-show-del').checked;
+  const sel = document.getElementById('hist-fe'), cv = sel.value;
+  sel.innerHTML = '<option value="">All Employees</option>';
+  employees.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.id; o.textContent = `${e.empNo} – ${e.lastName}, ${e.firstName}`;
+    if (String(e.id) === cv) o.selected = true;
+    sel.appendChild(o);
+  });
+
+  let data = jobHistory.filter(h => {
+    if (!sd && h.deleted) return false;
+    if (fe && String(h.empId) !== fe) return false;
     return `${en(h.empId)} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)}`.toLowerCase().includes(q);
-  }).sort((a,b)=>b.effDate.localeCompare(a.effDate));
-  const tb=document.getElementById('hist-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="11" class="tbl-empty">No records.</td></tr>`;upBtns('hist');return;}
-  tb.innerHTML=data.map(h=>`
-    <tr class="${h.deleted?'del-row':''}">
+  }).sort((a, b) => b.effDate.localeCompare(a.effDate));
+
+  const tb = document.getElementById('hist-tbody');
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="11" class="tbl-empty">No records.</td></tr>`; upBtns('hist'); return; }
+  tb.innerHTML = data.map(h => `
+    <tr class="${h.deleted ? 'del-row' : ''}">
       <td><input type="checkbox" class="chk-hist" value="${h.id}" onchange="upBtns('hist')"/></td>
       <td>JH-${String(h.id).padStart(3,'0')}</td>
       <td>${en(h.empId)}</td>
@@ -914,89 +919,150 @@ function renderHist(){
       <td>${dn(h.deptId)}</td>
       <td>${fmt(h.effDate)}</td>
       <td>${fmtSal(h.salary)}</td>
-      <td><span class="badge ${h.deleted?'b-del':'b-active'}">${h.deleted?'Inactive':'Active'}</span></td>
+      <td><span class="badge ${h.deleted ? 'b-del' : 'b-active'}">${h.deleted ? 'Inactive' : 'Active'}</span></td>
       <td class="ns"><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditHist(${h.id})">Edit</button></td>
     </tr>`).join('');
   upBtns('hist');
 }
-function openAddHist(){
-  editId.hist=null;
-  document.getElementById('mo-hist-title').textContent='Add Job History';
+
+function openAddHist() {
+  editId.hist = null;
+  document.getElementById('mo-hist-title').textContent = 'Add Job History';
   popFormSelects();
-  document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];
-  document.getElementById('fh-sal').value='';
+  document.getElementById('fh-eff').value = new Date().toISOString().split('T')[0];
+  document.getElementById('fh-sal').value = '';
   om('mo-hist');
 }
-function openEditHist(id){
-  const h=jobHistory.find(x=>x.id===id);if(!h)return;
-  editId.hist=id;
-  document.getElementById('mo-hist-title').textContent='Edit Job History';
+
+function openEditHist(id) {
+  const h = jobHistory.find(x => x.id === id); if (!h) return;
+  editId.hist = id;
+  document.getElementById('mo-hist-title').textContent = 'Edit Job History';
   popFormSelects();
-  setTimeout(()=>{document.getElementById('fh-emp').value=h.empId;document.getElementById('fh-job').value=h.jobId;document.getElementById('fh-dept').value=h.deptId;},10);
-  document.getElementById('fh-eff').value=h.effDate;
-  document.getElementById('fh-sal').value=h.salary||'';
+  setTimeout(() => {
+    document.getElementById('fh-emp').value  = h.empId;
+    document.getElementById('fh-job').value  = h.jobId;
+    document.getElementById('fh-dept').value = h.deptId;
+  }, 10);
+  document.getElementById('fh-eff').value = h.effDate;
+  document.getElementById('fh-sal').value = h.salary || '';
   om('mo-hist');
 }
-function saveHist(){
-  const empId=+document.getElementById('fh-emp').value;
-  const jobId=+document.getElementById('fh-job').value;
-  const deptId=+document.getElementById('fh-dept').value;
-  const effDate=document.getElementById('fh-eff').value;
-  const salary=+document.getElementById('fh-sal').value||0;
-  if(!empId||!jobId||!deptId||!effDate){alert('Fill required fields.');return;}
-  if(editId.hist){Object.assign(jobHistory.find(x=>x.id===editId.hist),{empId,jobId,deptId,effDate,salary});}
-  else{jobHistory.push({id:nH++,empId,jobId,deptId,effDate,salary,deleted:false});}
-  cm('mo-hist');renderHist();
-}
 
-/* ═══ DEPARTMENTS ═══ */
-function renderDepts(){
-  console.log("🔍 Rendering departments, current departments array:", departments);
-  const ec=id=>employees.filter(e=>e.deptId===id&&!e.deleted).length;
-  const tb=document.getElementById('dept-tbody');
-  const data=departments.filter(d=>!d.deleted);
-  console.log("🔍 Filtered departments (not deleted):", data);
+// ── FIX 2: saveHist — check raw .value strings ──
+function saveHist() {
+  const empVal  = document.getElementById('fh-emp').value;
+  const jobVal  = document.getElementById('fh-job').value;
+  const deptVal = document.getElementById('fh-dept').value;
+  const effDate = document.getElementById('fh-eff').value;
+  const salary  = +document.getElementById('fh-sal').value || 0;
 
-  if(!data.length){
-    tb.innerHTML=`<tr><td colspan="5" class="tbl-empty">No departments.</td></tr>`;
+  // FIX: check raw string values before casting to numbers
+  if (!empVal || !jobVal || !deptVal || !effDate) {
+    alert('Please fill in all required fields: Employee, Job Position, Department, and Effective Date.');
     return;
   }
 
-  tb.innerHTML=data.map(d=>{
-    console.log("🔍 Rendering department:", d);
-    return `
+  const empId  = +empVal;
+  const jobId  = +jobVal;
+  const deptId = +deptVal;
+
+  if (editId.hist) {
+    Object.assign(jobHistory.find(x => x.id === editId.hist), { empId, jobId, deptId, effDate, salary });
+  } else {
+    jobHistory.push({ id: nH++, empId, jobId, deptId, effDate, salary, deleted: false });
+  }
+  cm('mo-hist');
+  renderHist();
+}
+
+/* ═══ DEPARTMENTS ═══ */
+// ── FIX 3: renderDepts — use array index for onclick to avoid ID injection issues ──
+function renderDepts() {
+  const ec = id => employees.filter(e => String(e.deptId) === String(id) && !e.deleted).length;
+  const tb = document.getElementById('dept-tbody');
+  const data = departments.filter(d => !d.deleted);
+
+  if (!data.length) {
+    tb.innerHTML = `<tr><td colspan="5" class="tbl-empty">No departments.</td></tr>`;
+    renderDepts._data = [];
+    return;
+  }
+
+  // Store filtered list so index-based onclick can look up the correct record
+  renderDepts._data = data;
+
+  tb.innerHTML = data.map((d, i) => `
     <tr>
-      <td><strong>${d.code || 'UNDEFINED'}</strong></td>
-      <td>${d.name || 'UNDEFINED'}</td>
-      <td style="max-width:200px;color:var(--muted)">${d.desc||'—'}</td>
+      <td><strong>${d.code || '—'}</strong></td>
+      <td>${d.name || '—'}</td>
+      <td style="max-width:200px;color:var(--muted)">${d.desc || '—'}</td>
       <td>${ec(d.id)}</td>
       <td>
-        <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept(${d.id})">Edit</button>
-        <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="delDept(${d.id})">Delete</button>
+        <button class="btn btn-white"   style="padding:3px 7px;font-size:10px" onclick="openEditDeptByIndex(${i})">Edit</button>
+        <button class="btn btn-danger"  style="padding:3px 7px;font-size:10px" onclick="delDeptByIndex(${i})">Delete</button>
       </td>
-    </tr>`;
-  }).join('');
+    </tr>`).join('');
 }
-function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name','fd-desc'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
-function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;document.getElementById('fd-desc').value=d.desc||'';om('mo-dept');}
-function saveDept(){
-  const code=document.getElementById('fd-code').value.trim();
-  const name=document.getElementById('fd-name').value.trim();
-  const desc=document.getElementById('fd-desc').value.trim();
-  if(!code||!name){alert('Code and name required.');return;}
-  if(editId.dept){Object.assign(gD(editId.dept),{code,name,desc});}
-  else{departments.push({id:nD++,code,name,desc,deleted:false});}
-  cm('mo-dept');renderDepts();
+renderDepts._data = [];
+
+function openEditDeptByIndex(i) {
+  const d = renderDepts._data[i];
+  if (!d) return;
+  editId.dept = d.id;
+  document.getElementById('mo-dept-title').textContent = 'Edit Department';
+  document.getElementById('fd-code').value = d.code;
+  document.getElementById('fd-name').value = d.name;
+  document.getElementById('fd-desc').value = d.desc || '';
+  om('mo-dept');
 }
-function delDept(id){const d=gD(id);askConfirm('Delete Department',`Delete "${d.name}"?`,()=>{d.deleted=true;renderDepts();},'Delete');}
+
+function delDeptByIndex(i) {
+  const d = renderDepts._data[i];
+  if (!d) return;
+  askConfirm('Delete Department', `Delete "${d.name}"?`, () => {
+    d.deleted = true;
+    renderDepts();
+  }, 'Delete');
+}
+
+function openAddDept() {
+  editId.dept = null;
+  document.getElementById('mo-dept-title').textContent = 'Add Department';
+  ['fd-code','fd-name','fd-desc'].forEach(f => document.getElementById(f).value = '');
+  om('mo-dept');
+}
+
+function saveDept() {
+  const code = document.getElementById('fd-code').value.trim();
+  const name = document.getElementById('fd-name').value.trim();
+  const desc = document.getElementById('fd-desc').value.trim();
+  if (!code || !name) { alert('Dept Code and Name are required.'); return; }
+  if (editId.dept) {
+    Object.assign(gD(editId.dept), { code, name, desc });
+  } else {
+    departments.push({ id: nD++, code, name, desc, deleted: false });
+  }
+  cm('mo-dept');
+  renderDepts();
+}
 
 /* ═══ JOB POSITIONS ═══ */
-function renderJobs(){
-  const ec=id=>employees.filter(e=>e.jobId===id&&!e.deleted).length;
-  const tb=document.getElementById('job-tbody');
-  const data=jobs.filter(j=>!j.deleted);
-  if(!data.length){tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No jobs.</td></tr>`;return;}
-  tb.innerHTML=data.map(j=>`
+// ── FIX 4: renderJobs — use array index for onclick, same pattern as departments ──
+function renderJobs() {
+  const ec = id => employees.filter(e => String(e.jobId) === String(id) && !e.deleted).length;
+  const tb = document.getElementById('job-tbody');
+  const data = jobs.filter(j => !j.deleted);
+
+  if (!data.length) {
+    tb.innerHTML = `<tr><td colspan="6" class="tbl-empty">No jobs.</td></tr>`;
+    renderJobs._data = [];
+    return;
+  }
+
+  renderJobs._data = data;
+
+  tb.innerHTML = data.map((j, i) => `
     <tr>
       <td><strong>${j.code}</strong></td>
       <td>${j.desc}</td>
@@ -1004,150 +1070,255 @@ function renderJobs(){
       <td>${ec(j.id)}</td>
       <td><span class="badge b-active">Active</span></td>
       <td>
-        <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditJob(${j.id})">Edit</button>
-        <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="delJob(${j.id})">Delete</button>
+        <button class="btn btn-white"  style="padding:3px 7px;font-size:10px" onclick="openEditJobByIndex(${i})">Edit</button>
+        <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="delJobByIndex(${i})">Delete</button>
       </td>
     </tr>`).join('');
 }
-function openAddJob(){editId.job=null;document.getElementById('mo-job-title').textContent='Add Job Position';['fj-code','fj-desc'].forEach(f=>document.getElementById(f).value='');popFormSelects();om('mo-job');}
-function openEditJob(id){const j=gJ(id);if(!j)return;editId.job=id;document.getElementById('mo-job-title').textContent='Edit Job Position';document.getElementById('fj-code').value=j.code;document.getElementById('fj-desc').value=j.desc;popFormSelects();setTimeout(()=>{document.getElementById('fj-dept').value=j.deptId;},10);om('mo-job');}
-function saveJob(){
-  const code=document.getElementById('fj-code').value.trim();
-  const desc=document.getElementById('fj-desc').value.trim();
-  const deptId=+document.getElementById('fj-dept').value;
-  if(!code||!desc||!deptId){alert('All fields required.');return;}
-  if(editId.job){Object.assign(gJ(editId.job),{code,desc,deptId});}
-  else{jobs.push({id:nJ++,code,desc,deptId,deleted:false});}
-  cm('mo-job');renderJobs();
+renderJobs._data = [];
+
+function openEditJobByIndex(i) {
+  const j = renderJobs._data[i];
+  if (!j) return;
+  editId.job = j.id;
+  document.getElementById('mo-job-title').textContent = 'Edit Job Position';
+  document.getElementById('fj-code').value = j.code;
+  document.getElementById('fj-desc').value = j.desc;
+  popFormSelects();
+  setTimeout(() => { document.getElementById('fj-dept').value = j.deptId; }, 10);
+  om('mo-job');
 }
-function delJob(id){const j=gJ(id);askConfirm('Delete Job',`Delete "${j.desc}"?`,()=>{j.deleted=true;renderJobs();},'Delete');}
+
+function delJobByIndex(i) {
+  const j = renderJobs._data[i];
+  if (!j) return;
+  askConfirm('Delete Job', `Delete "${j.desc}"?`, () => {
+    j.deleted = true;
+    renderJobs();
+  }, 'Delete');
+}
+
+function openAddJob() {
+  editId.job = null;
+  document.getElementById('mo-job-title').textContent = 'Add Job Position';
+  ['fj-code','fj-desc'].forEach(f => document.getElementById(f).value = '');
+  popFormSelects();
+  om('mo-job');
+}
+
+// ── FIX 5: saveJob — check raw .value string for dept ──
+function saveJob() {
+  const code    = document.getElementById('fj-code').value.trim();
+  const desc    = document.getElementById('fj-desc').value.trim();
+  const deptVal = document.getElementById('fj-dept').value;
+
+  // FIX: check raw string value before casting to number
+  if (!code || !desc || !deptVal) {
+    alert('All fields are required: Job Code, Job Description, and Department.');
+    return;
+  }
+
+  const deptId = +deptVal;
+
+  if (editId.job) {
+    Object.assign(gJ(editId.job), { code, desc, deptId });
+  } else {
+    jobs.push({ id: nJ++, code, desc, deptId, deleted: false });
+  }
+  cm('mo-job');
+  renderJobs();
+}
 
 /* ═══ DELETED ITEMS ═══ */
-function switchDelTab(btn,panel){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+function switchDelTab(btn, panel) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById(panel).classList.add('active');
-  if(panel==='del-emp')renderDelEmp();
-  if(panel==='del-hist')renderDelHist();
-  if(panel==='del-jobs')renderDelJobs();
-  if(panel==='del-depts')renderDelDepts();
+  if (panel === 'del-emp')   renderDelEmp();
+  if (panel === 'del-hist')  renderDelHist();
+  if (panel === 'del-jobs')  renderDelJobs();
+  if (panel === 'del-depts') renderDelDepts();
 }
-function renderDeleted(){renderDelEmp();}
-function renderDelEmp(){
-  const data=employees.filter(e=>e.deleted);
-  const tb=document.getElementById('del-emp-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="7" class="tbl-empty">No inactive employees.</td></tr>`;return;}
-  tb.innerHTML=data.map(e=>`
+
+function renderDeleted() { renderDelEmp(); }
+
+function renderDelEmp() {
+  const data = employees.filter(e => e.deleted);
+  const tb   = document.getElementById('del-emp-tbody');
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="7" class="tbl-empty">No inactive employees.</td></tr>`; return; }
+  tb.innerHTML = data.map(e => `
     <tr class="del-row">
-      <td class="ns">${e.empNo}</td><td class="ns"><strong>${e.lastName}</strong></td>
-      <td class="ns">${e.firstName}</td><td class="ns">${dn(e.deptId)}</td>
-      <td class="ns">${jd(e.jobId)}</td><td class="ns">${fmt(e.sepDate)}</td>
+      <td class="ns">${e.empNo}</td>
+      <td class="ns"><strong>${e.lastName}</strong></td>
+      <td class="ns">${e.firstName}</td>
+      <td class="ns">${dn(e.deptId)}</td>
+      <td class="ns">${jd(e.jobId)}</td>
+      <td class="ns">${fmt(e.sepDate)}</td>
       <td class="ns"><button class="btn btn-success" style="padding:3px 7px;font-size:10px" onclick="recoverEmp(${e.id})">Recover</button></td>
     </tr>`).join('');
 }
-function recoverEmp(id){askConfirm('Recover Employee','Restore this employee to active?',()=>{gE(id).deleted=false;renderDelEmp();renderStats();},'Recover');}
-function renderDelHist(){
-  const data=jobHistory.filter(h=>h.deleted);
-  const tb=document.getElementById('del-hist-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="7" class="tbl-empty">No inactive history.</td></tr>`;return;}
-  tb.innerHTML=data.map(h=>`
+
+function recoverEmp(id) {
+  askConfirm('Recover Employee', 'Restore this employee to active?', () => {
+    gE(id).deleted = false; renderDelEmp(); renderStats();
+  }, 'Recover');
+}
+
+function renderDelHist() {
+  const data = jobHistory.filter(h => h.deleted);
+  const tb   = document.getElementById('del-hist-tbody');
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="7" class="tbl-empty">No inactive history.</td></tr>`; return; }
+  tb.innerHTML = data.map(h => `
     <tr class="del-row">
       <td class="ns">JH-${String(h.id).padStart(3,'0')}</td>
-      <td class="ns">${en(h.empId)}</td><td class="ns">${jc(h.jobId)}</td>
-      <td class="ns">${dc(h.deptId)}</td><td class="ns">${fmt(h.effDate)}</td>
+      <td class="ns">${en(h.empId)}</td>
+      <td class="ns">${jc(h.jobId)}</td>
+      <td class="ns">${dc(h.deptId)}</td>
+      <td class="ns">${fmt(h.effDate)}</td>
       <td class="ns">${fmtSal(h.salary)}</td>
       <td class="ns"><button class="btn btn-success" style="padding:3px 7px;font-size:10px" onclick="recoverHist(${h.id})">Recover</button></td>
     </tr>`).join('');
 }
-function recoverHist(id){askConfirm('Recover History','Restore this history entry?',()=>{jobHistory.find(x=>x.id===id).deleted=false;renderDelHist();},'Recover');}
-function renderDelJobs(){
-  const data=jobs.filter(j=>j.deleted);
-  const tb=document.getElementById('del-jobs-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="4" class="tbl-empty">No inactive jobs.</td></tr>`;return;}
-  tb.innerHTML=data.map(j=>`
+
+function recoverHist(id) {
+  askConfirm('Recover History', 'Restore this history entry?', () => {
+    jobHistory.find(x => x.id === id).deleted = false; renderDelHist();
+  }, 'Recover');
+}
+
+function renderDelJobs() {
+  const data = jobs.filter(j => j.deleted);
+  const tb   = document.getElementById('del-jobs-tbody');
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="4" class="tbl-empty">No inactive jobs.</td></tr>`; return; }
+  tb.innerHTML = data.map(j => `
     <tr class="del-row">
-      <td class="ns">${j.code}</td><td class="ns">${j.desc}</td><td class="ns">${dn(j.deptId)}</td>
+      <td class="ns">${j.code}</td>
+      <td class="ns">${j.desc}</td>
+      <td class="ns">${dn(j.deptId)}</td>
       <td class="ns"><button class="btn btn-success" style="padding:3px 7px;font-size:10px" onclick="recoverJob(${j.id})">Recover</button></td>
     </tr>`).join('');
 }
-function recoverJob(id){askConfirm('Recover Job','Restore this job position?',()=>{gJ(id).deleted=false;renderDelJobs();},'Recover');}
-function renderDelDepts(){
-  const data=departments.filter(d=>d.deleted);
-  const tb=document.getElementById('del-depts-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="3" class="tbl-empty">No inactive departments.</td></tr>`;return;}
-  tb.innerHTML=data.map(d=>`
+
+function recoverJob(id) {
+  askConfirm('Recover Job', 'Restore this job position?', () => {
+    gJ(id).deleted = false; renderDelJobs();
+  }, 'Recover');
+}
+
+function renderDelDepts() {
+  const data = departments.filter(d => d.deleted);
+  const tb   = document.getElementById('del-depts-tbody');
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="3" class="tbl-empty">No inactive departments.</td></tr>`; return; }
+  tb.innerHTML = data.map(d => `
     <tr class="del-row">
-      <td class="ns">${d.code}</td><td class="ns">${d.name}</td>
+      <td class="ns">${d.code}</td>
+      <td class="ns">${d.name}</td>
       <td class="ns"><button class="btn btn-success" style="padding:3px 7px;font-size:10px" onclick="recoverDept(${d.id})">Recover</button></td>
     </tr>`).join('');
 }
-function recoverDept(id){askConfirm('Recover Dept','Restore this department?',()=>{gD(id).deleted=false;renderDelDepts();},'Recover');}
+
+function recoverDept(id) {
+  askConfirm('Recover Dept', 'Restore this department?', () => {
+    gD(id).deleted = false; renderDelDepts();
+  }, 'Recover');
+}
 
 /* ═══ USERS ═══ */
-function renderUsers(){
-  const tb=document.getElementById('users-tbody');
-  if(!sysUsers.length){tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No users.</td></tr>`;return;}
-  tb.innerHTML=sysUsers.map(u=>`
+function renderUsers() {
+  const tb = document.getElementById('users-tbody');
+  if (!sysUsers.length) { tb.innerHTML = `<tr><td colspan="6" class="tbl-empty">No users.</td></tr>`; return; }
+  tb.innerHTML = sysUsers.map(u => `
     <tr>
       <td><strong>${u.username}</strong></td>
       <td>${u.firstName} ${u.lastName}</td>
-      <td><span class="badge ${u.role==='superadmin'?'b-sa':u.role==='admin'?'b-dept':'b-active'}">${u.role.toUpperCase()}</span></td>
-      <td>${u.empId?en(u.empId):'—'}</td>
-      <td><span class="badge ${u.deleted?'b-del':'b-active'}">${u.deleted?'Inactive':'Active'}</span></td>
+      <td><span class="badge ${u.role === 'superadmin' ? 'b-sa' : u.role === 'admin' ? 'b-dept' : 'b-active'}">${u.role.toUpperCase()}</span></td>
+      <td>${u.empId ? en(u.empId) : '—'}</td>
+      <td><span class="badge ${u.deleted ? 'b-del' : 'b-active'}">${u.deleted ? 'Inactive' : 'Active'}</span></td>
       <td>
-        <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser(${u.id})">Edit</button>
+        <button class="btn btn-white"  style="padding:3px 7px;font-size:10px" onclick="openEditUser(${u.id})">Edit</button>
         <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="delUser(${u.id})">Delete</button>
       </td>
     </tr>`).join('');
 }
-function openAddUser(){editId.user=null;document.getElementById('mo-user-title').textContent='Add User';['fu-user','fu-pass','fu-fn','fu-ln'].forEach(f=>document.getElementById(f).value='');document.getElementById('fu-role').value='';popFormSelects();om('mo-user');}
-function openEditUser(id){const u=sysUsers.find(x=>x.id===id);if(!u)return;editId.user=id;document.getElementById('mo-user-title').textContent='Edit User';document.getElementById('fu-user').value=u.username;document.getElementById('fu-pass').value=u.password;document.getElementById('fu-fn').value=u.firstName;document.getElementById('fu-ln').value=u.lastName;document.getElementById('fu-role').value=u.role;popFormSelects();setTimeout(()=>{document.getElementById('fu-emp').value=u.empId||'';},10);om('mo-user');}
-function saveUser(){
-  const username=document.getElementById('fu-user').value.trim();
-  const password=document.getElementById('fu-pass').value.trim();
-  const firstName=document.getElementById('fu-fn').value.trim();
-  const lastName=document.getElementById('fu-ln').value.trim();
-  const role=document.getElementById('fu-role').value;
-  const empId=+document.getElementById('fu-emp').value||null;
-  if(!username||!role){alert('Username and role required.');return;}
-  const userData = { username, password, first_name: firstName, last_name: lastName, role, emp_id: empId, deleted: false };
-  if(editId.user){
-    const existing = sysUsers.find(x=>x.id===editId.user);
-    Object.assign(existing, {username,password,firstName,lastName,role,empId});
-    sb.from('profiles').update(userData).eq('username', existing.username).then(() => console.log('User updated')).catch(err => console.error('Update error:', err));
-  } else {
-    sysUsers.push({id:nU++,username,password,firstName,lastName,role,empId,deleted:false});
-    sb.from('profiles').insert(userData).then(() => console.log('User added')).catch(err => console.error('Insert error:', err));
-  }
-  cm('mo-user');renderUsers();
+
+function openAddUser() {
+  editId.user = null;
+  document.getElementById('mo-user-title').textContent = 'Add User';
+  ['fu-user','fu-pass','fu-fn','fu-ln'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('fu-role').value = '';
+  popFormSelects();
+  om('mo-user');
 }
-function delUser(id){askConfirm('Delete User','Remove this user from the system?',()=>{
-  const u = sysUsers.find(x=>x.id===id);
-  if(u){
-    sb.from('profiles').update({ deleted: true }).eq('username', u.username).then(() => console.log('User deleted')).catch(err => console.error('Delete error:', err));
-    sysUsers = sysUsers.filter(x=>x.id!==id);
+
+function openEditUser(id) {
+  const u = sysUsers.find(x => x.id === id); if (!u) return;
+  editId.user = id;
+  document.getElementById('mo-user-title').textContent = 'Edit User';
+  document.getElementById('fu-user').value = u.username;
+  document.getElementById('fu-pass').value = u.password;
+  document.getElementById('fu-fn').value   = u.firstName;
+  document.getElementById('fu-ln').value   = u.lastName;
+  document.getElementById('fu-role').value = u.role;
+  popFormSelects();
+  setTimeout(() => { document.getElementById('fu-emp').value = u.empId || ''; }, 10);
+  om('mo-user');
+}
+
+function saveUser() {
+  const username  = document.getElementById('fu-user').value.trim();
+  const password  = document.getElementById('fu-pass').value.trim();
+  const firstName = document.getElementById('fu-fn').value.trim();
+  const lastName  = document.getElementById('fu-ln').value.trim();
+  const role      = document.getElementById('fu-role').value;
+  const empId     = +document.getElementById('fu-emp').value || null;
+  if (!username || !role) { alert('Username and role required.'); return; }
+  const userData = { username, password, first_name: firstName, last_name: lastName, role, emp_id: empId, deleted: false };
+  if (editId.user) {
+    const existing = sysUsers.find(x => x.id === editId.user);
+    Object.assign(existing, { username, password, firstName, lastName, role, empId });
+    sb.from('profiles').update(userData).eq('username', existing.username)
+      .then(() => console.log('User updated')).catch(err => console.error('Update error:', err));
+  } else {
+    sysUsers.push({ id: nU++, username, password, firstName, lastName, role, empId, deleted: false });
+    sb.from('profiles').insert(userData)
+      .then(() => console.log('User added')).catch(err => console.error('Insert error:', err));
   }
+  cm('mo-user');
   renderUsers();
-},'Delete');}
+}
+
+function delUser(id) {
+  askConfirm('Delete User', 'Remove this user from the system?', () => {
+    const u = sysUsers.find(x => x.id === id);
+    if (u) {
+      sb.from('profiles').update({ deleted: true }).eq('username', u.username)
+        .then(() => console.log('User deleted')).catch(err => console.error('Delete error:', err));
+      sysUsers = sysUsers.filter(x => x.id !== id);
+    }
+    renderUsers();
+  }, 'Delete');
+}
 
 /* ═══ PROFILE ═══ */
-function viewProf(id){
-  const e=gE(id);if(!e)return;
-  const hist=jobHistory.filter(h=>h.empId===id).sort((a,b)=>b.effDate.localeCompare(a.effDate));
-  const rows=hist.length?hist.map(h=>`
+function viewProf(id) {
+  const e = gE(id); if (!e) return;
+  const hist = jobHistory.filter(h => String(h.empId) === String(id) || String(h.empId) === String(e.empNo))
+    .sort((a, b) => b.effDate.localeCompare(a.effDate));
+
+  const rows = hist.length ? hist.map(h => `
     <tr>
       <td>${jc(h.jobId)}</td><td>${jd(h.jobId)}</td>
       <td>${dc(h.deptId)}</td><td>${dn(h.deptId)}</td>
       <td>${fmt(h.effDate)}</td><td>${fmtSal(h.salary)}</td>
-      <td><span class="badge ${h.deleted?'b-del':'b-active'}">${h.deleted?'Inactive':'Active'}</span></td>
+      <td><span class="badge ${h.deleted ? 'b-del' : 'b-active'}">${h.deleted ? 'Inactive' : 'Active'}</span></td>
       <td>
-        <button class="btn btn-white" style="padding:2px 6px;font-size:10px" onclick="openEditHist(${h.id});nav(document.querySelector('[data-page=job-history]'),'job-history')">Edit</button>
+        <button class="btn btn-white"  style="padding:2px 6px;font-size:10px" onclick="openEditHist(${h.id});nav(document.querySelector('[data-page=job-history]'),'job-history')">Edit</button>
         <button class="btn btn-danger" style="padding:2px 6px;font-size:10px" onclick="delHistRow(${h.id},${id})">Del</button>
       </td>
-    </tr>`).join(''):`<tr><td colspan="8" class="tbl-empty">No history.</td></tr>`;
+    </tr>`).join('') : `<tr><td colspan="8" class="tbl-empty">No history.</td></tr>`;
 
-  document.getElementById('profile-content').innerHTML=`
+  document.getElementById('profile-content').innerHTML = `
     <div class="pp">
       <div class="pp-head">
         <div class="ava">${ini(e)}</div>
@@ -1156,21 +1327,21 @@ function viewProf(id){
           <div class="prole">${jd(e.jobId)} · ${dn(e.deptId)}</div>
           <div class="pid">${e.empNo}</div>
         </div>
-        <div style="margin-left:auto"><span class="badge ${e.deleted?'b-del':'b-active'}" style="font-size:11px">${e.deleted?'Inactive':'Active'}</span></div>
+        <div style="margin-left:auto"><span class="badge ${e.deleted ? 'b-del' : 'b-active'}" style="font-size:11px">${e.deleted ? 'Inactive' : 'Active'}</span></div>
       </div>
       <div class="pp-body">
         <div class="pst">Personal Information</div>
         <div class="pg">
           <div class="pf"><label>Emp No</label><div class="v">${e.empNo}</div></div>
-          <div class="pf"><label>Username</label><div class="v">${e.username||'—'}</div></div>
+          <div class="pf"><label>Username</label><div class="v">${e.username || '—'}</div></div>
           <div class="pf"><label>Last Name</label><div class="v">${e.lastName}</div></div>
           <div class="pf"><label>First Name</label><div class="v">${e.firstName}</div></div>
-          <div class="pf"><label>Gender</label><div class="v">${e.gender||'—'}</div></div>
+          <div class="pf"><label>Gender</label><div class="v">${e.gender || '—'}</div></div>
           <div class="pf"><label>Hire Date</label><div class="v">${fmt(e.hireDate)}</div></div>
-          <div class="pf"><label>Sep Date</label><div class="v">${e.sepDate?fmt(e.sepDate):'—'}</div></div>
+          <div class="pf"><label>Sep Date</label><div class="v">${e.sepDate ? fmt(e.sepDate) : '—'}</div></div>
           <div class="pf"><label>Salary</label><div class="v">${fmtSal(e.salary)}</div></div>
-          <div class="pf"><label>Email</label><div class="v">${e.email||'—'}</div></div>
-          <div class="pf"><label>Phone</label><div class="v">${e.phone||'—'}</div></div>
+          <div class="pf"><label>Email</label><div class="v">${e.email || '—'}</div></div>
+          <div class="pf"><label>Phone</label><div class="v">${e.phone || '—'}</div></div>
         </div>
         <div class="pst">Current Assignment</div>
         <div class="pg" style="margin-bottom:18px">
@@ -1192,46 +1363,54 @@ function viewProf(id){
         <div style="margin-top:14px;display:flex;gap:7px">
           <button class="btn btn-primary" onclick="openEditEmp(${e.id})">Edit Profile</button>
           ${e.deleted
-            ?`<button class="btn btn-success" onclick="recoverProfEmp(${e.id})">Restore</button>`
-            :`<button class="btn btn-danger" onclick="delProfEmp(${e.id})">Deactivate</button>`}
+            ? `<button class="btn btn-success" onclick="recoverProfEmp(${e.id})">Restore</button>`
+            : `<button class="btn btn-danger"  onclick="delProfEmp(${e.id})">Deactivate</button>`}
         </div>
       </div>
     </div>`;
 
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-profile').classList.add('active');
-  document.getElementById('topbar-title').textContent='Employee Profile';
+  document.getElementById('topbar-title').textContent = 'Employee Profile';
 }
-function openAddHistFor(empId){
-  editId.hist=null;
-  document.getElementById('mo-hist-title').textContent='Add Job History';
-  popFormSelects();
-  setTimeout(()=>{document.getElementById('fh-emp').value=empId;},10);
-  document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];
-  document.getElementById('fh-sal').value='';
-  om('mo-hist');
-  // Re-render profile after save via hook
-  const origSave=window._origSaveHist;
-  window._profileEmpId=empId;
-}
-function saveHistAndRefresh(){
-  saveHist();
-  if(window._profileEmpId){setTimeout(()=>viewProf(window._profileEmpId),50);}
-}
-function delHistRow(hid,empId){
-  askConfirm('Delete History Entry','Deactivate this history record?',()=>{
-    jobHistory.find(x=>x.id===hid).deleted=true;
-    viewProf(empId);
-  },'Delete');
-}
-function delProfEmp(id){askConfirm('Deactivate Employee','Mark employee as inactive?',()=>{gE(id).deleted=true;viewProf(id);renderStats();},'Deactivate');}
-function recoverProfEmp(id){askConfirm('Restore Employee','Restore employee to active?',()=>{gE(id).deleted=false;viewProf(id);renderStats();},'Restore');}
 
-function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',async ()=>{
-  await sb.auth.signOut();
-  window.location.href = 'index.html#login';
-},'Log Out');}
+function openAddHistFor(empId) {
+  editId.hist = null;
+  document.getElementById('mo-hist-title').textContent = 'Add Job History';
+  popFormSelects();
+  setTimeout(() => { document.getElementById('fh-emp').value = empId; }, 10);
+  document.getElementById('fh-eff').value = new Date().toISOString().split('T')[0];
+  document.getElementById('fh-sal').value = '';
+  window._profileEmpId = empId;
+  om('mo-hist');
+}
+
+function delHistRow(hid, empId) {
+  askConfirm('Delete History Entry', 'Deactivate this history record?', () => {
+    jobHistory.find(x => x.id === hid).deleted = true;
+    viewProf(empId);
+  }, 'Delete');
+}
+
+function delProfEmp(id) {
+  askConfirm('Deactivate Employee', 'Mark employee as inactive?', () => {
+    gE(id).deleted = true; viewProf(id); renderStats();
+  }, 'Deactivate');
+}
+
+function recoverProfEmp(id) {
+  askConfirm('Restore Employee', 'Restore employee to active?', () => {
+    gE(id).deleted = false; viewProf(id); renderStats();
+  }, 'Restore');
+}
+
+function doLogout() {
+  askConfirm('Log Out', 'Are you sure you want to log out?', async () => {
+    await sb.auth.signOut();
+    window.location.href = 'index.html#login';
+  }, 'Log Out');
+}
 
 /* INIT */
 loadAllData();
