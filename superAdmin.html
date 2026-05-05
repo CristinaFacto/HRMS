@@ -512,46 +512,30 @@ tbody td{padding:8px 12px;vertical-align:middle}
 /* ═══ DATA ═══ */
 const ROLE = 'superadmin';
 
-let departments = [
-  {id:1,code:'IT', name:'Information Technology',desc:'Tech infrastructure.',deleted:false},
-  {id:2,code:'HR', name:'Human Resources',       desc:'Employee relations.',deleted:false},
-  {id:3,code:'FIN',name:'Finance',               desc:'Financial management.',deleted:false},
-  {id:4,code:'OPS',name:'Operations',            desc:'Day-to-day operations.',deleted:false},
-];
-let jobs = [
-  {id:1,code:'DEV', desc:'Software Developer',   deptId:1,deleted:false},
-  {id:2,code:'SA',  desc:'System Administrator', deptId:1,deleted:false},
-  {id:3,code:'HRO', desc:'HR Officer',           deptId:2,deleted:false},
-  {id:4,code:'RECR',desc:'Recruiter',            deptId:2,deleted:false},
-  {id:5,code:'ACCT',desc:'Accountant',           deptId:3,deleted:false},
-  {id:6,code:'OPMG',desc:'Operations Manager',   deptId:4,deleted:false},
-];
-let employees = [
-  {id:1,empNo:'EMP-001',username:'admin1',    lastName:'One',   firstName:'Admin',    gender:'Male',  hireDate:'2020-01-15',sepDate:'',salary:75000,deptId:2,jobId:3,email:'admin1@co.com',    phone:'+63 912 000 0001',deleted:false},
-  {id:2,empNo:'EMP-002',username:'employee1', lastName:'One',   firstName:'Employee', gender:'Female',hireDate:'2021-03-01',sepDate:'',salary:55000,deptId:1,jobId:1,email:'emp1@co.com',      phone:'+63 912 000 0002',deleted:false},
-  {id:3,empNo:'EMP-003',username:'employee2', lastName:'Two',   firstName:'Employee', gender:'Male',  hireDate:'2021-06-15',sepDate:'',salary:52000,deptId:1,jobId:2,email:'emp2@co.com',      phone:'+63 912 000 0003',deleted:false},
-  {id:4,empNo:'EMP-004',username:'employee3', lastName:'Three', firstName:'Employee', gender:'Female',hireDate:'2022-02-10',sepDate:'',salary:60000,deptId:3,jobId:5,email:'emp3@co.com',      phone:'+63 912 000 0004',deleted:false},
-  {id:5,empNo:'EMP-005',username:'employee4', lastName:'Four',  firstName:'Employee', gender:'Male',  hireDate:'2022-08-20',sepDate:'',salary:65000,deptId:4,jobId:6,email:'emp4@co.com',      phone:'+63 912 000 0005',deleted:false},
-  {id:6,empNo:'EMP-006',username:'employee5', lastName:'Five',  firstName:'Employee', gender:'Female',hireDate:'2023-01-05',sepDate:'2024-12-31',salary:48000,deptId:2,jobId:4,email:'emp5@co.com',phone:'+63 912 000 0006',deleted:true},
-];
-let jobHistory = [
-  {id:1,empId:1,jobId:3,deptId:2,effDate:'2020-01-15',salary:75000,deleted:false},
-  {id:2,empId:2,jobId:1,deptId:1,effDate:'2021-03-01',salary:55000,deleted:false},
-  {id:3,empId:3,jobId:2,deptId:1,effDate:'2021-06-15',salary:52000,deleted:false},
-  {id:4,empId:4,jobId:5,deptId:3,effDate:'2022-02-10',salary:60000,deleted:false},
-  {id:5,empId:5,jobId:6,deptId:4,effDate:'2022-08-20',salary:65000,deleted:false},
-  {id:6,empId:6,jobId:4,deptId:2,effDate:'2023-01-05',salary:48000,deleted:true},
-  {id:7,empId:2,jobId:2,deptId:1,effDate:'2020-05-01',salary:50000,deleted:false},
-];
-let sysUsers = [
-  {id:1,username:'superadmin1',password:'sa123',firstName:'Super',   lastName:'Admin',role:'superadmin',empId:null,deleted:false},
-  {id:2,username:'admin1',     password:'ad123',firstName:'Admin',   lastName:'One',  role:'admin',     empId:1,   deleted:false},
-  {id:3,username:'user1',      password:'us123',firstName:'Employee',lastName:'One',  role:'user',      empId:2,   deleted:false},
-];
+let departments = [];
+let jobs = [];
+let employees = [];
+let jobHistory = [];
+let sysUsers = [];
 
-let nE=7,nD=5,nJ=7,nH=8,nU=4;
-let editId={emp:null,dept:null,job:null,hist:null,user:null};
-let pendingFn=null;
+async function loadAllData() {
+  const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
+    sb.from('employees').select('*'),
+    sb.from('departments').select('*'),
+    sb.from('jobs').select('*'),
+    sb.from('job_history').select('*'),
+    sb.from('sys_users').select('*'),
+  ]);
+
+  employees   = empRes.data  || [];
+  departments = deptRes.data || [];
+  jobs        = jobRes.data  || [];
+  jobHistory  = histRes.data || [];
+  sysUsers    = userRes.data || [];
+
+  renderEmp();
+  renderStats();
+}
 
 /* ═══ HELPERS ═══ */
 const gD=id=>departments.find(d=>d.id===id);
@@ -1059,7 +1043,7 @@ function recoverProfEmp(id){askConfirm('Restore Employee','Restore employee to a
 function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',()=>{alert('Logged out. (Demo mode – page will reload)');location.reload();},'Log Out');}
 
 /* INIT */
-renderEmp();renderStats();
+loadAllData();
 </script>
 </body>
 </html>
