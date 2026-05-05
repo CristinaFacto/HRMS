@@ -525,10 +525,10 @@ async function loadAllData() {
 
   const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
     sb.from('employee').select('*'),
-    sb.from('departments').select('*'),
-    sb.from('jobs').select('*'),
-    sb.from('job_history').select('*'),
-    sb.from('sys_users').select('*'),
+    sb.from('department').select('*'),   // FIXED
+    sb.from('job').select('*'),          // FIXED
+    sb.from('jobHistory').select('*'),   // FIXED (if your table is lowercase different, adjust)
+    sb.from('profiles').select('*'),     // FIXED (instead of sys_users)
   ]);
 
   console.log("EMP:", empRes);
@@ -537,21 +537,25 @@ async function loadAllData() {
   console.log("HIST:", histRes);
   console.log("USERS:", userRes);
 
-  if (empRes.error) console.error(empRes.error);
+  if (empRes.error) console.error("EMP ERROR:", empRes.error);
+  if (deptRes.error) console.error("DEPT ERROR:", deptRes.error);
+  if (jobRes.error) console.error("JOB ERROR:", jobRes.error);
+  if (histRes.error) console.error("HIST ERROR:", histRes.error);
+  if (userRes.error) console.error("USER ERROR:", userRes.error);
 
   employees = (empRes.data || []).map(e => ({
-  id: e.empno,
-  empNo: e.empno,
-  lastName: e.lastname,
-  firstName: e.firstname,
-  gender: e.gender,
-  hireDate: e.hiredate,
-  sepDate: e.sepdate,
-  deleted: false
-}));
-  
+    id: e.empno,
+    empNo: e.empno,
+    lastName: e.lastname,
+    firstName: e.firstname,
+    gender: e.gender,
+    hireDate: e.hiredate,
+    sepDate: e.sepdate,
+    deleted: false
+  }));
+
   departments = deptRes.data || [];
-  jobs        = jobRes.data  || [];
+  jobs        = jobRes.data || [];
   jobHistory  = histRes.data || [];
   sysUsers    = userRes.data || [];
 
