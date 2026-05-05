@@ -521,18 +521,28 @@ let jobHistory = [];
 let sysUsers = [];
 
 async function loadAllData() {
+  console.log("Loading data...");
+
   const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
     sb.from('employees').select('*'),
     sb.from('departments').select('*'),
     sb.from('jobs').select('*'),
-    sb.from('jobhistory').select('*'),
+    sb.from('job_history').select('*'),
     sb.from('sys_users').select('*'),
   ]);
+
+  console.log("EMP:", empRes);
+  console.log("DEPT:", deptRes);
+  console.log("JOBS:", jobRes);
+  console.log("HIST:", histRes);
+  console.log("USERS:", userRes);
+
+  if (empRes.error) console.error(empRes.error);
 
   employees   = empRes.data  || [];
   departments = deptRes.data || [];
   jobs        = jobRes.data  || [];
-  jobhistory  = histRes.data || [];
+  jobHistory  = histRes.data || [];
   sysUsers    = userRes.data || [];
 
   renderEmp();
