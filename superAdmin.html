@@ -501,6 +501,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
 <script>
  // ── Supabase init ──────────────────────────────────────────────
   const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
@@ -523,17 +525,18 @@ async function loadAllData() {
     sb.from('employees').select('*'),
     sb.from('departments').select('*'),
     sb.from('jobs').select('*'),
-    sb.from('job_history').select('*'),
+    sb.from('jobhistory').select('*'),
     sb.from('sys_users').select('*'),
   ]);
 
   employees   = empRes.data  || [];
   departments = deptRes.data || [];
   jobs        = jobRes.data  || [];
-  jobHistory  = histRes.data || [];
+  jobhistory  = histRes.data || [];
   sysUsers    = userRes.data || [];
 
-  loadAllData();
+  renderEmp();
+  renderStats();
 }
 
 /* ═══ HELPERS ═══ */
@@ -1042,7 +1045,7 @@ function recoverProfEmp(id){askConfirm('Restore Employee','Restore employee to a
 function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',()=>{alert('Logged out. (Demo mode – page will reload)');location.reload();},'Log Out');}
 
 /* INIT */
-renderEmp();renderStats();
+loadAllData();
 </script>
 </body>
 </html>
