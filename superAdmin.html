@@ -1111,11 +1111,25 @@ function saveUser(){
   const role=document.getElementById('fu-role').value;
   const empId=+document.getElementById('fu-emp').value||null;
   if(!username||!role){alert('Username and role required.');return;}
-  if(editId.user){Object.assign(sysUsers.find(x=>x.id===editId.user),{username,password,firstName,lastName,role,empId});}
-  else{sysUsers.push({id:nU++,username,password,firstName,lastName,role,empId,deleted:false});}
+  const userData = { username, password, first_name: firstName, last_name: lastName, role, emp_id: empId, deleted: false };
+  if(editId.user){
+    const existing = sysUsers.find(x=>x.id===editId.user);
+    Object.assign(existing, {username,password,firstName,lastName,role,empId});
+    sb.from('profiles').update(userData).eq('username', existing.username).then(() => console.log('User updated')).catch(err => console.error('Update error:', err));
+  } else {
+    sysUsers.push({id:nU++,username,password,firstName,lastName,role,empId,deleted:false});
+    sb.from('profiles').insert(userData).then(() => console.log('User added')).catch(err => console.error('Insert error:', err));
+  }
   cm('mo-user');renderUsers();
 }
-function delUser(id){askConfirm('Delete User','Remove this user from the system?',()=>{sysUsers=sysUsers.filter(x=>x.id!==id);renderUsers();},'Delete');}
+function delUser(id){askConfirm('Delete User','Remove this user from the system?',()=>{
+  const u = sysUsers.find(x=>x.id===id);
+  if(u){
+    sb.from('profiles').update({ deleted: true }).eq('username', u.username).then(() => console.log('User deleted')).catch(err => console.error('Delete error:', err));
+    sysUsers = sysUsers.filter(x=>x.id!==id);
+  }
+  renderUsers();
+},'Delete');}
 
 /* ═══ PROFILE ═══ */
 function viewProf(id){
