@@ -1228,7 +1228,10 @@ function delHistRow(hid,empId){
 function delProfEmp(id){askConfirm('Deactivate Employee','Mark employee as inactive?',()=>{gE(id).deleted=true;viewProf(id);renderStats();},'Deactivate');}
 function recoverProfEmp(id){askConfirm('Restore Employee','Restore employee to active?',()=>{gE(id).deleted=false;viewProf(id);renderStats();},'Restore');}
 
-function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',()=>{alert('Logged out. (Demo mode – page will reload)');location.reload();},'Log Out');}
+function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',async ()=>{
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+},'Log Out');}
 
 /* INIT */
 loadAllData();
