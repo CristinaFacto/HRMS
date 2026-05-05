@@ -510,6 +510,13 @@ tbody td{padding:8px 12px;vertical-align:middle}
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
+  // Sign in anonymously to access data
+  sb.auth.signInAnonymously().then(() => {
+    console.log('✅ Signed in anonymously to Supabase');
+  }).catch(err => {
+    console.warn('Anonymous sign-in not available, using public access:', err.message);
+  });
+
 
 /* ═══ DATA ═══ */
 const ROLE = 'superadmin';
@@ -519,48 +526,141 @@ let jobs = [];
 let employees = [];
 let jobHistory = [];
 let sysUsers = [];
+let nE = 1, nH = 1, nD = 1, nJ = 1, nU = 1;
+let editId = { emp: null, hist: null, dept: null, job: null, user: null };
+let pendingFn = null;
 
 async function loadAllData() {
-  console.log("Loading data...");
+  console.log("Loading data from Supabase...");
+  console.log("Supabase URL:", SUPABASE_URL);
 
-  const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
-    sb.from('employee').select('*'),
-    sb.from('department').select('*'),   // FIXED
-    sb.from('job').select('*'),          // FIXED
-    sb.from('jobhistory').select('*'),   // FIXED (if your table is lowercase different, adjust)
-    sb.from('profiles').select('*'),     // FIXED (instead of sys_users)
-  ]);
+  try {
+    const [empRes, deptRes, jobRes, histRes, userRes] = await Promise.all([
+      sb.from('employee').select('*'),
+      sb.from('department').select('*'),
+      sb.from('job').select('*'),
+      sb.from('jobhistory').select('*'),
+      sb.from('profiles').select('*'),
+    ]);
 
-  console.log("EMP:", empRes);
-  console.log("DEPT:", deptRes);
-  console.log("JOBS:", jobRes);
-  console.log("HIST:", histRes);
-  console.log("USERS:", userRes);
+    console.log("EMP Response:", empRes);
+    console.log("DEPT Response:", deptRes);
+    console.log("JOBS Response:", jobRes);
+    console.log("HIST Response:", histRes);
+    console.log("USERS Response:", userRes);
 
-  if (empRes.error) console.error("EMP ERROR:", empRes.error);
-  if (deptRes.error) console.error("DEPT ERROR:", deptRes.error);
-  if (jobRes.error) console.error("JOB ERROR:", jobRes.error);
-  if (histRes.error) console.error("HIST ERROR:", histRes.error);
-  if (userRes.error) console.error("USER ERROR:", userRes.error);
+    if (empRes.error) {
+      console.error("❌ EMP ERROR:", empRes.error);
+      alert("Error loading employees: " + empRes.error.message);
+    }
+    if (deptRes.error) {
+      console.error("❌ DEPT ERROR:", deptRes.error);
+      alert("Error loading departments: " + deptRes.error.message);
+    }
+    if (jobRes.error) {
+      console.error("❌ JOB ERROR:", jobRes.error);
+      alert("Error loading jobs: " + jobRes.error.message);
+    }
+    if (histRes.error) {
+      console.error("❌ HIST ERROR:", histRes.error);
+      alert("Error loading job history: " + histRes.error.message);
+    }
+    if (userRes.error) {
+      console.error("❌ USER ERROR:", userRes.error);
+      alert("Error loading users: " + userRes.error.message);
+    }
 
-  employees = (empRes.data || []).map(e => ({
-    id: e.empno,
-    empNo: e.empno,
-    lastName: e.lastname,
-    firstName: e.firstname,
-    gender: e.gender,
-    hireDate: e.hiredate,
-    sepDate: e.sepdate,
-    deleted: false
-  }));
+    // Map departments - handle both field name variations
+    departments = (deptRes.data || []).map((d, idx) => ({
+      id: idx + 1,
+      code: d.deptCode || d.code || d.dept_code || '',
+      name: d.deptName || d.name || d.dept_name || '',
+      desc: d.description || d.desc || '',
+      deleted: d.deleted || false
+    }));
 
-  departments = deptRes.data || [];
-  jobs        = jobRes.data || [];
-  jobHistory  = histRes.data || [];
-  sysUsers    = userRes.data || [];
+    console.log("✅ Departments loaded:", departments.length, departments);
 
-  renderEmp();
-  renderStats();
+    // Map jobs
+    jobs = (jobRes.data || []).map((j, idx) => ({
+      id: idx + 1,
+      code: j.jobCode || j.code || j.job_code || '',
+      desc: j.jobDesc || j.description || j.desc || j.job_desc || '',
+      deptId: j.deptId || j.dept_id || 1,
+      deleted: j.deleted || false
+    }));
+
+    console.log("✅ Jobs loaded:", jobs.length, jobs);
+
+    // Map job history first to find current job/dept/salary for each employee
+    jobHistory = (histRes.data || []).map((h, idx) => ({
+      id: idx + 1,
+      empId: h.empNo || h.emp_id || h.empno || '',
+      jobId: jobs.find(j => j.code === (h.jobCode || h.job_code))?.id || 1,
+      deptId: departments.find(d => d.code === (h.deptCode || h.dept_code))?.id || 1,
+      effDate: h.effDate || h.eff_date || '',
+      salary: h.salary || 0,
+      deleted: h.deleted || false
+    }));
+
+    console.log("✅ Job History loaded:", jobHistory.length, jobHistory);
+
+    // Map employees - find their current job/dept from latest history
+    employees = (empRes.data || []).map((e, idx) => {
+      const empNo = e.empno || e.emp_no || '';
+      const hist = jobHistory.filter(h => h.empId === empNo).sort((a, b) => 
+        new Date(b.effDate) - new Date(a.effDate)
+      )[0];
+
+      return {
+        id: idx + 1,
+        empNo: empNo,
+        lastName: e.lastname || e.last_name || '',
+        firstName: e.firstname || e.first_name || '',
+        gender: e.gender || '',
+        birthdate: e.birthdate || e.birth_date || '',
+        hireDate: e.hiredate || e.hire_date || '',
+        sepDate: e.sepdate || e.sep_date || null,
+        username: e.username || '',
+        email: e.email || '',
+        phone: e.phone || '',
+        deptId: hist?.deptId || 1,
+        jobId: hist?.jobId || 1,
+        salary: hist?.salary || 0,
+        deleted: e.deleted || (e.sepDate || e.sep_date ? true : false)
+      };
+    });
+
+    console.log("✅ Employees loaded:", employees.length, employees);
+
+    // Map system users
+    sysUsers = (userRes.data || []).map((u, idx) => ({
+      id: idx + 1,
+      username: u.username || '',
+      password: u.password || '',
+      firstName: u.first_name || u.firstName || '',
+      lastName: u.last_name || u.lastName || '',
+      role: u.role || 'user',
+      empId: u.emp_id || u.empId || null,
+      deleted: u.deleted || false
+    }));
+
+    console.log("✅ Users loaded:", sysUsers.length, sysUsers);
+
+    // Update counters
+    nE = (employees.length || 0) + 1;
+    nH = (jobHistory.length || 0) + 1;
+    nD = (departments.length || 0) + 1;
+    nJ = (jobs.length || 0) + 1;
+    nU = (sysUsers.length || 0) + 1;
+
+    console.log("✅ All data loaded successfully!");
+    renderEmp();
+    renderStats();
+  } catch (error) {
+    console.error("❌ FATAL ERROR:", error);
+    alert("Fatal error loading data: " + error.message);
+  }
 }
 
 /* ═══ HELPERS ═══ */
