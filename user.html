@@ -774,7 +774,7 @@ function viewProf(id){
 function doLogout(){
   askConfirm('Log Out','Are you sure you want to log out?',async ()=>{
     await sb.auth.signOut();
-    window.location.href = 'index.html';
+    window.location.href = 'index.html#login';
   },'Log Out');
 }
 
