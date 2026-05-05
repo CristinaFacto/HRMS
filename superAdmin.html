@@ -549,6 +549,20 @@ async function loadAllData() {
     console.log("HIST Response:", histRes);
     console.log("USERS Response:", userRes);
 
+    // Debug: Show first record from each table
+    if (empRes.data && empRes.data.length > 0) {
+      console.log("🔍 First employee record:", empRes.data[0]);
+    }
+    if (deptRes.data && deptRes.data.length > 0) {
+      console.log("🔍 First department record:", deptRes.data[0]);
+    }
+    if (jobRes.data && jobRes.data.length > 0) {
+      console.log("🔍 First job record:", jobRes.data[0]);
+    }
+    if (histRes.data && histRes.data.length > 0) {
+      console.log("🔍 First job history record:", histRes.data[0]);
+    }
+
     if (empRes.error) {
       console.error("❌ EMP ERROR:", empRes.error);
       alert("Error loading employees: " + empRes.error.message);
@@ -570,50 +584,74 @@ async function loadAllData() {
       alert("Error loading users: " + userRes.error.message);
     }
 
-    // Map departments - handle both field name variations
-    departments = (deptRes.data || []).map((d, idx) => ({
-      id: idx + 1,
-      code: d.deptCode || d.code || d.dept_code || '',
-      name: d.deptName || d.name || d.dept_name || '',
-      desc: d.description || d.desc || '',
-      deleted: d.deleted || false
-    }));
+    // Map departments - handle both field name variations and preserve real DB IDs when available
+    departments = (deptRes.data || []).map((d, idx) => {
+      console.log(`🔍 Mapping department ${idx}:`, d);
+      const mappedId = d.id ?? d.deptid ?? d.deptId ?? d.dept_id ?? d.deptcode ?? d.deptCode ?? d.dept_code ?? (idx + 1);
+      const mapped = {
+        id: mappedId,
+        code: d.deptcode || d.deptCode || d.code || d.dept_code || '',
+        name: d.deptname || d.deptName || d.name || d.dept_name || '',
+        desc: d.description || d.desc || '',
+        deleted: d.deleted || false
+      };
+      console.log(`✅ Mapped department:`, mapped);
+      return mapped;
+    });
 
     console.log("✅ Departments loaded:", departments.length, departments);
 
-    // Map jobs
-    jobs = (jobRes.data || []).map((j, idx) => ({
-      id: idx + 1,
-      code: j.jobCode || j.code || j.job_code || '',
-      desc: j.jobDesc || j.description || j.desc || j.job_desc || '',
-      deptId: j.deptId || j.dept_id || 1,
-      deleted: j.deleted || false
-    }));
+    // Map jobs and resolve department references by ID or department code
+    jobs = (jobRes.data || []).map((j, idx) => {
+      const rawDeptRef = j.deptid || j.deptId || j.dept_id || j.deptcode || j.deptCode || j.dept_code || '';
+      const deptMatch = departments.find(d => String(d.id) === String(rawDeptRef) || String(d.code) === String(rawDeptRef));
+      return {
+        id: j.id ?? j.jobid ?? j.jobId ?? j.job_id ?? (idx + 1),
+        code: j.jobcode || j.jobCode || j.code || j.job_code || '',
+        desc: j.jobdesc || j.jobDesc || j.description || j.desc || j.job_desc || '',
+        deptId: deptMatch?.id ?? null,
+        deleted: j.deleted || false
+      };
+    });
 
     console.log("✅ Jobs loaded:", jobs.length, jobs);
 
     // Map job history first to find current job/dept/salary for each employee
-    jobHistory = (histRes.data || []).map((h, idx) => ({
-      id: idx + 1,
-      empId: h.empNo || h.emp_id || h.empno || '',
-      jobId: jobs.find(j => j.code === (h.jobCode || h.job_code))?.id || 1,
-      deptId: departments.find(d => d.code === (h.deptCode || h.dept_code))?.id || 1,
-      effDate: h.effDate || h.eff_date || '',
-      salary: h.salary || 0,
-      deleted: h.deleted || false
-    }));
+    jobHistory = (histRes.data || []).map((h, idx) => {
+      const rawJobRef = h.jobcode || h.jobCode || h.job_code || h.jobid || h.jobId || h.job_id || '';
+      const rawDeptRef = h.deptcode || h.deptCode || h.dept_code || h.deptid || h.deptId || h.dept_id || '';
+      console.log(`Mapping job history ${idx}:`, { rawJobRef, rawDeptRef, h });
+
+      const jobMatch = jobs.find(j => String(j.code) === String(rawJobRef) || String(j.id) === String(rawJobRef));
+      const deptMatch = departments.find(d => String(d.code) === String(rawDeptRef) || String(d.id) === String(rawDeptRef));
+
+      console.log(`Job match for ${rawJobRef}:`, jobMatch);
+      console.log(`Dept match for ${rawDeptRef}:`, deptMatch);
+
+      return {
+        id: idx + 1,
+        empId: h.empno || h.empNo || h.emp_id || h.empId || '',
+        jobId: jobMatch?.id ?? null,
+        deptId: deptMatch?.id ?? null,
+        effDate: h.effdate || h.effDate || h.eff_date || '',
+        salary: h.salary || 0,
+        deleted: h.deleted || false
+      };
+    });
 
     console.log("✅ Job History loaded:", jobHistory.length, jobHistory);
 
     // Map employees - find their current job/dept from latest history
     employees = (empRes.data || []).map((e, idx) => {
       const empNo = e.empno || e.emp_no || '';
-      const hist = jobHistory.filter(h => h.empId === empNo).sort((a, b) => 
+      const hist = jobHistory.filter(h => String(h.empId) === String(empNo)).sort((a, b) =>
         new Date(b.effDate) - new Date(a.effDate)
       )[0];
 
+      console.log(`Employee ${empNo} history:`, hist);
+
       return {
-        id: idx + 1,
+        id: e.id ?? e.empid ?? e.empId ?? e.emp_id ?? (idx + 1),
         empNo: empNo,
         lastName: e.lastname || e.last_name || '',
         firstName: e.firstname || e.first_name || '',
@@ -624,8 +662,8 @@ async function loadAllData() {
         username: e.username || '',
         email: e.email || '',
         phone: e.phone || '',
-        deptId: hist?.deptId || 1,
-        jobId: hist?.jobId || 1,
+        deptId: hist?.deptId ?? null,
+        jobId: hist?.jobId ?? null,
         salary: hist?.salary || 0,
         deleted: e.deleted || (e.sepDate || e.sep_date ? true : false)
       };
@@ -664,9 +702,9 @@ async function loadAllData() {
 }
 
 /* ═══ HELPERS ═══ */
-const gD=id=>departments.find(d=>d.id===id);
-const gJ=id=>jobs.find(j=>j.id===id);
-const gE=id=>employees.find(e=>e.id===id);
+const gD=id=>departments.find(d=>d.id===id || String(d.id)===String(id) || d.code===id || String(d.code)===String(id));
+const gJ=id=>jobs.find(j=>j.id===id || String(j.id)===String(id) || j.code===id || String(j.code)===String(id));
+const gE=id=>employees.find(e=>e.id===id || String(e.id)===String(id) || e.empNo===id || String(e.empNo)===String(id));
 const dn=id=>{const d=gD(id);return d?d.name:'—'};
 const dc=id=>{const d=gD(id);return d?d.code:'—'};
 const jd=id=>{const j=gJ(id);return j?j.desc:'—'};
@@ -913,21 +951,31 @@ function saveHist(){
 
 /* ═══ DEPARTMENTS ═══ */
 function renderDepts(){
+  console.log("🔍 Rendering departments, current departments array:", departments);
   const ec=id=>employees.filter(e=>e.deptId===id&&!e.deleted).length;
   const tb=document.getElementById('dept-tbody');
   const data=departments.filter(d=>!d.deleted);
-  if(!data.length){tb.innerHTML=`<tr><td colspan="5" class="tbl-empty">No departments.</td></tr>`;return;}
-  tb.innerHTML=data.map(d=>`
+  console.log("🔍 Filtered departments (not deleted):", data);
+
+  if(!data.length){
+    tb.innerHTML=`<tr><td colspan="5" class="tbl-empty">No departments.</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML=data.map(d=>{
+    console.log("🔍 Rendering department:", d);
+    return `
     <tr>
-      <td><strong>${d.code}</strong></td>
-      <td>${d.name}</td>
+      <td><strong>${d.code || 'UNDEFINED'}</strong></td>
+      <td>${d.name || 'UNDEFINED'}</td>
       <td style="max-width:200px;color:var(--muted)">${d.desc||'—'}</td>
       <td>${ec(d.id)}</td>
       <td>
         <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept(${d.id})">Edit</button>
         <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="delDept(${d.id})">Delete</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name','fd-desc'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
 function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;document.getElementById('fd-desc').value=d.desc||'';om('mo-dept');}
