@@ -527,7 +527,7 @@ async function loadAllData() {
     sb.from('employee').select('*'),
     sb.from('department').select('*'),   // FIXED
     sb.from('job').select('*'),          // FIXED
-    sb.from('jobHistory').select('*'),   // FIXED (if your table is lowercase different, adjust)
+    sb.from('jobhistory').select('*'),   // FIXED (if your table is lowercase different, adjust)
     sb.from('profiles').select('*'),     // FIXED (instead of sys_users)
   ]);
 
