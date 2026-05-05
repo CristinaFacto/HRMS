@@ -533,8 +533,7 @@ async function loadAllData() {
   jobHistory  = histRes.data || [];
   sysUsers    = userRes.data || [];
 
-  renderEmp();
-  renderStats();
+  loadAllData();
 }
 
 /* ═══ HELPERS ═══ */
@@ -1043,7 +1042,7 @@ function recoverProfEmp(id){askConfirm('Restore Employee','Restore employee to a
 function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',()=>{alert('Logged out. (Demo mode – page will reload)');location.reload();},'Log Out');}
 
 /* INIT */
-loadAllData();
+renderEmp();renderStats();
 </script>
 </body>
 </html>
