@@ -527,8 +527,10 @@ let sysUsers = [];
 let nE = 1, nH = 1, nD = 1, nJ = 1, nU = 1;
 let editId = { emp: null, hist: null, dept: null, job: null, user: null };
 let pendingFn = null;
+let isLoading = true;
 
 async function loadAllData() {
+  isLoading = true;
   console.log("Loading data from Supabase...");
 
   try {
@@ -635,6 +637,7 @@ async function loadAllData() {
     console.error("❌ FATAL ERROR:", error);
     alert("Fatal error loading data: " + error.message);
   }
+  isLoading = false;
 }
 
 /* ═══ HELPERS ═══ */
@@ -703,7 +706,7 @@ function popDeptFilter() {
 }
 
 function renderEmp() {
-  if (!employees.length && !departments.length) {
+  if (isLoading && !employees.length) {
     const tb = document.getElementById('emp-tbody');
     tb.innerHTML = `<tr><td colspan="12" class="tbl-empty">Loading data...</td></tr>`;
     return;
