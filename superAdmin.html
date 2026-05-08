@@ -703,6 +703,11 @@ function popDeptFilter() {
 }
 
 function renderEmp() {
+  if (!employees.length && !departments.length) {
+    const tb = document.getElementById('emp-tbody');
+    tb.innerHTML = `<tr><td colspan="12" class="tbl-empty">Loading data...</td></tr>`;
+    return;
+  }
   popDeptFilter();
   const q  = document.getElementById('emp-q').value.toLowerCase();
   const fd = document.getElementById('emp-fd').value;
