@@ -272,7 +272,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="tw">
         <table>
-          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Description</th><th>Employees</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Employees</th><th>Actions</th></tr></thead>
           <tbody id="dept-tbody"></tbody>
         </table>
       </div>
@@ -288,7 +288,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="tw">
         <table>
-          <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Employees</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Job Code</th><th>Job Description</th><th>Employees</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="job-tbody"></tbody>
         </table>
       </div>
@@ -306,24 +306,28 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <button class="tab-btn" onclick="switchDelTab(this,'del-depts')">Departments</button>
       </div>
       <div id="del-emp" class="tab-panel active">
+        <div style="margin-bottom:12px"><button class="btn btn-audit" onclick="viewAuditDelEmp()">View All Audit Logs</button></div>
         <div class="tw"><table>
           <thead><tr><th>Emp No</th><th>Last Name</th><th>First Name</th><th>Department</th><th>Job</th><th>Sep Date</th><th>Action</th></tr></thead>
           <tbody id="del-emp-tbody"></tbody>
         </table></div>
       </div>
       <div id="del-hist" class="tab-panel">
+        <div style="margin-bottom:12px"><button class="btn btn-audit" onclick="viewAuditDelHist()">View All Audit Logs</button></div>
         <div class="tw"><table>
           <thead><tr><th>ID</th><th>Employee</th><th>Job Code</th><th>Dept Code</th><th>Eff Date</th><th>Salary</th><th>Action</th></tr></thead>
           <tbody id="del-hist-tbody"></tbody>
         </table></div>
       </div>
       <div id="del-jobs" class="tab-panel">
+        <div style="margin-bottom:12px"><button class="btn btn-audit" onclick="viewAuditDelJobs()">View All Audit Logs</button></div>
         <div class="tw"><table>
           <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Action</th></tr></thead>
           <tbody id="del-jobs-tbody"></tbody>
         </table></div>
       </div>
       <div id="del-depts" class="tab-panel">
+        <div style="margin-bottom:12px"><button class="btn btn-audit" onclick="viewAuditDelDepts()">View All Audit Logs</button></div>
         <div class="tw"><table>
           <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Action</th></tr></thead>
           <tbody id="del-depts-tbody"></tbody>
@@ -998,7 +1002,7 @@ function renderDepts() {
   const data = departments.filter(d => !d.deleted);
 
   if (!data.length) {
-    tb.innerHTML = `<tr><td colspan="5" class="tbl-empty">No departments.</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="4" class="tbl-empty">No departments.</td></tr>`;
     renderDepts._data = [];
     return;
   }
@@ -1009,7 +1013,6 @@ function renderDepts() {
     <tr>
       <td><strong>${d.code || '—'}</strong></td>
       <td>${d.name || '—'}</td>
-      <td style="max-width:200px;color:var(--muted)">${d.desc || '—'}</td>
       <td>${ec(d.id)}</td>
       <td>
         <button class="btn btn-white"   style="padding:3px 7px;font-size:10px" onclick="openEditDeptByIndex(${i})">Edit</button>
@@ -1078,7 +1081,6 @@ function renderJobs() {
     <tr>
       <td><strong>${j.code}</strong></td>
       <td>${j.desc}</td>
-      <td>${dn(j.deptId)}</td>
       <td>${ec(j.id)}</td>
       <td><span class="badge b-active">Active</span></td>
       <td>
@@ -1169,6 +1171,8 @@ function renderDelEmp() {
     </tr>`).join('');
 }
 
+function viewAuditDelEmp(){viewAudit('Deleted Employees','Employee','Deleted Employees Audit');}
+
 function recoverEmp(id) {
   askConfirm('Recover Employee', 'Restore this employee to active?', () => {
     gE(id).deleted = false; renderDelEmp(); renderStats();
@@ -1191,6 +1195,8 @@ function renderDelHist() {
     </tr>`).join('');
 }
 
+function viewAuditDelHist(){viewAudit('Deleted Job History','JobHistory','Deleted Job History Audit');}
+
 function recoverHist(id) {
   askConfirm('Recover History', 'Restore this history entry?', () => {
     jobHistory.find(x => x.id === id).deleted = false; renderDelHist();
@@ -1210,6 +1216,8 @@ function renderDelJobs() {
     </tr>`).join('');
 }
 
+function viewAuditDelJobs(){viewAudit('Deleted Job Positions','Job','Deleted Jobs Audit');}
+
 function recoverJob(id) {
   askConfirm('Recover Job', 'Restore this job position?', () => {
     gJ(id).deleted = false; renderDelJobs();
@@ -1227,6 +1235,8 @@ function renderDelDepts() {
       <td class="ns"><button class="btn btn-success" style="padding:3px 7px;font-size:10px" onclick="recoverDept(${d.id})">Recover</button></td>
     </tr>`).join('');
 }
+
+function viewAuditDelDepts(){viewAudit('Deleted Departments','Department','Deleted Departments Audit');}
 
 function recoverDept(id) {
   askConfirm('Recover Dept', 'Restore this department?', () => {
