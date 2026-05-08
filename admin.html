@@ -248,6 +248,10 @@ tbody td{padding:8px 12px;vertical-align:middle}
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
             Restore
           </button>
+          <button class="btn btn-audit" onclick="viewSectionAudit('Employee','Employee Audit Log')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Audit Log
+          </button>
         </div>
       </div>
       <div class="stats" id="emp-stats"></div>
@@ -268,7 +272,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
             <th class="cc"><input type="checkbox" id="chk-emp-all" onchange="toggleAll('emp',this)"/></th>
             <th>Emp No</th><th>Last Name</th><th>First Name</th><th>Gender</th>
             <th>Hire Date</th><th>Sep Date</th><th>Current Job</th><th>Dept</th>
-            <th>Salary</th><th>Status</th><th>Last Modified</th><th>Actions</th>
+            <th>Salary</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="emp-tbody"></tbody>
         </table>
@@ -283,9 +287,12 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <button class="btn btn-primary" onclick="openAddHist()">Add Entry</button>
           <button class="btn btn-block" id="btn-blk-hist" onclick="bulkBlock('hist')" disabled>Block</button>
           <button class="btn btn-restore" id="btn-rst-hist" onclick="bulkRestore('hist')" disabled>Restore</button>
+          <button class="btn btn-audit" onclick="viewSectionAudit('JobHistory','Job History Audit Log')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Audit Log
+          </button>
         </div>
       </div>
-      <!-- CHANGED: Removed employee filter bar from Job History -->
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search…" oninput="renderHist()"/>
         <label class="del-toggle"><input type="checkbox" id="hist-show-all" onchange="renderHist()"/> Show blocked</label>
@@ -295,7 +302,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <thead><tr>
             <th class="cc"><input type="checkbox" id="chk-hist-all" onchange="toggleAll('hist',this)"/></th>
             <th>ID</th><th>Employee</th><th>Job Code</th><th>Job Desc</th>
-            <th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Last Modified</th><th>Actions</th>
+            <th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="hist-tbody"></tbody>
         </table>
@@ -308,11 +315,15 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="ph-left"><h2>Departments</h2><p>Manage organizational departments.</p></div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="openAddDept()">Add Department</button>
+          <button class="btn btn-audit" onclick="viewSectionAudit('Department','Department Audit Log')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Audit Log
+          </button>
         </div>
       </div>
       <div class="tw">
         <table>
-          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Description</th><th>Employees</th><th>Last Modified</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>Employees</th><th>Actions</th></tr></thead>
           <tbody id="dept-tbody"></tbody>
         </table>
       </div>
@@ -324,11 +335,15 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="ph-left"><h2>Job Positions</h2><p>Define and manage job roles.</p></div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="openAddJob()">Add Job Position</button>
+          <button class="btn btn-audit" onclick="viewSectionAudit('Job','Job Positions Audit Log')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Audit Log
+          </button>
         </div>
       </div>
       <div class="tw">
         <table>
-          <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Employees</th><th>Status</th><th>Last Modified</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Job Code</th><th>Job Description</th><th>Employees</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="job-tbody"></tbody>
         </table>
       </div>
@@ -338,6 +353,12 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div id="page-deleted" class="page">
       <div class="ph">
         <div class="ph-left"><h2>Deleted Items</h2><p>Records blocked or soft-deleted by admin. Use Recover to restore visibility.</p></div>
+        <div class="btn-group">
+          <button class="btn btn-audit" id="btn-del-audit" onclick="viewDeletedTabAudit()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Audit Log
+          </button>
+        </div>
       </div>
       <div class="perm-notice">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -351,7 +372,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div id="del-emp" class="tab-panel active">
         <div class="tw"><table>
-          <thead><tr><th>Emp No</th><th>Last Name</th><th>First Name</th><th>Department</th><th>Job</th><th>Status</th><th>Hidden By</th><th>Hidden At</th><th>Action</th></tr></thead>
+          <thead><tr><th>Emp No</th><th>Last Name</th><th>First Name</th><th>Department</th><th>Job</th><th>Status</th><th>Hidden By</th><th>Action</th></tr></thead>
           <tbody id="del-emp-tbody"></tbody>
         </table></div>
       </div>
@@ -396,16 +417,21 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <button class="tab-btn" id="um-tab-all" onclick="switchUMTab(this,'um-all')">All Registrations</button>
       </div>
 
-      <!-- Active Accounts tab — CHANGED: Block button moved here, admin cannot block superadmin -->
       <div id="um-accounts" class="tab-panel active">
         <div class="stats" id="user-stats"></div>
-        <div class="filter-row">
-          <input type="text" id="users-q" placeholder="Search users…" oninput="renderUsers()"/>
-          <select id="users-fr" onchange="renderUsers()">
-            <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </select>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+          <div class="filter-row" style="margin-bottom:0">
+            <input type="text" id="users-q" placeholder="Search users…" oninput="renderUsers()"/>
+            <select id="users-fr" onchange="renderUsers()">
+              <option value="">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+          </div>
+          <button class="btn btn-audit" onclick="viewSectionAudit('User','User Management Audit Log')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Audit Log
+          </button>
         </div>
         <div class="tw">
           <table>
@@ -467,7 +493,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div class="mh"><h3 id="mo-emp-title">Add Employee</h3><button class="mc-btn" onclick="cm('mo-emp')">×</button></div>
     <div class="mb">
       <div class="f2">
-        <!-- CHANGED: Emp No now numeric only, 5 digits -->
         <div class="fr">
           <label>Emp No <span style="color:var(--danger)">*</span></label>
           <input id="fe-empno" placeholder="12345" maxlength="5" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
@@ -614,6 +639,8 @@ let nextRegId=6, pendingRejectId=null, nextAuditId=11;
 let nE=1,nH=1,nD=1,nJ=1,nU=1;
 let editId={emp:null,hist:null,dept:null,job:null,user:null};
 let pendingFn=null;
+// Track which deleted tab is active for the audit button
+let currentDelTab='Employee';
 
 async function loadAllData(){
   try{
@@ -642,12 +669,16 @@ async function loadAllData(){
     });
     employees=(empRes.data||[]).map((e,idx)=>{
       const empNo=e.empno||e.emp_no||'';
-      const hist=jobHistory.filter(h=>h.empId===empNo).sort((a,b)=>new Date(b.effDate)-new Date(a.effDate))[0];
+      const hist=jobHistory.filter(h=>String(h.empId)===String(empNo)).sort((a,b)=>new Date(b.effDate)-new Date(a.effDate))[0];
       return{id:idx+1,empNo,lastName:e.lastname||e.last_name||'',firstName:e.firstname||e.first_name||'',
         gender:e.gender||'',birthdate:e.birthdate||e.birth_date||'',hireDate:e.hiredate||e.hire_date||'',
         sepDate:e.sepdate||e.sep_date||null,username:e.username||'',email:e.email||'',phone:e.phone||'',
         deptId:hist?.deptId||1,jobId:hist?.jobId||1,salary:hist?.salary||0,
         deleted:e.deleted||(e.sepDate||e.sep_date?true:false),blocked:e.blocked||false};
+    });
+    jobHistory=jobHistory.map(h=>{
+      const emp=findEmployeeByNo(String(h.empId));
+      return emp?{...h,empId:emp.id}:h;
     });
     sysUsers=(userRes.data||[]).map((u,idx)=>({
       id:idx+1,username:u.username||'',password:u.password||'',
@@ -665,11 +696,12 @@ async function loadAllData(){
 const gD=id=>departments.find(d=>d.id===id);
 const gJ=id=>jobs.find(j=>j.id===id);
 const gE=id=>employees.find(e=>e.id===id);
+const findEmployeeByNo=no=>employees.find(e=>String(e.empNo)===String(no));
 const dn=id=>{const d=gD(id);return d?d.name:'—';};
 const dc=id=>{const d=gD(id);return d?d.code:'—';};
 const jd=id=>{const j=gJ(id);return j?j.desc:'—';};
 const jc=id=>{const j=gJ(id);return j?j.code:'—';};
-const en=id=>{const e=gE(id);return e?`${e.lastName}, ${e.firstName}`:'—';};
+const en=id=>{const e=gE(Number(id))||findEmployeeByNo(id);return e?`${e.lastName}, ${e.firstName}`:'—';};
 const ini=e=>(e.firstName[0]+e.lastName[0]).toUpperCase();
 const fmt=d=>d?d:'—';
 const fmtSal=s=>s?'₱'+Number(s).toLocaleString():'—';
@@ -764,7 +796,7 @@ function renderEmp(){
     return `${e.empNo} ${e.lastName} ${e.firstName} ${jd(e.jobId)} ${dn(e.deptId)}`.toLowerCase().includes(q);
   }).sort((a,b)=>a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName));
   const tb=document.getElementById('emp-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="13" class="tbl-empty">No employees found.</td></tr>`;upBtns('emp');return;}
+  if(!data.length){tb.innerHTML=`<tr><td colspan="12" class="tbl-empty">No employees found.</td></tr>`;upBtns('emp');return;}
   tb.innerHTML=data.map(e=>{
     const rowCls=e.deleted?'del-row':e.blocked?'blk-row':'';
     const sb2=e.deleted?'<span class="badge b-del">Inactive</span>':e.blocked?'<span class="badge b-blk">Blocked</span>':'<span class="badge b-active">Active</span>';
@@ -775,11 +807,9 @@ function renderEmp(){
       <td>${e.sepDate?fmt(e.sepDate):'—'}</td><td>${jd(e.jobId)}</td>
       <td><span class="badge b-dept">${dc(e.deptId)}</span></td>
       <td>${fmtSal(e.salary)}</td><td class="ns">${sb2}</td>
-      <td class="ns">${metaTag(e.meta)}</td>
       <td class="ns" style="white-space:nowrap">
         <button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf(${e.id})">View</button>
         <button class="btn btn-white"   style="padding:3px 7px;font-size:10px" onclick="openEditEmp(${e.id})">Edit</button>
-        <button class="btn btn-audit"   style="padding:3px 7px;font-size:10px" onclick="viewEmpAudit(${e.id})">Log</button>
       </td></tr>`;
   }).join('');
   upBtns('emp');
@@ -799,7 +829,6 @@ function upBtns(scope){
   }
 }
 
-/* CHANGED: bulkBlock removed from employees for admin — only hist remains */
 function bulkBlock(scope){
   if(scope==='hist'){
     const ids=getChk('chk-hist').filter(id=>{const h=jobHistory.find(x=>x.id===id);return h&&!h.deleted;});
@@ -856,7 +885,6 @@ function openEditEmp(id){
 
 function saveEmp(){
   const empNo=document.getElementById('fe-empno').value.trim();
-  /* CHANGED: Validate Emp No — exactly 5 digits, numbers only */
   if(!/^\d{5}$/.test(empNo)){alert('Emp No must be exactly 5 numerical digits. Please only select numbers.');return;}
   const username=document.getElementById('fe-user').value.trim(),lastName=document.getElementById('fe-ln').value.trim(),firstName=document.getElementById('fe-fn').value.trim(),gender=document.getElementById('fe-gender').value,hireDate=document.getElementById('fe-hire').value,sepDate=document.getElementById('fe-sep').value,salary=+document.getElementById('fe-sal').value||0,deptId=+document.getElementById('fe-dept').value,jobId=+document.getElementById('fe-job').value,email=document.getElementById('fe-email').value.trim(),phone=document.getElementById('fe-phone').value.trim();
   if(!lastName||!firstName||!deptId||!jobId){alert('Fill required fields.');return;}
@@ -866,7 +894,7 @@ function saveEmp(){
   cm('mo-emp');renderEmp();renderStats();
 }
 
-/* JOB HISTORY — CHANGED: no employee filter select used */
+/* JOB HISTORY */
 function renderHist(){
   const q=document.getElementById('hist-q').value.toLowerCase();
   const all=document.getElementById('hist-show-all').checked;
@@ -875,13 +903,12 @@ function renderHist(){
     return `${en(h.empId)} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)}`.toLowerCase().includes(q);
   }).sort((a,b)=>b.effDate.localeCompare(a.effDate));
   const tb=document.getElementById('hist-tbody');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="12" class="tbl-empty">No records.</td></tr>`;upBtns('hist');return;}
+  if(!data.length){tb.innerHTML=`<tr><td colspan="11" class="tbl-empty">No records.</td></tr>`;upBtns('hist');return;}
   tb.innerHTML=data.map(h=>`<tr class="${h.deleted?'del-row':''}">
     <td><input type="checkbox" class="chk-hist" value="${h.id}" onchange="upBtns('hist')"/></td>
     <td>JH-${String(h.id).padStart(3,'0')}</td><td>${en(h.empId)}</td><td>${jc(h.jobId)}</td><td>${jd(h.jobId)}</td>
     <td>${dc(h.deptId)}</td><td>${dn(h.deptId)}</td><td>${fmt(h.effDate)}</td><td>${fmtSal(h.salary)}</td>
     <td><span class="badge ${h.deleted?'b-del':'b-active'}">${h.deleted?'Blocked':'Active'}</span></td>
-    <td class="ns">${metaTag(h.meta)}</td>
     <td class="ns"><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditHist(${h.id})">Edit</button></td>
   </tr>`).join('');
   upBtns('hist');
@@ -898,15 +925,14 @@ function saveHist(){
   cm('mo-hist');renderHist();
 }
 
-/* DEPARTMENTS — CHANGED: Block button replaced with Delete */
+/* DEPARTMENTS */
 function renderDepts(){
   const ec=id=>employees.filter(e=>e.deptId===id&&!e.deleted&&!e.blocked).length;
   const tb=document.getElementById('dept-tbody'),data=departments.filter(d=>!d.deleted);
-  if(!data.length){tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No departments.</td></tr>`;return;}
+  if(!data.length){tb.innerHTML=`<tr><td colspan="4" class="tbl-empty">No departments.</td></tr>`;return;}
   tb.innerHTML=data.map(d=>`<tr>
     <td><strong>${d.code}</strong></td><td>${d.name}</td>
-    <td style="max-width:200px;color:var(--muted)">${d.desc||'—'}</td><td>${ec(d.id)}</td>
-    <td class="ns">${metaTag(d.meta)}</td>
+    <td>${ec(d.id)}</td>
     <td>
       <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept(${d.id})">Edit</button>
       <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteDept(${d.id})">Delete</button>
@@ -916,18 +942,16 @@ function renderDepts(){
 function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name','fd-desc'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
 function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;document.getElementById('fd-desc').value=d.desc||'';om('mo-dept');}
 function saveDept(){const code=document.getElementById('fd-code').value.trim(),name=document.getElementById('fd-name').value.trim(),desc=document.getElementById('fd-desc').value.trim();if(!code||!name){alert('Code and name required.');return;}const metaInfo={by:CURRENT_USER,at:now(),action:editId.dept?'EDIT':'ADD',note:editId.dept?'Dept updated':'New dept added'};if(editId.dept){Object.assign(gD(editId.dept),{code,name,desc,meta:metaInfo});logAudit('EDIT','Department',`${code} – ${name}`,'Updated');}else{departments.push({id:nD++,code,name,desc,deleted:false,meta:metaInfo});logAudit('ADD','Department',`${code} – ${name}`,'Added');}cm('mo-dept');renderDepts();}
-/* CHANGED: deleteDept instead of blockDept */
 function deleteDept(id){const d=gD(id);askConfirm('Delete Department',`Delete "${d.name}"?`,()=>{d.deleted=true;d.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted by admin'};logAudit('DELETE','Department',`${d.code} – ${d.name}`,'Deleted');renderDepts();},'Delete','btn-danger');}
 
-/* JOB POSITIONS — CHANGED: Block button replaced with Delete */
+/* JOB POSITIONS */
 function renderJobs(){
   const ec=id=>employees.filter(e=>e.jobId===id&&!e.deleted&&!e.blocked).length;
   const tb=document.getElementById('job-tbody'),data=jobs.filter(j=>!j.deleted);
-  if(!data.length){tb.innerHTML=`<tr><td colspan="7" class="tbl-empty">No jobs.</td></tr>`;return;}
+  if(!data.length){tb.innerHTML=`<tr><td colspan="6" class="tbl-empty">No jobs.</td></tr>`;return;}
   tb.innerHTML=data.map(j=>`<tr>
-    <td><strong>${j.code}</strong></td><td>${j.desc}</td><td>${dn(j.deptId)}</td>
+    <td><strong>${j.code}</strong></td><td>${j.desc}</td>
     <td>${ec(j.id)}</td><td><span class="badge b-active">Active</span></td>
-    <td class="ns">${metaTag(j.meta)}</td>
     <td>
       <button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditJob(${j.id})">Edit</button>
       <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteJob(${j.id})">Delete</button>
@@ -938,10 +962,48 @@ function openEditJob(id){const j=gJ(id);if(!j)return;editId.job=id;document.getE
 function saveJob(){const code=document.getElementById('fj-code').value.trim(),desc=document.getElementById('fj-desc').value.trim(),deptId=+document.getElementById('fj-dept').value;if(!code||!desc||!deptId){alert('All fields required.');return;}const metaInfo={by:CURRENT_USER,at:now(),action:editId.job?'EDIT':'ADD',note:editId.job?'Job updated':'New job added'};if(editId.job){Object.assign(gJ(editId.job),{code,desc,deptId,meta:metaInfo});logAudit('EDIT','Job',`${code} – ${desc}`,'Updated');}else{jobs.push({id:nJ++,code,desc,deptId,deleted:false,meta:metaInfo});logAudit('ADD','Job',`${code} – ${desc}`,'Added');}cm('mo-job');renderJobs();}
 function deleteJob(id){const j=gJ(id);askConfirm('Delete Job',`Delete "${j.desc}"?`,()=>{j.deleted=true;j.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted by admin'};logAudit('DELETE','Job',`${j.code} – ${j.desc}`,'Deleted');renderJobs();},'Delete','btn-danger');}
 
+/* SECTION AUDIT LOG — shows all logs for an entity type */
+const actionDot={ADD:'dot-add',EDIT:'dot-edit',BLOCK:'dot-block',RESTORE:'dot-restore',DELETE:'dot-block',VIEW:'dot-add'};
+const actionColor={ADD:'#1E3A5F',EDIT:'#1a73e8',BLOCK:'#92400e',RESTORE:'#27ae60',DELETE:'#c0392b',VIEW:'#6b7280'};
+
+function viewSectionAudit(entity, title){
+  const logs = auditLog.filter(a => a.entity === entity);
+  document.getElementById('mo-ad-title').textContent = title || `${entity} Audit Log`;
+  if(!logs.length){
+    document.getElementById('mo-ad-body').innerHTML=`<p style="color:var(--muted);font-size:12px;padding:8px">No audit entries recorded yet for this section.</p>`;
+  } else {
+    document.getElementById('mo-ad-body').innerHTML=`<div class="tw">${logs.map(a=>`<div class="audit-entry">
+      <span class="audit-dot ${actionDot[a.action]||'dot-add'}"></span>
+      <span class="audit-time">${a.timestamp}</span>
+      <span class="audit-who">${a.user}</span>
+      <span class="audit-action"><span style="font-weight:bold;color:${actionColor[a.action]||'#333'}">[${a.action}]</span> <strong>${a.record}</strong> — ${a.note||'—'}</span>
+    </div>`).join('')}</div>`;
+  }
+  om('mo-audit-detail');
+}
+
 /* DELETED ITEMS */
-function switchDelTab(btn,panel){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(panel).classList.add('active');if(panel==='del-emp')renderHidEmp();if(panel==='del-hist')renderHidHist();if(panel==='del-jobs')renderHidJobs();if(panel==='del-depts')renderHidDepts();}
+function switchDelTab(btn,panel){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panel).classList.add('active');
+  // Track which entity the audit log button should target
+  const tabMap={'del-emp':'Employee','del-hist':'JobHistory','del-jobs':'Job','del-depts':'Department'};
+  currentDelTab=tabMap[panel]||'Employee';
+  if(panel==='del-emp')renderHidEmp();
+  if(panel==='del-hist')renderHidHist();
+  if(panel==='del-jobs')renderHidJobs();
+  if(panel==='del-depts')renderHidDepts();
+}
+
+function viewDeletedTabAudit(){
+  const labelMap={'Employee':'Employee Audit Log','JobHistory':'Job History Audit Log','Job':'Job Positions Audit Log','Department':'Department Audit Log'};
+  viewSectionAudit(currentDelTab, labelMap[currentDelTab]||'Audit Log');
+}
+
 function renderDeleted(){renderHidEmp();}
-function renderHidEmp(){const data=employees.filter(e=>e.deleted||e.blocked),tb=document.getElementById('del-emp-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="9" class="tbl-empty">No hidden employees.</td></tr>`;return;}tb.innerHTML=data.map(e=>`<tr class="${e.deleted?'del-row':'blk-row'}"><td class="ns">${e.empNo}</td><td class="ns"><strong>${e.lastName}</strong></td><td class="ns">${e.firstName}</td><td class="ns">${dn(e.deptId)}</td><td class="ns">${jd(e.jobId)}</td><td class="ns"><span class="badge ${e.deleted?'b-del':'b-blk'}">${e.deleted?'Inactive':'Blocked'}</span></td><td class="ns" style="font-size:10px">${e.meta?e.meta.by:'—'}</td><td class="ns" style="font-size:10px">${e.meta?e.meta.at:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverEmp(${e.id})">Recover</button></td></tr>`).join('');}
+function renderHidEmp(){const data=employees.filter(e=>e.deleted||e.blocked),tb=document.getElementById('del-emp-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="8" class="tbl-empty">No hidden employees.</td></tr>`;return;}tb.innerHTML=data.map(e=>`<tr class="${e.deleted?'del-row':'blk-row'}"><td class="ns">${e.empNo}</td><td class="ns"><strong>${e.lastName}</strong></td><td class="ns">${e.firstName}</td><td class="ns">${dn(e.deptId)}</td><td class="ns">${jd(e.jobId)}</td><td class="ns"><span class="badge ${e.deleted?'b-del':'b-blk'}">${e.deleted?'Inactive':'Blocked'}</span></td><td class="ns" style="font-size:10px">${e.meta?e.meta.by:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverEmp(${e.id})">Recover</button></td></tr>`).join('');}
 function recoverEmp(id){askConfirm('Recover Employee','Restore to active?',()=>{const e=gE(id);e.deleted=false;e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Recovered');renderHidEmp();renderStats();},'Recover','btn-success');}
 function renderHidHist(){const data=jobHistory.filter(h=>h.deleted),tb=document.getElementById('del-hist-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="8" class="tbl-empty">No hidden history.</td></tr>`;return;}tb.innerHTML=data.map(h=>`<tr class="del-row"><td class="ns">JH-${String(h.id).padStart(3,'0')}</td><td class="ns">${en(h.empId)}</td><td class="ns">${jc(h.jobId)}</td><td class="ns">${dc(h.deptId)}</td><td class="ns">${fmt(h.effDate)}</td><td class="ns"><span class="badge b-blk">Blocked</span></td><td class="ns" style="font-size:10px">${h.meta?h.meta.by:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverHist(${h.id})">Recover</button></td></tr>`).join('');}
 function recoverHist(id){askConfirm('Recover History','Restore this entry?',()=>{const h=jobHistory.find(x=>x.id===id);h.deleted=false;h.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','JobHistory',`JH-${String(h.id).padStart(3,'0')}`,'Recovered');renderHidHist();},'Recover','btn-success');}
@@ -950,7 +1012,7 @@ function recoverJob(id){askConfirm('Recover Job','Restore this job?',()=>{const 
 function renderHidDepts(){const data=departments.filter(d=>d.deleted),tb=document.getElementById('del-depts-tbody');if(!data.length){tb.innerHTML=`<tr><td colspan="5" class="tbl-empty">No hidden departments.</td></tr>`;return;}tb.innerHTML=data.map(d=>`<tr class="del-row"><td class="ns">${d.code}</td><td class="ns">${d.name}</td><td class="ns"><span class="badge b-blk">Deleted</span></td><td class="ns" style="font-size:10px">${d.meta?d.meta.by:'—'}</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverDept(${d.id})">Recover</button></td></tr>`).join('');}
 function recoverDept(id){askConfirm('Recover Dept','Restore this department?',()=>{const d=gD(id);d.deleted=false;d.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Department',`${d.code} – ${d.name}`,'Recovered');renderHidDepts();},'Recover','btn-success');}
 
-/* USER MANAGEMENT — CHANGED: Block button here; admin cannot block superadmin */
+/* USER MANAGEMENT */
 function switchUMTab(btn,panel){
   document.querySelectorAll('#page-usermgmt .tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#page-usermgmt .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -973,7 +1035,6 @@ function renderUsers(){
   tb.innerHTML=data.map(u=>{
     const roleClass=u.role==='admin'?'b-admin':u.role==='superadmin'?'b-sa':'b-user';
     const emp=u.empId?en(u.empId):'—';
-    /* CHANGED: Admin cannot block superadmin — only show Block for non-superadmin users */
     const blockBtn = u.role==='superadmin'
       ? `<span style="font-size:10px;color:var(--muted);font-style:italic">Protected</span>`
       : `<button class="btn btn-block" style="padding:3px 7px;font-size:10px" onclick="blockUser(${u.id})">Block</button>`;
@@ -989,7 +1050,6 @@ function renderUsers(){
   }).join('');
 }
 
-/* CHANGED: blockUser — only blocks users (not superadmin) */
 function blockUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
   if(u.role==='superadmin'){alert('You cannot block a Super Admin.');return;}
@@ -1065,9 +1125,6 @@ function renderAllReg(){
 function reconsiderReg(id){const r=registrations.find(x=>x.id===id);if(!r)return;askConfirm('Reconsider Application',`Move "${r.username}" back to Pending?`,()=>{r.status='pending';r.reviewedBy=null;r.reviewedAt=null;r.note='';renderAllReg();renderPending();renderUserStats();updatePendingBadges();},'Reconsider','btn-primary');}
 
 /* PROFILE VIEW */
-const actionDot={ADD:'dot-add',EDIT:'dot-edit',BLOCK:'dot-block',RESTORE:'dot-restore',VIEW:'dot-add'};
-const actionColor={ADD:'#1E3A5F',EDIT:'#1a73e8',BLOCK:'#92400e',RESTORE:'#27ae60',VIEW:'#6b7280'};
-
 function viewEmpAudit(id){
   const e=gE(id);if(!e)return;
   logAudit('VIEW','Employee',`${e.empNo} (${e.lastName}, ${e.firstName})`,'Audit log viewed');
