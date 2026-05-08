@@ -661,8 +661,19 @@ function nav(el, page) {
   document.getElementById('page-' + page).classList.add('active');
   const t = { employees:'Employees','job-history':'Job History',departments:'Departments',jobs:'Job Positions',deleted:'Deleted Items',users:'User Management',profile:'Employee Profile' };
   document.getElementById('topbar-title').textContent = t[page] || page;
-  if (page === 'employees')   { renderEmp(); renderStats(); }
-  if (page === 'job-history')   renderHist();
+  if (page === 'employees') {
+    document.getElementById('emp-q').value = '';
+    document.getElementById('emp-fd').value = '';
+    document.getElementById('emp-fs').value = '';
+    document.getElementById('emp-show-del').checked = false;
+    renderEmp(); renderStats();
+  }
+  if (page === 'job-history') {
+    document.getElementById('hist-q').value = '';
+    document.getElementById('hist-fe').value = '';
+    document.getElementById('hist-show-del').checked = false;
+    renderHist();
+  }
   if (page === 'departments')   renderDepts();
   if (page === 'jobs')          renderJobs();
   if (page === 'deleted')       renderDeleted();
