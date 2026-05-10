@@ -249,10 +249,10 @@
   clearMessage();
   setLoading(true);
   const { error } = await sb.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: 'https://hrms-chi-seven.vercel.app'
-    }
+  provider: 'google',
+  options: {
+    redirectTo: 'https://hrms-chi-seven.vercel.app/index.html'
+  }
   });
   setLoading(false);
   if (error) showMessage(error.message);
