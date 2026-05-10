@@ -248,10 +248,12 @@
   document.getElementById('googleBtn').addEventListener('click', async () => {
     clearMessage();
     setLoading(true);
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/user.html' }
-    });
+    const { error } = await _supabase.auth.signInWithOAuth({
+  provider: 'google',
+  options: {
+    redirectTo: 'https://hrms-chi-seven.vercel.app'
+  }
+  });
     setLoading(false);
     if (error) showMessage(error.message);
   });
