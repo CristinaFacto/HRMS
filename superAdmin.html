@@ -137,7 +137,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sb-logo">
     <span class="lbl">HR System</span>
@@ -190,7 +189,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </nav>
 
-<!-- MAIN -->
 <div id="main">
   <div class="topbar">
     <span class="topbar-title" id="topbar-title">Employees</span>
@@ -205,7 +203,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div id="page-employees" class="page active">
       <div class="perm-notice">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Super Admin role: You can <strong>view, edit, restore, and permanently delete</strong> employees. Block/Deactivate is in User Management.
+        Super Admin role: You can <strong>view, edit, block, delete, and permanently delete</strong> employees.
       </div>
       <div class="ph">
         <div class="ph-left"><h2>Employee Records</h2><p>Manage employee profiles.</p></div>
@@ -213,11 +211,11 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <button class="btn btn-primary" onclick="openAddEmp()">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Employee
           </button>
-          <button class="btn btn-restore" id="btn-rst-emp" onclick="bulkRestore('emp')" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>Restore
+          <button class="btn btn-block" id="btn-blk-emp" onclick="bulkBlockEmp()" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Block
           </button>
           <button class="btn btn-danger" id="btn-del-emp" onclick="bulkPermDelete('emp')" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>Perm. Delete
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>Delete
           </button>
           <button class="btn btn-audit" onclick="viewSectionAudit('Employee','Employee Audit Log')">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Audit Log
@@ -365,7 +363,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <!-- USER MANAGEMENT -->
     <div id="page-usermgmt" class="page">
       <div class="ph">
-        <div class="ph-left"><h2>User Management</h2><p>Manage system accounts. Super Admin can block Admin accounts.</p></div>
+        <div class="ph-left"><h2>User Management</h2><p>Manage system accounts. Super Admin can block/unblock Admin and User accounts.</p></div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="openAddUser()">Add User</button>
           <button class="btn btn-audit" onclick="viewSectionAudit('User','User Management Audit Log')">
@@ -407,8 +405,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
 </div>
 
 <!-- MODALS -->
-
-<!-- ADD/EDIT EMPLOYEE -->
 <div class="mo" id="mo-emp">
   <div class="modal">
     <div class="mh"><h3 id="mo-emp-title">Add Employee</h3><button class="mc-btn" onclick="cm('mo-emp')">x</button></div>
@@ -451,7 +447,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- ADD/EDIT JOB HISTORY -->
 <div class="mo" id="mo-hist">
   <div class="modal">
     <div class="mh"><h3 id="mo-hist-title">Add Job History</h3><button class="mc-btn" onclick="cm('mo-hist')">x</button></div>
@@ -473,8 +468,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- ADD/EDIT DEPT -->
-<!-- REMOVED: Description field -->
 <div class="mo" id="mo-dept">
   <div class="modal" style="width:420px">
     <div class="mh"><h3 id="mo-dept-title">Add Department</h3><button class="mc-btn" onclick="cm('mo-dept')">x</button></div>
@@ -491,8 +484,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- ADD/EDIT JOB -->
-<!-- REMOVED: Department dropdown -->
 <div class="mo" id="mo-job">
   <div class="modal" style="width:420px">
     <div class="mh"><h3 id="mo-job-title">Add Job Position</h3><button class="mc-btn" onclick="cm('mo-job')">x</button></div>
@@ -509,7 +500,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- ADD/EDIT USER -->
 <div class="mo" id="mo-user">
   <div class="modal" style="width:420px">
     <div class="mh"><h3 id="mo-user-title">Add User</h3><button class="mc-btn" onclick="cm('mo-user')">x</button></div>
@@ -541,7 +531,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- AUDIT DETAIL -->
 <div class="mo" id="mo-audit-detail">
   <div class="modal modal-wide">
     <div class="mh"><h3 id="mo-ad-title">Change History</h3><button class="mc-btn" onclick="cm('mo-audit-detail')">x</button></div>
@@ -550,7 +539,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- CONFIRM -->
 <div class="mo" id="mo-confirm">
   <div class="modal" style="width:370px">
     <div class="mh"><h3 id="conf-title">Confirm</h3><button class="mc-btn" onclick="cm('mo-confirm')">x</button></div>
@@ -585,80 +573,38 @@ async function loadAllData(){
       sb.from('jobhistory').select('*'),
       sb.from('profiles').select('*'),
     ]);
-
-    // Build departments
     departments=(deptRes.data||[]).map((d,idx)=>({
-      id:idx+1,
-      code:d.deptcode||d.deptCode||d.code||d.dept_code||'',
+      id:idx+1,code:d.deptcode||d.deptCode||d.code||d.dept_code||'',
       name:d.deptname||d.deptName||d.name||d.dept_name||'',
-      desc:d.description||d.desc||'',
-      deleted:d.deleted||false
+      desc:d.description||d.desc||'',deleted:d.deleted||false
     }));
-
-    // Build jobs
     jobs=(jobRes.data||[]).map((j,idx)=>({
-      id:idx+1,
-      code:j.jobcode||j.jobCode||j.code||j.job_code||'',
+      id:idx+1,code:j.jobcode||j.jobCode||j.code||j.job_code||'',
       desc:j.jobdesc||j.jobDesc||j.description||j.desc||j.job_desc||'',
-      deptId:j.deptid||j.deptId||j.dept_id||1,
-      deleted:j.deleted||false
+      deptId:j.deptid||j.deptId||j.dept_id||1,deleted:j.deleted||false
     }));
-
-    // Build job history (keep empId as the raw empno string for now)
     const rawHistory=(histRes.data||[]).map((h,idx)=>{
       const jc2=h.jobcode||h.jobCode||h.job_code||'';
       const dc2=h.deptcode||h.deptCode||h.dept_code||'';
       const jobMatch=jobs.find(j=>j.code===jc2);
       const deptMatch=departments.find(d=>d.code===dc2);
-      return{
-        id:idx+1,
-        empNo:String(h.empno||h.empNo||h.emp_id||''),
-        jobId:jobMatch?jobMatch.id:1,
-        deptId:deptMatch?deptMatch.id:1,
-        effDate:h.effdate||h.effDate||h.eff_date||'',
-        salary:h.salary||0,
-        deleted:h.deleted||false
-      };
+      return{id:idx+1,empNo:String(h.empno||h.empNo||h.emp_id||''),
+        jobId:jobMatch?jobMatch.id:1,deptId:deptMatch?deptMatch.id:1,
+        effDate:h.effdate||h.effDate||h.eff_date||'',salary:h.salary||0,deleted:h.deleted||false};
     });
-
-    // Build employees first (using empNo as the key)
     employees=(empRes.data||[]).map((e,idx)=>{
       const empNo=String(e.empno||e.emp_no||'');
       const hist=rawHistory.filter(h=>h.empNo===empNo).sort((a,b)=>new Date(b.effDate)-new Date(a.effDate))[0];
-      return{
-        id:idx+1,
-        empNo,
-        lastName:e.lastname||e.last_name||'',
-        firstName:e.firstname||e.first_name||'',
-        gender:e.gender||'',
-        birthdate:e.birthdate||e.birth_date||'',
-        hireDate:e.hiredate||e.hire_date||'',
-        sepDate:e.sepdate||e.sep_date||null,
-        username:e.username||'',
-        email:e.email||'',
-        phone:e.phone||'',
-        deptId:hist?hist.deptId:1,
-        jobId:hist?hist.jobId:1,
-        salary:hist?hist.salary:0,
-        deleted:e.deleted||false,
-        blocked:e.blocked||false
-      };
+      return{id:idx+1,empNo,lastName:e.lastname||e.last_name||'',firstName:e.firstname||e.first_name||'',
+        gender:e.gender||'',birthdate:e.birthdate||e.birth_date||'',hireDate:e.hiredate||e.hire_date||'',
+        sepDate:e.sepdate||e.sep_date||null,username:e.username||'',email:e.email||'',phone:e.phone||'',
+        deptId:hist?hist.deptId:1,jobId:hist?hist.jobId:1,salary:hist?hist.salary:0,
+        deleted:e.deleted||false,blocked:e.blocked||false};
     });
-
-    // Now map jobHistory empNo -> employee.id
     jobHistory=rawHistory.map(h=>{
       const emp=employees.find(e=>e.empNo===h.empNo);
-      return{
-        id:h.id,
-        empId:emp?emp.id:0,
-        jobId:h.jobId,
-        deptId:h.deptId,
-        effDate:h.effDate,
-        salary:h.salary,
-        deleted:h.deleted
-      };
+      return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
-
     sysUsers=(userRes.data||[]).map((u,idx)=>({
       id:idx+1,username:u.username||'',password:u.password||'',
       firstName:u.first_name||u.firstName||'',lastName:u.last_name||u.lastName||'',
@@ -666,18 +612,14 @@ async function loadAllData(){
       registeredAt:u.registered_at||u.registeredAt||'',
       deleted:u.deleted||false,blocked:u.blocked||false
     }));
-
-    nE=employees.length+1; nH=jobHistory.length+1;
-    nD=departments.length+1; nJ=jobs.length+1; nU=sysUsers.length+1;
-
-    renderEmp(); renderStats();
+    nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
+    renderEmp();renderStats();
   }catch(err){alert('Fatal error loading data: '+err.message);}
 }
 
 const gD=id=>departments.find(d=>d.id===id);
 const gJ=id=>jobs.find(j=>j.id===id);
 const gE=id=>employees.find(e=>e.id===id);
-const findEmployeeByNo=no=>employees.find(e=>String(e.empNo)===String(no));
 const dn=id=>{const d=gD(id);return d?d.name:'--';};
 const dc=id=>{const d=gD(id);return d?d.code:'--';};
 const jd=id=>{const j=gJ(id);return j?j.desc:'--';};
@@ -689,7 +631,6 @@ const fmtSal=s=>s?'P'+Number(s).toLocaleString():'--';
 const now=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
 function logAudit(action,entity,record,note){auditLog.unshift({id:nextAuditId++,timestamp:now(),user:CURRENT_USER,action,entity,record,note:note||''});}
 
-/* NAVIGATION */
 function nav(el,page){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
@@ -711,12 +652,10 @@ function askConfirm(title,msg,fn,btn,btnClass){
   document.getElementById('conf-title').textContent=title;
   document.getElementById('conf-msg').textContent=msg;
   const ok=document.getElementById('conf-ok');
-  ok.textContent=btn||'Confirm';
-  ok.className='btn '+(btnClass||'btn-danger');
+  ok.textContent=btn||'Confirm';ok.className='btn '+(btnClass||'btn-danger');
   pendingFn=fn;om('mo-confirm');
 }
 
-/* STATS */
 function renderStats(){
   const a=employees.filter(e=>!e.deleted&&!e.blocked).length;
   const b=employees.filter(e=>e.blocked).length;
@@ -743,17 +682,12 @@ function renderUserStats(){
     '<div class="sc '+(blocked>0?'warn':'')+'"><div class="n">'+blocked+'</div><div class="l">Blocked</div></div>';
 }
 
-/* EMPLOYEES */
 function popDeptFilter(){
   const s=document.getElementById('emp-fd'),v=s.value;
   s.innerHTML='<option value="">All Departments</option>';
-  departments.forEach(d=>{
-    const o=document.createElement('option');
-    o.value=d.id;o.textContent=d.name;
-    if(String(d.id)===v)o.selected=true;
-    s.appendChild(o);
-  });
+  departments.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;if(String(d.id)===v)o.selected=true;s.appendChild(o);});
 }
+
 function renderEmp(){
   popDeptFilter();
   const q=document.getElementById('emp-q').value.toLowerCase();
@@ -785,18 +719,24 @@ function renderEmp(){
       '<td class="ns">'+badge+'</td>'+
       '<td class="ns" style="white-space:nowrap">'+
         '<button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf('+e.id+')">View</button> '+
-        '<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditEmp('+e.id+')">Edit</button>'+
+        '<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditEmp('+e.id+')">Edit</button> '+
+        (!e.blocked&&!e.deleted?'<button class="btn btn-block" style="padding:3px 7px;font-size:10px" onclick="blockOneEmp('+e.id+')">Block</button>':'')+
+        (e.blocked?'<button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="unblockOneEmp('+e.id+')">Unblock</button>':'')+
+        ' <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteOneEmp('+e.id+')">Delete</button>'+
       '</td></tr>';
   }).join('');
   upBtns('emp');
 }
+
 function getChk(cls){return Array.from(document.querySelectorAll('.'+cls+':checked')).map(c=>+c.value);}
 function toggleAll(scope,cb){document.querySelectorAll('.chk-'+scope).forEach(c=>c.checked=cb.checked);upBtns(scope);}
 function upBtns(scope){
   if(scope==='emp'){
     const ids=getChk('chk-emp');
-    document.getElementById('btn-rst-emp').disabled=!ids.some(id=>{const e=gE(id);return e&&(e.deleted||e.blocked);});
-    document.getElementById('btn-del-emp').disabled=!ids.some(id=>{const e=gE(id);return e&&(e.deleted||e.blocked);});
+    const hasActive=ids.some(id=>{const e=gE(id);return e&&!e.deleted&&!e.blocked;});
+    const hasHidden=ids.some(id=>{const e=gE(id);return e&&(e.deleted||e.blocked);});
+    document.getElementById('btn-blk-emp').disabled=!hasActive;
+    document.getElementById('btn-del-emp').disabled=!ids.length;
   }
   if(scope==='hist'){
     const ids=getChk('chk-hist');
@@ -804,15 +744,53 @@ function upBtns(scope){
     document.getElementById('btn-rst-hist').disabled=!ids.some(id=>{const h=jobHistory.find(x=>x.id===id);return h&&h.deleted;});
   }
 }
-function bulkRestore(scope){
+
+function blockOneEmp(id){
+  const e=gE(id);if(!e)return;
+  askConfirm('Block Employee','Block '+e.lastName+', '+e.firstName+'? They will be hidden from regular users.',function(){
+    e.blocked=true;e.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked by superadmin'};
+    logAudit('BLOCK','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Blocked by superadmin');
+    renderEmp();renderStats();
+  },'Block','btn-block');
+}
+function unblockOneEmp(id){
+  const e=gE(id);if(!e)return;
+  askConfirm('Unblock Employee','Restore '+e.lastName+', '+e.firstName+' to active?',function(){
+    e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Unblocked by superadmin'};
+    logAudit('RESTORE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Unblocked by superadmin');
+    renderEmp();renderStats();
+  },'Unblock','btn-success');
+}
+function deleteOneEmp(id){
+  const e=gE(id);if(!e)return;
+  askConfirm('Delete Employee','Permanently delete '+e.lastName+', '+e.firstName+'? This CANNOT be undone.',function(){
+    logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Permanently deleted by superadmin');
+    const idx=employees.findIndex(x=>x.id===id);if(idx>-1)employees.splice(idx,1);
+    renderEmp();renderStats();
+  },'Delete','btn-danger');
+}
+
+function bulkBlockEmp(){
+  const ids=getChk('chk-emp').filter(id=>{const e=gE(id);return e&&!e.deleted&&!e.blocked;});
+  if(!ids.length)return;
+  askConfirm('Block Employees','Block '+ids.length+' employee(s)?',function(){
+    ids.forEach(id=>{const e=gE(id);if(e){e.blocked=true;e.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Bulk blocked by superadmin'};logAudit('BLOCK','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Bulk blocked');}});
+    renderEmp();renderStats();
+  },'Block','btn-block');
+}
+function bulkPermDelete(scope){
   if(scope==='emp'){
-    const ids=getChk('chk-emp').filter(id=>{const e=gE(id);return e&&(e.deleted||e.blocked);});
+    const ids=getChk('chk-emp');
     if(!ids.length)return;
-    askConfirm('Restore Employees','Restore '+ids.length+' employee(s)?',function(){
-      ids.forEach(id=>{const e=gE(id);if(e){e.deleted=false;e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Restored'};logAudit('RESTORE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Restored by superadmin');}});
+    askConfirm('Permanently Delete','Permanently delete '+ids.length+' employee(s)? This CANNOT be undone.',function(){
+      ids.forEach(id=>{const e=gE(id);if(e)logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Permanently deleted by superadmin');});
+      ids.forEach(id=>{const idx=employees.findIndex(e=>e.id===id);if(idx>-1)employees.splice(idx,1);});
       renderEmp();renderStats();
-    },'Restore','btn-success');
+    },'Delete','btn-danger');
   }
+}
+
+function bulkRestore(scope){
   if(scope==='hist'){
     const ids=getChk('chk-hist').filter(id=>{const h=jobHistory.find(x=>x.id===id);return h&&h.deleted;});
     if(!ids.length)return;
@@ -820,17 +798,6 @@ function bulkRestore(scope){
       ids.forEach(id=>{const h=jobHistory.find(x=>x.id===id);if(h){h.deleted=false;h.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Restored'};logAudit('RESTORE','JobHistory','JH-'+String(h.id).padStart(3,'0'),'Restored by superadmin');}});
       renderHist();
     },'Restore','btn-success');
-  }
-}
-function bulkPermDelete(scope){
-  if(scope==='emp'){
-    const ids=getChk('chk-emp').filter(id=>{const e=gE(id);return e&&(e.deleted||e.blocked);});
-    if(!ids.length)return;
-    askConfirm('Permanently Delete','Permanently delete '+ids.length+' employee(s)? This CANNOT be undone.',function(){
-      ids.forEach(id=>{const e=gE(id);if(e)logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Permanently deleted by superadmin');});
-      ids.forEach(id=>{const idx=employees.findIndex(e=>e.id===id);if(idx>-1)employees.splice(idx,1);});
-      renderEmp();renderStats();
-    },'Delete','btn-danger');
   }
 }
 function bulkBlock(scope){
@@ -843,6 +810,7 @@ function bulkBlock(scope){
     },'Block','btn-block');
   }
 }
+
 function popFormSelects(){
   ['fe-dept','fh-dept'].forEach(sid=>{
     const s=document.getElementById(sid);if(!s)return;
@@ -902,7 +870,6 @@ function saveEmp(){
   cm('mo-emp');renderEmp();renderStats();
 }
 
-/* JOB HISTORY */
 function renderHist(){
   const q=document.getElementById('hist-q').value.toLowerCase();
   const all=document.getElementById('hist-show-all').checked;
@@ -933,112 +900,67 @@ function openEditHist(id){
   om('mo-hist');
 }
 function saveHist(){
-  const empId=+document.getElementById('fh-emp').value;
-  const jobId=+document.getElementById('fh-job').value;
-  const deptId=+document.getElementById('fh-dept').value;
-  const effDate=document.getElementById('fh-eff').value;
-  const salary=+document.getElementById('fh-sal').value||0;
+  const empId=+document.getElementById('fh-emp').value,jobId=+document.getElementById('fh-job').value,deptId=+document.getElementById('fh-dept').value,effDate=document.getElementById('fh-eff').value,salary=+document.getElementById('fh-sal').value||0;
   if(!empId||!jobId||!deptId||!effDate){alert('Fill required fields.');return;}
   const meta={by:CURRENT_USER,at:now(),action:editId.hist?'EDIT':'ADD',note:editId.hist?'History updated':'New entry'};
-  if(editId.hist){
-    Object.assign(jobHistory.find(x=>x.id===editId.hist),{empId,jobId,deptId,effDate,salary,meta});
-    logAudit('EDIT','JobHistory','JH-'+String(editId.hist).padStart(3,'0'),'History updated');
-  }else{
-    jobHistory.push({id:nH++,empId,jobId,deptId,effDate,salary,deleted:false,meta});
-    logAudit('ADD','JobHistory','JH-'+String(nH-1).padStart(3,'0')+' ('+en(empId)+')','New entry added');
-  }
+  if(editId.hist){Object.assign(jobHistory.find(x=>x.id===editId.hist),{empId,jobId,deptId,effDate,salary,meta});logAudit('EDIT','JobHistory','JH-'+String(editId.hist).padStart(3,'0'),'History updated');}
+  else{jobHistory.push({id:nH++,empId,jobId,deptId,effDate,salary,deleted:false,meta});logAudit('ADD','JobHistory','JH-'+String(nH-1).padStart(3,'0')+' ('+en(empId)+')','New entry added');}
   cm('mo-hist');renderHist();
 }
 
-/* DEPARTMENTS */
 function renderDepts(){
   const ec=function(id){return employees.filter(e=>e.deptId===id&&!e.deleted&&!e.blocked).length;};
-  const tb=document.getElementById('dept-tbody');
-  const data=departments.filter(d=>!d.deleted);
+  const tb=document.getElementById('dept-tbody'),data=departments.filter(d=>!d.deleted);
   if(!data.length){tb.innerHTML='<tr><td colspan="4" class="tbl-empty">No departments.</td></tr>';return;}
   tb.innerHTML=data.map(d=>'<tr>'+
-    '<td><strong>'+d.code+'</strong></td><td>'+d.name+'</td>'+
-    '<td>'+ec(d.id)+'</td>'+
-    '<td>'+
-      '<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept('+d.id+')">Edit</button> '+
-      '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteDept('+d.id+')">Delete</button>'+
-    '</td></tr>').join('');
+    '<td><strong>'+d.code+'</strong></td><td>'+d.name+'</td><td>'+ec(d.id)+'</td>'+
+    '<td><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept('+d.id+')">Edit</button> '+
+    '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteDept('+d.id+')">Delete</button></td></tr>').join('');
 }
 function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
 function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;om('mo-dept');}
 function saveDept(){
-  const code=document.getElementById('fd-code').value.trim();
-  const name=document.getElementById('fd-name').value.trim();
+  const code=document.getElementById('fd-code').value.trim(),name=document.getElementById('fd-name').value.trim();
   if(!code||!name){alert('Code and name required.');return;}
   const meta={by:CURRENT_USER,at:now(),action:editId.dept?'EDIT':'ADD',note:editId.dept?'Dept updated':'New dept added'};
   if(editId.dept){Object.assign(gD(editId.dept),{code,name,meta});logAudit('EDIT','Department',code+' - '+name,'Updated');}
   else{departments.push({id:nD++,code,name,desc:'',deleted:false,meta});logAudit('ADD','Department',code+' - '+name,'Added');}
   cm('mo-dept');renderDepts();
 }
-function deleteDept(id){
-  const d=gD(id);
-  askConfirm('Delete Department','Delete "'+d.name+'"?',function(){
-    d.deleted=true;d.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted'};
-    logAudit('DELETE','Department',d.code+' - '+d.name,'Deleted by superadmin');
-    renderDepts();
-  },'Delete','btn-danger');
-}
+function deleteDept(id){const d=gD(id);askConfirm('Delete Department','Delete "'+d.name+'"?',function(){d.deleted=true;d.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted'};logAudit('DELETE','Department',d.code+' - '+d.name,'Deleted by superadmin');renderDepts();},'Delete','btn-danger');}
 
-/* JOB POSITIONS */
 function renderJobs(){
   const ec=function(id){return employees.filter(e=>e.jobId===id&&!e.deleted&&!e.blocked).length;};
-  const tb=document.getElementById('job-tbody');
-  const data=jobs.filter(j=>!j.deleted);
+  const tb=document.getElementById('job-tbody'),data=jobs.filter(j=>!j.deleted);
   if(!data.length){tb.innerHTML='<tr><td colspan="5" class="tbl-empty">No jobs.</td></tr>';return;}
   tb.innerHTML=data.map(j=>'<tr>'+
-    '<td><strong>'+j.code+'</strong></td><td>'+j.desc+'</td>'+
-    '<td>'+ec(j.id)+'</td><td><span class="badge b-active">Active</span></td>'+
-    '<td>'+
-      '<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditJob('+j.id+')">Edit</button> '+
-      '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteJob('+j.id+')">Delete</button>'+
-    '</td></tr>').join('');
+    '<td><strong>'+j.code+'</strong></td><td>'+j.desc+'</td><td>'+ec(j.id)+'</td>'+
+    '<td><span class="badge b-active">Active</span></td>'+
+    '<td><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditJob('+j.id+')">Edit</button> '+
+    '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteJob('+j.id+')">Delete</button></td></tr>').join('');
 }
 function openAddJob(){editId.job=null;document.getElementById('mo-job-title').textContent='Add Job Position';['fj-code','fj-desc'].forEach(f=>document.getElementById(f).value='');om('mo-job');}
 function openEditJob(id){const j=gJ(id);if(!j)return;editId.job=id;document.getElementById('mo-job-title').textContent='Edit Job Position';document.getElementById('fj-code').value=j.code;document.getElementById('fj-desc').value=j.desc;om('mo-job');}
 function saveJob(){
-  const code=document.getElementById('fj-code').value.trim();
-  const desc=document.getElementById('fj-desc').value.trim();
+  const code=document.getElementById('fj-code').value.trim(),desc=document.getElementById('fj-desc').value.trim();
   if(!code||!desc){alert('Job Code and Description required.');return;}
   const meta={by:CURRENT_USER,at:now(),action:editId.job?'EDIT':'ADD',note:editId.job?'Job updated':'New job added'};
   if(editId.job){Object.assign(gJ(editId.job),{code,desc,meta});logAudit('EDIT','Job',code+' - '+desc,'Updated');}
   else{jobs.push({id:nJ++,code,desc,deptId:1,deleted:false,meta});logAudit('ADD','Job',code+' - '+desc,'Added');}
   cm('mo-job');renderJobs();
 }
-function deleteJob(id){
-  const j=gJ(id);
-  askConfirm('Delete Job','Delete "'+j.desc+'"?',function(){
-    j.deleted=true;j.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted'};
-    logAudit('DELETE','Job',j.code+' - '+j.desc,'Deleted by superadmin');
-    renderJobs();
-  },'Delete','btn-danger');
-}
+function deleteJob(id){const j=gJ(id);askConfirm('Delete Job','Delete "'+j.desc+'"?',function(){j.deleted=true;j.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted'};logAudit('DELETE','Job',j.code+' - '+j.desc,'Deleted by superadmin');renderJobs();},'Delete','btn-danger');}
 
-/* AUDIT LOG */
 const actionDot={ADD:'dot-add',EDIT:'dot-edit',BLOCK:'dot-block',RESTORE:'dot-restore',DELETE:'dot-block',VIEW:'dot-add'};
 const actionColor={ADD:'#1E3A5F',EDIT:'#1a73e8',BLOCK:'#92400e',RESTORE:'#27ae60',DELETE:'#c0392b',VIEW:'#6b7280'};
 function viewSectionAudit(entity,title){
   const logs=auditLog.filter(a=>a.entity===entity);
   document.getElementById('mo-ad-title').textContent=title||entity+' Audit Log';
-  if(!logs.length){
-    document.getElementById('mo-ad-body').innerHTML='<p style="color:var(--muted);font-size:12px;padding:8px">No audit entries recorded yet.</p>';
-  }else{
-    document.getElementById('mo-ad-body').innerHTML='<div class="tw">'+logs.map(a=>
-      '<div class="audit-entry">'+
-      '<span class="audit-dot '+(actionDot[a.action]||'dot-add')+'"></span>'+
-      '<span class="audit-time">'+a.timestamp+'</span>'+
-      '<span class="audit-who">'+a.user+'</span>'+
-      '<span class="audit-action"><span style="font-weight:bold;color:'+(actionColor[a.action]||'#333')+'">['+a.action+']</span> <strong>'+a.record+'</strong> -- '+(a.note||'--')+'</span>'+
-      '</div>').join('')+'</div>';
-  }
+  if(!logs.length){document.getElementById('mo-ad-body').innerHTML='<p style="color:var(--muted);font-size:12px;padding:8px">No audit entries recorded yet.</p>';}
+  else{document.getElementById('mo-ad-body').innerHTML='<div class="tw">'+logs.map(a=>'<div class="audit-entry"><span class="audit-dot '+(actionDot[a.action]||'dot-add')+'"></span><span class="audit-time">'+a.timestamp+'</span><span class="audit-who">'+a.user+'</span><span class="audit-action"><span style="font-weight:bold;color:'+(actionColor[a.action]||'#333')+'">['+a.action+']</span> <strong>'+a.record+'</strong> -- '+(a.note||'--')+'</span></div>').join('')+'</div>';}
   om('mo-audit-detail');
 }
 
-/* DELETED ITEMS */
 function switchDelTab(btn,panel){
   document.querySelectorAll('#page-deleted .tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#page-deleted .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -1060,11 +982,8 @@ function renderHidEmp(){
   const tb=document.getElementById('del-emp-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="8" class="tbl-empty">No hidden employees.</td></tr>';return;}
   tb.innerHTML=data.map(e=>'<tr class="'+(e.deleted?'del-row':'blk-row')+'">'+
-    '<td class="ns">'+e.empNo+'</td>'+
-    '<td class="ns"><strong>'+e.lastName+'</strong></td>'+
-    '<td class="ns">'+e.firstName+'</td>'+
-    '<td class="ns">'+dn(e.deptId)+'</td>'+
-    '<td class="ns">'+jd(e.jobId)+'</td>'+
+    '<td class="ns">'+e.empNo+'</td><td class="ns"><strong>'+e.lastName+'</strong></td><td class="ns">'+e.firstName+'</td>'+
+    '<td class="ns">'+dn(e.deptId)+'</td><td class="ns">'+jd(e.jobId)+'</td>'+
     '<td class="ns"><span class="badge '+(e.deleted?'b-del':'b-blk')+'">'+(e.deleted?'Inactive':'Blocked')+'</span></td>'+
     '<td class="ns" style="font-size:10px">'+(e.meta?e.meta.by:'--')+'</td>'+
     '<td class="ns" style="white-space:nowrap">'+
@@ -1072,87 +991,15 @@ function renderHidEmp(){
       '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="permDeleteEmp('+e.id+')">Perm. Delete</button>'+
     '</td></tr>').join('');
 }
-function recoverEmp(id){
-  askConfirm('Recover Employee','Restore to active?',function(){
-    const e=gE(id);e.deleted=false;e.blocked=false;
-    e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};
-    logAudit('RESTORE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Recovered');
-    renderHidEmp();renderStats();
-  },'Recover','btn-success');
-}
-function permDeleteEmp(id){
-  const e=gE(id);
-  askConfirm('Permanently Delete','This cannot be undone. Delete this employee?',function(){
-    logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Permanently deleted by superadmin');
-    const idx=employees.findIndex(x=>x.id===id);if(idx>-1)employees.splice(idx,1);
-    renderHidEmp();renderStats();
-  },'Delete','btn-danger');
-}
-function renderHidHist(){
-  const data=jobHistory.filter(h=>h.deleted);
-  const tb=document.getElementById('del-hist-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="8" class="tbl-empty">No hidden history.</td></tr>';return;}
-  tb.innerHTML=data.map(h=>'<tr class="del-row">'+
-    '<td class="ns">JH-'+String(h.id).padStart(3,'0')+'</td>'+
-    '<td class="ns">'+en(h.empId)+'</td>'+
-    '<td class="ns">'+jc(h.jobId)+'</td>'+
-    '<td class="ns">'+dc(h.deptId)+'</td>'+
-    '<td class="ns">'+fmt(h.effDate)+'</td>'+
-    '<td class="ns"><span class="badge b-blk">Blocked</span></td>'+
-    '<td class="ns" style="font-size:10px">'+(h.meta?h.meta.by:'--')+'</td>'+
-    '<td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverHist('+h.id+')">Recover</button></td>'+
-  '</tr>').join('');
-}
-function recoverHist(id){
-  askConfirm('Recover History','Restore this entry?',function(){
-    const h=jobHistory.find(x=>x.id===id);h.deleted=false;
-    h.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};
-    logAudit('RESTORE','JobHistory','JH-'+String(h.id).padStart(3,'0'),'Recovered');
-    renderHidHist();
-  },'Recover','btn-success');
-}
-function renderHidJobs(){
-  const data=jobs.filter(j=>j.deleted);
-  const tb=document.getElementById('del-jobs-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="5" class="tbl-empty">No hidden jobs.</td></tr>';return;}
-  tb.innerHTML=data.map(j=>'<tr class="del-row">'+
-    '<td class="ns">'+j.code+'</td>'+
-    '<td class="ns">'+j.desc+'</td>'+
-    '<td class="ns"><span class="badge b-blk">Deleted</span></td>'+
-    '<td class="ns" style="font-size:10px">'+(j.meta?j.meta.by:'--')+'</td>'+
-    '<td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverJob('+j.id+')">Recover</button></td>'+
-  '</tr>').join('');
-}
-function recoverJob(id){
-  askConfirm('Recover Job','Restore this job?',function(){
-    const j=gJ(id);j.deleted=false;
-    j.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};
-    logAudit('RESTORE','Job',j.code+' - '+j.desc,'Recovered');
-    renderHidJobs();
-  },'Recover','btn-success');
-}
-function renderHidDepts(){
-  const data=departments.filter(d=>d.deleted);
-  const tb=document.getElementById('del-depts-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="5" class="tbl-empty">No hidden departments.</td></tr>';return;}
-  tb.innerHTML=data.map(d=>'<tr class="del-row">'+
-    '<td class="ns">'+d.code+'</td>'+
-    '<td class="ns">'+d.name+'</td>'+
-    '<td class="ns"><span class="badge b-blk">Deleted</span></td>'+
-    '<td class="ns" style="font-size:10px">'+(d.meta?d.meta.by:'--')+'</td>'+
-    '<td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverDept('+d.id+')">Recover</button></td>'+
-  '</tr>').join('');
-}
-function recoverDept(id){
-  askConfirm('Recover Dept','Restore this department?',function(){
-    const d=gD(id);d.deleted=false;
-    d.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};
-    logAudit('RESTORE','Department',d.code+' - '+d.name,'Recovered');
-    renderHidDepts();
-  },'Recover','btn-success');
-}
+function recoverEmp(id){askConfirm('Recover Employee','Restore to active?',function(){const e=gE(id);e.deleted=false;e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Recovered');renderHidEmp();renderStats();},'Recover','btn-success');}
+function permDeleteEmp(id){const e=gE(id);askConfirm('Permanently Delete','This cannot be undone. Delete this employee?',function(){logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Permanently deleted by superadmin');const idx=employees.findIndex(x=>x.id===id);if(idx>-1)employees.splice(idx,1);renderHidEmp();renderStats();},'Delete','btn-danger');}
+function renderHidHist(){const data=jobHistory.filter(h=>h.deleted);const tb=document.getElementById('del-hist-tbody');if(!data.length){tb.innerHTML='<tr><td colspan="8" class="tbl-empty">No hidden history.</td></tr>';return;}tb.innerHTML=data.map(h=>'<tr class="del-row"><td class="ns">JH-'+String(h.id).padStart(3,'0')+'</td><td class="ns">'+en(h.empId)+'</td><td class="ns">'+jc(h.jobId)+'</td><td class="ns">'+dc(h.deptId)+'</td><td class="ns">'+fmt(h.effDate)+'</td><td class="ns"><span class="badge b-blk">Blocked</span></td><td class="ns" style="font-size:10px">'+(h.meta?h.meta.by:'--')+'</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverHist('+h.id+')">Recover</button></td></tr>').join('');}
+function recoverHist(id){askConfirm('Recover History','Restore this entry?',function(){const h=jobHistory.find(x=>x.id===id);h.deleted=false;h.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','JobHistory','JH-'+String(h.id).padStart(3,'0'),'Recovered');renderHidHist();},'Recover','btn-success');}
+function renderHidJobs(){const data=jobs.filter(j=>j.deleted);const tb=document.getElementById('del-jobs-tbody');if(!data.length){tb.innerHTML='<tr><td colspan="5" class="tbl-empty">No hidden jobs.</td></tr>';return;}tb.innerHTML=data.map(j=>'<tr class="del-row"><td class="ns">'+j.code+'</td><td class="ns">'+j.desc+'</td><td class="ns"><span class="badge b-blk">Deleted</span></td><td class="ns" style="font-size:10px">'+(j.meta?j.meta.by:'--')+'</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverJob('+j.id+')">Recover</button></td></tr>').join('');}
+function recoverJob(id){askConfirm('Recover Job','Restore this job?',function(){const j=gJ(id);j.deleted=false;j.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Job',j.code+' - '+j.desc,'Recovered');renderHidJobs();},'Recover','btn-success');}
+function renderHidDepts(){const data=departments.filter(d=>d.deleted);const tb=document.getElementById('del-depts-tbody');if(!data.length){tb.innerHTML='<tr><td colspan="5" class="tbl-empty">No hidden departments.</td></tr>';return;}tb.innerHTML=data.map(d=>'<tr class="del-row"><td class="ns">'+d.code+'</td><td class="ns">'+d.name+'</td><td class="ns"><span class="badge b-blk">Deleted</span></td><td class="ns" style="font-size:10px">'+(d.meta?d.meta.by:'--')+'</td><td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverDept('+d.id+')">Recover</button></td></tr>').join('');}
+function recoverDept(id){askConfirm('Recover Dept','Restore this department?',function(){const d=gD(id);d.deleted=false;d.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Recovered'};logAudit('RESTORE','Department',d.code+' - '+d.name,'Recovered');renderHidDepts();},'Recover','btn-success');}
 
-/* USER MANAGEMENT */
 function renderUsers(){
   const q=document.getElementById('users-q').value.toLowerCase();
   const fr=document.getElementById('users-fr').value;
@@ -1167,10 +1014,11 @@ function renderUsers(){
     const roleClass=u.role==='superadmin'?'b-sa':u.role==='admin'?'b-admin':'b-user';
     const emp=u.empId?en(u.empId):'--';
     let actionBtns='';
-    if(u.role==='superadmin'){
+    if(u.username===CURRENT_USER){
+      // Cannot block yourself
       actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button>'+
-        '<span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">Protected</span>';
-    }else{
+        '<span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">You</span>';
+    } else {
       const blockLbl=u.blocked?'Unblock':'Block';
       const blockCls=u.blocked?'btn-restore':'btn-block';
       actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button> '+
@@ -1189,7 +1037,7 @@ function renderUsers(){
 }
 function toggleBlockUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  if(u.role==='superadmin'){alert('Super Admin accounts cannot be blocked.');return;}
+  if(u.username===CURRENT_USER){alert('You cannot block your own account.');return;}
   const action=u.blocked?'Unblock':'Block';
   askConfirm(action+' User',action+' account "'+u.username+'"?',function(){
     u.blocked=!u.blocked;
@@ -1199,7 +1047,7 @@ function toggleBlockUser(id){
 }
 function deleteUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  if(u.role==='superadmin'){alert('Super Admin accounts cannot be deleted.');return;}
+  if(u.username===CURRENT_USER){alert('You cannot delete your own account.');return;}
   askConfirm('Delete User','Permanently delete user "'+u.username+'"?',function(){
     logAudit('DELETE','User',u.username,'Permanently deleted by superadmin');
     const idx=sysUsers.findIndex(x=>x.id===id);if(idx>-1)sysUsers.splice(idx,1);
@@ -1226,37 +1074,19 @@ function openEditUser(id){
   om('mo-user');
 }
 function saveUser(){
-  const username=document.getElementById('fu-user').value.trim();
-  const password=document.getElementById('fu-pass').value.trim();
-  const firstName=document.getElementById('fu-fn').value.trim();
-  const lastName=document.getElementById('fu-ln').value.trim();
-  const role=document.getElementById('fu-role').value;
-  const empId=+document.getElementById('fu-emp').value||null;
+  const username=document.getElementById('fu-user').value.trim(),password=document.getElementById('fu-pass').value.trim(),firstName=document.getElementById('fu-fn').value.trim(),lastName=document.getElementById('fu-ln').value.trim(),role=document.getElementById('fu-role').value,empId=+document.getElementById('fu-emp').value||null;
   if(!username||!role){alert('Username and role are required.');return;}
-  if(editId.user){
-    const u=sysUsers.find(x=>x.id===editId.user);
-    Object.assign(u,{username,password,firstName,lastName,role,empId});
-    logAudit('EDIT','User',username,'Updated by superadmin');
-  }else{
-    sysUsers.push({id:nU++,username,password,firstName,lastName,role,empId,deleted:false,blocked:false,registeredAt:now()});
-    logAudit('ADD','User',username,'Created by superadmin');
-  }
+  if(editId.user){const u=sysUsers.find(x=>x.id===editId.user);Object.assign(u,{username,password,firstName,lastName,role,empId});logAudit('EDIT','User',username,'Updated by superadmin');}
+  else{sysUsers.push({id:nU++,username,password,firstName,lastName,role,empId,deleted:false,blocked:false,registeredAt:now()});logAudit('ADD','User',username,'Created by superadmin');}
   cm('mo-user');renderUsers();renderUserStats();
 }
 
-/* PROFILE */
 function viewEmpAudit(id){
   const e=gE(id);if(!e)return;
   const logs=auditLog.filter(a=>a.record.includes(e.empNo)||a.record.includes(e.lastName+', '+e.firstName));
   document.getElementById('mo-ad-title').textContent='Change History: '+e.lastName+', '+e.firstName;
   document.getElementById('mo-ad-body').innerHTML=logs.length?
-    '<div class="tw">'+logs.map(a=>
-      '<div class="audit-entry">'+
-      '<span class="audit-dot '+(actionDot[a.action]||'dot-add')+'"></span>'+
-      '<span class="audit-time">'+a.timestamp+'</span>'+
-      '<span class="audit-who">'+a.user+'</span>'+
-      '<span class="audit-action"><span style="font-weight:bold;color:'+(actionColor[a.action]||'#333')+'">['+a.action+']</span> '+(a.note||'--')+'</span>'+
-      '</div>').join('')+'</div>':
+    '<div class="tw">'+logs.map(a=>'<div class="audit-entry"><span class="audit-dot '+(actionDot[a.action]||'dot-add')+'"></span><span class="audit-time">'+a.timestamp+'</span><span class="audit-who">'+a.user+'</span><span class="audit-action"><span style="font-weight:bold;color:'+(actionColor[a.action]||'#333')+'">['+a.action+']</span> '+(a.note||'--')+'</span></div>').join('')+'</div>':
     '<p style="color:var(--muted);font-size:12px;padding:8px">No change history found.</p>';
   om('mo-audit-detail');
 }
@@ -1280,11 +1110,7 @@ function viewProf(id){
     '<div class="pp">'+
     '<div class="pp-head">'+
       '<div class="ava">'+ini(e)+'</div>'+
-      '<div class="pp-info">'+
-        '<div class="pname">'+e.lastName+', '+e.firstName+'</div>'+
-        '<div class="prole">'+jd(e.jobId)+' - '+dn(e.deptId)+'</div>'+
-        '<div class="pid">'+e.empNo+'</div>'+
-      '</div>'+
+      '<div class="pp-info"><div class="pname">'+e.lastName+', '+e.firstName+'</div><div class="prole">'+jd(e.jobId)+' - '+dn(e.deptId)+'</div><div class="pid">'+e.empNo+'</div></div>'+
       '<div style="margin-left:auto">'+badge+'</div>'+
     '</div>'+
     '<div class="pp-body">'+
@@ -1313,17 +1139,13 @@ function viewProf(id){
         '<div class="pst" style="margin-bottom:0">Job History</div>'+
         '<button class="btn btn-primary" style="font-size:10px;padding:4px 9px" onclick="openAddHistFor('+id+')">+ Add Entry</button>'+
       '</div>'+
-      '<div class="tw">'+
-        '<table class="ht">'+
-          '<thead><tr><th>Job Code</th><th>Job Desc</th><th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>'+
-          '<tbody>'+rows+'</tbody>'+
-        '</table>'+
-      '</div>'+
+      '<div class="tw"><table class="ht"><thead><tr><th>Job Code</th><th>Job Desc</th><th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<div style="margin-top:14px;display:flex;gap:7px;flex-wrap:wrap">'+
         '<button class="btn btn-primary" onclick="openEditEmp('+e.id+')">Edit Profile</button>'+
         '<button class="btn btn-audit" onclick="viewEmpAudit('+e.id+')">View Audit Log</button>'+
-        ((e.deleted||e.blocked)?'<button class="btn btn-restore" onclick="recoverProfEmp('+e.id+')">Restore Employee</button>':'')+
-        ((e.deleted||e.blocked)?'<button class="btn btn-danger" onclick="permDeleteProfEmp('+e.id+')">Perm. Delete</button>':'')+
+        (!e.blocked&&!e.deleted?'<button class="btn btn-block" onclick="blockProfEmp('+e.id+')">Block Employee</button>':'')+
+        (e.blocked?'<button class="btn btn-restore" onclick="recoverProfEmp('+e.id+')">Unblock Employee</button>':'')+
+        '<button class="btn btn-danger" onclick="permDeleteProfEmp('+e.id+')">Perm. Delete</button>'+
       '</div>'+
     '</div></div>';
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -1341,14 +1163,20 @@ function openAddHistFor(empId){
 }
 function blockHistRow(hid,empId){
   askConfirm('Block History Entry','Block this history record?',function(){
-    const h=jobHistory.find(x=>x.id===hid);
-    h.deleted=true;h.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};
+    const h=jobHistory.find(x=>x.id===hid);h.deleted=true;h.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};
     logAudit('BLOCK','JobHistory','JH-'+String(h.id).padStart(3,'0'),'Blocked via profile');
     viewProf(empId);
   },'Block','btn-block');
 }
+function blockProfEmp(id){
+  askConfirm('Block Employee','Block this employee?',function(){
+    const e=gE(id);e.blocked=true;e.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};
+    logAudit('BLOCK','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Blocked via profile');
+    viewProf(id);renderStats();
+  },'Block','btn-block');
+}
 function recoverProfEmp(id){
-  askConfirm('Restore Employee','Restore employee to active?',function(){
+  askConfirm('Unblock Employee','Restore employee to active?',function(){
     const e=gE(id);e.deleted=false;e.blocked=false;
     e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Restored via profile'};
     logAudit('RESTORE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Restored via profile');
@@ -1365,8 +1193,7 @@ function permDeleteProfEmp(id){
 }
 function doLogout(){
   askConfirm('Log Out','Are you sure you want to log out?',async function(){
-    await sb.auth.signOut();
-    window.location.href='index.html#login';
+    await sb.auth.signOut();window.location.href='index.html#login';
   },'Log Out','btn-danger');
 }
 
