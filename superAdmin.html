@@ -350,7 +350,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div id="del-jobs" class="tab-panel">
         <div class="tw"><table>
-          <thead><tr><th>Job Code</th><th>Job Description</th><th>Department</th><th>Status</th><th>Hidden By</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Job Code</th><th>Job Description</th><th>Status</th><th>Hidden By</th><th>Actions</th></tr></thead>
           <tbody id="del-jobs-tbody"></tbody>
         </table></div>
       </div>
@@ -474,6 +474,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
 </div>
 
 <!-- ADD/EDIT DEPT -->
+<!-- REMOVED: Description field -->
 <div class="mo" id="mo-dept">
   <div class="modal" style="width:420px">
     <div class="mh"><h3 id="mo-dept-title">Add Department</h3><button class="mc-btn" onclick="cm('mo-dept')">x</button></div>
@@ -482,7 +483,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="fr"><label>Dept Code</label><input id="fd-code" placeholder="IT"/></div>
         <div class="fr"><label>Dept Name</label><input id="fd-name" placeholder="Information Technology"/></div>
       </div>
-      <div class="fr"><label>Description</label><textarea id="fd-desc"></textarea></div>
     </div>
     <div class="mf">
       <button class="btn btn-outline" onclick="cm('mo-dept')">Cancel</button>
@@ -492,6 +492,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
 </div>
 
 <!-- ADD/EDIT JOB -->
+<!-- REMOVED: Department dropdown -->
 <div class="mo" id="mo-job">
   <div class="modal" style="width:420px">
     <div class="mh"><h3 id="mo-job-title">Add Job Position</h3><button class="mc-btn" onclick="cm('mo-job')">x</button></div>
@@ -500,7 +501,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="fr"><label>Job Code</label><input id="fj-code" placeholder="DEV"/></div>
         <div class="fr"><label>Job Description</label><input id="fj-desc" placeholder="Software Developer"/></div>
       </div>
-      <div class="fr"><label>Department</label><select id="fj-dept"></select></div>
     </div>
     <div class="mf">
       <button class="btn btn-outline" onclick="cm('mo-job')">Cancel</button>
@@ -585,6 +585,8 @@ async function loadAllData(){
       sb.from('jobhistory').select('*'),
       sb.from('profiles').select('*'),
     ]);
+
+    // Build departments
     departments=(deptRes.data||[]).map((d,idx)=>({
       id:idx+1,
       code:d.deptcode||d.deptCode||d.code||d.dept_code||'',
@@ -592,6 +594,8 @@ async function loadAllData(){
       desc:d.description||d.desc||'',
       deleted:d.deleted||false
     }));
+
+    // Build jobs
     jobs=(jobRes.data||[]).map((j,idx)=>({
       id:idx+1,
       code:j.jobcode||j.jobCode||j.code||j.job_code||'',
@@ -599,14 +603,16 @@ async function loadAllData(){
       deptId:j.deptid||j.deptId||j.dept_id||1,
       deleted:j.deleted||false
     }));
-    jobHistory=(histRes.data||[]).map((h,idx)=>{
+
+    // Build job history (keep empId as the raw empno string for now)
+    const rawHistory=(histRes.data||[]).map((h,idx)=>{
       const jc2=h.jobcode||h.jobCode||h.job_code||'';
       const dc2=h.deptcode||h.deptCode||h.dept_code||'';
       const jobMatch=jobs.find(j=>j.code===jc2);
       const deptMatch=departments.find(d=>d.code===dc2);
       return{
         id:idx+1,
-        empId:h.empno||h.empNo||h.emp_id||'',
+        empNo:String(h.empno||h.empNo||h.emp_id||''),
         jobId:jobMatch?jobMatch.id:1,
         deptId:deptMatch?deptMatch.id:1,
         effDate:h.effdate||h.effDate||h.eff_date||'',
@@ -614,25 +620,45 @@ async function loadAllData(){
         deleted:h.deleted||false
       };
     });
+
+    // Build employees first (using empNo as the key)
     employees=(empRes.data||[]).map((e,idx)=>{
-      const empNo=e.empno||e.emp_no||'';
-      const hist=jobHistory.filter(h=>String(h.empId)===String(empNo)).sort((a,b)=>new Date(b.effDate)-new Date(a.effDate))[0];
+      const empNo=String(e.empno||e.emp_no||'');
+      const hist=rawHistory.filter(h=>h.empNo===empNo).sort((a,b)=>new Date(b.effDate)-new Date(a.effDate))[0];
       return{
-        id:idx+1,empNo,
+        id:idx+1,
+        empNo,
         lastName:e.lastname||e.last_name||'',
         firstName:e.firstname||e.first_name||'',
-        gender:e.gender||'',birthdate:e.birthdate||e.birth_date||'',
+        gender:e.gender||'',
+        birthdate:e.birthdate||e.birth_date||'',
         hireDate:e.hiredate||e.hire_date||'',
         sepDate:e.sepdate||e.sep_date||null,
-        username:e.username||'',email:e.email||'',phone:e.phone||'',
-        deptId:hist?hist.deptId:1,jobId:hist?hist.jobId:1,salary:hist?hist.salary:0,
-        deleted:e.deleted||(e.sepDate||e.sep_date?true:false),blocked:e.blocked||false
+        username:e.username||'',
+        email:e.email||'',
+        phone:e.phone||'',
+        deptId:hist?hist.deptId:1,
+        jobId:hist?hist.jobId:1,
+        salary:hist?hist.salary:0,
+        deleted:e.deleted||false,
+        blocked:e.blocked||false
       };
     });
-    jobHistory=jobHistory.map(h=>{
-      const emp=findEmployeeByNo(String(h.empId));
-      return emp?Object.assign({},h,{empId:emp.id}):h;
+
+    // Now map jobHistory empNo -> employee.id
+    jobHistory=rawHistory.map(h=>{
+      const emp=employees.find(e=>e.empNo===h.empNo);
+      return{
+        id:h.id,
+        empId:emp?emp.id:0,
+        jobId:h.jobId,
+        deptId:h.deptId,
+        effDate:h.effDate,
+        salary:h.salary,
+        deleted:h.deleted
+      };
     });
+
     sysUsers=(userRes.data||[]).map((u,idx)=>({
       id:idx+1,username:u.username||'',password:u.password||'',
       firstName:u.first_name||u.firstName||'',lastName:u.last_name||u.lastName||'',
@@ -640,8 +666,10 @@ async function loadAllData(){
       registeredAt:u.registered_at||u.registeredAt||'',
       deleted:u.deleted||false,blocked:u.blocked||false
     }));
-    nE=(employees.length||0)+1; nH=(jobHistory.length||0)+1;
-    nD=(departments.length||0)+1; nJ=(jobs.length||0)+1; nU=(sysUsers.length||0)+1;
+
+    nE=employees.length+1; nH=jobHistory.length+1;
+    nD=departments.length+1; nJ=jobs.length+1; nU=sysUsers.length+1;
+
     renderEmp(); renderStats();
   }catch(err){alert('Fatal error loading data: '+err.message);}
 }
@@ -654,7 +682,7 @@ const dn=id=>{const d=gD(id);return d?d.name:'--';};
 const dc=id=>{const d=gD(id);return d?d.code:'--';};
 const jd=id=>{const j=gJ(id);return j?j.desc:'--';};
 const jc=id=>{const j=gJ(id);return j?j.code:'--';};
-const en=id=>{const e=gE(Number(id))||findEmployeeByNo(id);return e?(e.lastName+', '+e.firstName):'--';};
+const en=id=>{const e=gE(Number(id));return e?(e.lastName+', '+e.firstName):'--';};
 const ini=e=>(e.firstName[0]+e.lastName[0]).toUpperCase();
 const fmt=d=>d?d:'--';
 const fmtSal=s=>s?'P'+Number(s).toLocaleString():'--';
@@ -816,7 +844,7 @@ function bulkBlock(scope){
   }
 }
 function popFormSelects(){
-  ['fe-dept','fh-dept','fj-dept'].forEach(sid=>{
+  ['fe-dept','fh-dept'].forEach(sid=>{
     const s=document.getElementById(sid);if(!s)return;
     s.innerHTML='<option value="">-- Select --</option>';
     departments.filter(d=>!d.deleted).forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;s.appendChild(o);});
@@ -936,16 +964,15 @@ function renderDepts(){
       '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteDept('+d.id+')">Delete</button>'+
     '</td></tr>').join('');
 }
-function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name','fd-desc'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
-function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;document.getElementById('fd-desc').value=d.desc||'';om('mo-dept');}
+function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
+function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;om('mo-dept');}
 function saveDept(){
   const code=document.getElementById('fd-code').value.trim();
   const name=document.getElementById('fd-name').value.trim();
-  const desc=document.getElementById('fd-desc').value.trim();
   if(!code||!name){alert('Code and name required.');return;}
   const meta={by:CURRENT_USER,at:now(),action:editId.dept?'EDIT':'ADD',note:editId.dept?'Dept updated':'New dept added'};
-  if(editId.dept){Object.assign(gD(editId.dept),{code,name,desc,meta});logAudit('EDIT','Department',code+' - '+name,'Updated');}
-  else{departments.push({id:nD++,code,name,desc,deleted:false,meta});logAudit('ADD','Department',code+' - '+name,'Added');}
+  if(editId.dept){Object.assign(gD(editId.dept),{code,name,meta});logAudit('EDIT','Department',code+' - '+name,'Updated');}
+  else{departments.push({id:nD++,code,name,desc:'',deleted:false,meta});logAudit('ADD','Department',code+' - '+name,'Added');}
   cm('mo-dept');renderDepts();
 }
 function deleteDept(id){
@@ -971,16 +998,15 @@ function renderJobs(){
       '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteJob('+j.id+')">Delete</button>'+
     '</td></tr>').join('');
 }
-function openAddJob(){editId.job=null;document.getElementById('mo-job-title').textContent='Add Job Position';['fj-code','fj-desc'].forEach(f=>document.getElementById(f).value='');popFormSelects();om('mo-job');}
-function openEditJob(id){const j=gJ(id);if(!j)return;editId.job=id;document.getElementById('mo-job-title').textContent='Edit Job Position';document.getElementById('fj-code').value=j.code;document.getElementById('fj-desc').value=j.desc;popFormSelects();setTimeout(function(){document.getElementById('fj-dept').value=j.deptId;},10);om('mo-job');}
+function openAddJob(){editId.job=null;document.getElementById('mo-job-title').textContent='Add Job Position';['fj-code','fj-desc'].forEach(f=>document.getElementById(f).value='');om('mo-job');}
+function openEditJob(id){const j=gJ(id);if(!j)return;editId.job=id;document.getElementById('mo-job-title').textContent='Edit Job Position';document.getElementById('fj-code').value=j.code;document.getElementById('fj-desc').value=j.desc;om('mo-job');}
 function saveJob(){
   const code=document.getElementById('fj-code').value.trim();
   const desc=document.getElementById('fj-desc').value.trim();
-  const deptId=+document.getElementById('fj-dept').value;
-  if(!code||!desc||!deptId){alert('All fields required.');return;}
+  if(!code||!desc){alert('Job Code and Description required.');return;}
   const meta={by:CURRENT_USER,at:now(),action:editId.job?'EDIT':'ADD',note:editId.job?'Job updated':'New job added'};
-  if(editId.job){Object.assign(gJ(editId.job),{code,desc,deptId,meta});logAudit('EDIT','Job',code+' - '+desc,'Updated');}
-  else{jobs.push({id:nJ++,code,desc,deptId,deleted:false,meta});logAudit('ADD','Job',code+' - '+desc,'Added');}
+  if(editId.job){Object.assign(gJ(editId.job),{code,desc,meta});logAudit('EDIT','Job',code+' - '+desc,'Updated');}
+  else{jobs.push({id:nJ++,code,desc,deptId:1,deleted:false,meta});logAudit('ADD','Job',code+' - '+desc,'Added');}
   cm('mo-job');renderJobs();
 }
 function deleteJob(id){
@@ -1088,11 +1114,10 @@ function recoverHist(id){
 function renderHidJobs(){
   const data=jobs.filter(j=>j.deleted);
   const tb=document.getElementById('del-jobs-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="6" class="tbl-empty">No hidden jobs.</td></tr>';return;}
+  if(!data.length){tb.innerHTML='<tr><td colspan="5" class="tbl-empty">No hidden jobs.</td></tr>';return;}
   tb.innerHTML=data.map(j=>'<tr class="del-row">'+
     '<td class="ns">'+j.code+'</td>'+
     '<td class="ns">'+j.desc+'</td>'+
-    '<td class="ns">'+dn(j.deptId)+'</td>'+
     '<td class="ns"><span class="badge b-blk">Deleted</span></td>'+
     '<td class="ns" style="font-size:10px">'+(j.meta?j.meta.by:'--')+'</td>'+
     '<td class="ns"><button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="recoverJob('+j.id+')">Recover</button></td>'+
