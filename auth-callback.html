@@ -51,7 +51,26 @@
         return;
       }
 
-      if (profile.status !== 'approved') {
+      const status = (profile.status || '').toLowerCase();
+
+      if (status === 'blocked') {
+        window.location.href = 'blocked.html';
+        return;
+      }
+
+      if (status === 'deactivated') {
+        window.location.href = 'deactivated.html';
+        return;
+      }
+
+      if (status === 'inactive') {
+        window.location.href = 'waiting.html';
+        return;
+      }
+
+      if (status === 'active' || status === 'approved') {
+        // continue login
+      } else {
         window.location.href = 'waiting.html';
         return;
       }
