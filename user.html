@@ -70,6 +70,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
 /* ── BADGES ── */
 .badge{display:inline-block;padding:2px 7px;border-radius:var(--r);font-size:10px;font-weight:bold}
 .b-active{background:#e6f4ea;color:var(--success)}
+.b-sep{background:#fce8e6;color:var(--danger)}
 .b-dept{background:#e8f0fe;color:#1a73e8}
 
 /* ── STATS ── */
@@ -218,6 +219,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search history…" oninput="renderHist()"/>
+        <select id="hist-fe" onchange="renderHist()"><option value="">All Employees</option></select>
         <select id="hist-sort" onchange="renderHist()">
           <option value="az">Sort: A → Z (Employee)</option>
           <option value="za">Sort: Z → A (Employee)</option>
@@ -374,18 +376,42 @@ function setUsernameDisplay(user) {
 let departments  = [];
 let jobs         = [];
 let employees    = [];   // active only — shown in Employees page
-let allEmployees = [];   // all — used solely for name resolution in Job History
+let allEmployees = [];   // ALL employees including separated — used for name lookups
 let jobHistory   = [];
 let pendingFn    = null;
 
-/* ── empNo normalisation: strip whitespace and leading zeros for loose comparison ── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   FIX 1: normaliseEmpNo — trims AND zero-pads pure numeric strings to 5 digits.
+   This ensures "1" from a Supabase integer column matches "00001" from a varchar.
+───────────────────────────────────────────────────────────────────────────── */
 function normaliseEmpNo(v) {
   const s = String(v == null ? '' : v).trim();
-  // If it's a pure integer string, zero-pad to 5 digits to match DB varchar '00001'
   if (s !== '' && /^\d+$/.test(s)) {
     return s.padStart(5, '0');
   }
   return s;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FIX 2: extractEmpNo — tries every known Supabase column name variant,
+   then falls back to scanning ALL keys for the first numeric-looking value.
+   This guarantees we always get the empNo regardless of how Supabase names it.
+───────────────────────────────────────────────────────────────────────────── */
+function extractEmpNo(row) {
+  // Try all known column name variants first
+  const direct = row.empno ?? row.empNo ?? row.emp_no ?? row.emp_id
+               ?? row.employeeId ?? row.employee_id ?? row.EMPNO ?? row.EmpNo;
+  if (direct != null && String(direct).trim() !== '') {
+    return normaliseEmpNo(direct);
+  }
+  // Fallback: scan all keys for the first one that looks like an employee number
+  for (const key of Object.keys(row)) {
+    const val = String(row[key] ?? '').trim();
+    if (val !== '' && /^\d{1,5}$/.test(val)) {
+      return normaliseEmpNo(val);
+    }
+  }
+  return '';
 }
 
 /* Gender helpers */
@@ -435,19 +461,17 @@ async function loadAllData() {
       deptId: j.deptid   || j.deptId   || j.dept_id || 1
     }));
 
-    /* ── Job History ── */
+    /* ── Job History — use extractEmpNo for bulletproof column resolution ── */
     jobHistory = (histRes.data || []).map((h, idx) => {
       const jobCode  = h.jobcode  || h.jobCode  || h.job_code  || '';
       const deptCode = h.deptcode || h.deptCode || h.dept_code || '';
       const jobMatch  = jobs.find(j => j.code === jobCode);
       const deptMatch = departments.find(d => d.code === deptCode);
-
-      /* FIX: capture every possible empNo column name the DB might use */
-      const rawEmpNo = h.empno ?? h.empNo ?? h.emp_no ?? h.emp_id ?? h.employeeId ?? h.employee_id ?? '';
+      const empNo = extractEmpNo(h);   // ← FIX: robust extraction
 
       return {
         id:      idx + 1,
-        empNo:   normaliseEmpNo(rawEmpNo),
+        empNo,
         jobId:   jobMatch  ? jobMatch.id  : 1,
         deptId:  deptMatch ? deptMatch.id : 1,
         effDate: h.effdate  || h.effDate  || h.eff_date || '',
@@ -455,15 +479,19 @@ async function loadAllData() {
       };
     });
 
-    /* ── allEmployees: every row from DB (including separated/blocked/deleted) ── */
+    /* ─────────────────────────────────────────────────────────────────────
+       FIX 3: allEmployees — ALL rows from DB including separated employees.
+       isActive no longer excludes employees who have a sepDate.
+       Separated employees still appear in the table; their sepDate is shown.
+    ───────────────────────────────────────────────────────────────────── */
     allEmployees = (empRes.data || []).map((e, idx) => {
-      /* FIX: capture every possible empNo column name */
-      const rawEmpNo = e.empno ?? e.emp_no ?? e.employeeId ?? e.employee_id ?? '';
-      const empNo = normaliseEmpNo(rawEmpNo);
+      const empNo = extractEmpNo(e);   // ← FIX: robust extraction
 
       const hist = jobHistory
         .filter(h => empNoMatch(h.empNo, empNo))
         .sort((a, b) => new Date(b.effDate) - new Date(a.effDate))[0];
+
+      const sepDate = e.sepdate || e.sepDate || e.sep_date || null;
 
       return {
         id:        idx + 1,
@@ -472,22 +500,24 @@ async function loadAllData() {
         firstName: e.firstname || e.first_name || '',
         gender:    normalizeGender(e.gender),
         hireDate:  e.hiredate  || e.hire_date  || '',
-        sepDate:   e.sepdate   || e.sep_date   || null,
+        sepDate,
         username:  e.username  || '',
         email:     e.email     || '',
         phone:     e.phone     || '',
         deptId:    hist ? hist.deptId : 1,
         jobId:     hist ? hist.jobId  : 1,
         salary:    hist ? hist.salary : 0,
+        /* FIX: isActive only excludes truly deleted/blocked — NOT employees with a sepDate */
         isActive:  !(e.deleted || e.blocked)
       };
     });
 
-    /* ── employees = active subset ── */
+    /* ── employees = active subset (includes separated — they show with a sepDate) ── */
     employees = allEmployees.filter(e => e.isActive);
 
     renderEmp();
     renderStats();
+    populateHistEmpFilter();
   } catch (err) {
     alert('Fatal error loading data: ' + err.message);
   }
@@ -501,30 +531,30 @@ const gJ = id => jobs.find(j => j.id === id);
 const gE = id => employees.find(e => e.id === id);
 
 /*
- * empNoMatch — compare two empNo strings with three strategies:
- *   1. Exact string match              "10001" === "10001"
- *   2. Numeric equality               10001   ===  10001  (handles leading zeros and int vs string)
- *   3. Trimmed case-insensitive match  (belt-and-suspenders for alpha IDs)
+ * empNoMatch — three-strategy comparison so "00001" always matches "1":
+ *   1. Exact string match
+ *   2. Numeric equality (handles leading-zero / int vs string mismatches)
+ *   3. Trimmed case-insensitive (belt-and-suspenders for alpha IDs)
  */
 function empNoMatch(a, b) {
   if (!a && !b) return true;
   if (!a || !b) return false;
   const sa = String(a).trim();
   const sb2 = String(b).trim();
-  if (sa === sb2) return true;                          // exact
-  if (!isNaN(sa) && !isNaN(sb2) && Number(sa) === Number(sb2)) return true; // numeric
-  return sa.toLowerCase() === sb2.toLowerCase();        // case-insensitive
+  if (sa === sb2) return true;
+  if (!isNaN(sa) && !isNaN(sb2) && Number(sa) === Number(sb2)) return true;
+  return sa.toLowerCase() === sb2.toLowerCase();
 }
 
 /*
- * enByEmpNo — resolve a full name from allEmployees using the robust matcher.
+ * enByEmpNo — resolves a full name from allEmployees using robust matching.
  * Falls back to the raw empNo so the cell is never blank.
  */
 function enByEmpNo(empNo) {
   const key = normaliseEmpNo(empNo);
   const e = allEmployees.find(x => empNoMatch(x.empNo, key));
   if (e && (e.lastName || e.firstName)) {
-    return `${e.lastName}, ${e.firstName}`.replace(/^, |, $/, '').trim();
+    return (e.lastName + ', ' + e.firstName).replace(/^, |, $/g, '').trim();
   }
   return key || '—';
 }
@@ -551,7 +581,7 @@ function nav(el, page) {
   };
   document.getElementById('topbar-title').textContent = t[page] || page;
   if (page === 'employees')   { renderEmp(); renderStats(); }
-  if (page === 'job-history') renderHist();
+  if (page === 'job-history') { populateHistEmpFilter(); renderHist(); }
   if (page === 'departments') renderDepts();
   if (page === 'jobs')        renderJobs();
 }
@@ -574,13 +604,17 @@ function askConfirm(title, msg, fn, btn = 'Confirm') {
    STATS
 ════════════════════════════════════ */
 function renderStats() {
+  /* Count active employees (not deleted/blocked) */
+  const active = employees.filter(e => !e.sepDate).length;
+  const separated = employees.filter(e => e.sepDate).length;
   const total  = employees.length;
   const depts  = new Set(employees.map(e => e.deptId)).size;
   const male   = employees.filter(e => e.gender === 'M').length;
   const female = employees.filter(e => e.gender === 'F').length;
   const other  = employees.filter(e => e.gender !== 'M' && e.gender !== 'F' && e.gender !== '').length;
   document.getElementById('emp-stats').innerHTML = `
-    <div class="sc ac"><div class="n">${total}</div><div class="l">Active Employees</div></div>
+    <div class="sc ac"><div class="n">${active}</div><div class="l">Active Employees</div></div>
+    ${separated > 0 ? `<div class="sc"><div class="n">${separated}</div><div class="l">Separated</div></div>` : ''}
     <div class="sc"><div class="n">${depts}</div><div class="l">Departments</div></div>
     <div class="sc"><div class="n">${male}</div><div class="l">Male</div></div>
     <div class="sc"><div class="n">${female}</div><div class="l">Female</div></div>
@@ -625,32 +659,64 @@ function renderEmp() {
     tb.innerHTML = `<tr><td colspan="10" class="tbl-empty">No employees found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(e => `
+
+  tb.innerHTML = data.map(e => {
+    /* FIX: show sepDate properly; badge shows Separated if they have one */
+    const hasSep = e.sepDate && e.sepDate !== '';
+    const badge  = hasSep
+      ? `<span class="badge b-sep">Separated</span>`
+      : `<span class="badge b-active">Active</span>`;
+    return `
     <tr>
       <td>${e.empNo}</td>
       <td><strong>${e.lastName}</strong></td>
       <td>${e.firstName}</td>
       <td>${displayGender(e.gender)}</td>
       <td>${fmt(e.hireDate)}</td>
-      <td>${e.sepDate ? fmt(e.sepDate) : '—'}</td>
+      <td>${hasSep ? fmt(e.sepDate) : '—'}</td>
       <td>${jd(e.jobId)}</td>
       <td><span class="badge b-dept">${dc(e.deptId)}</span> ${dn(e.deptId)}</td>
-      <td><span class="badge b-active">Active</span></td>
+      <td>${badge}</td>
       <td>
         <button class="btn btn-outline" style="padding:3px 7px;font-size:10px"
           onclick="viewProf(${e.id})">View</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 /* ════════════════════════════════════
    JOB HISTORY
 ════════════════════════════════════ */
+
+/* Populate the "All Employees" filter dropdown in Job History */
+function populateHistEmpFilter() {
+  const sel = document.getElementById('hist-fe');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Employees</option>';
+
+  /* Build a sorted unique list from allEmployees so separated employees also appear */
+  const sorted = [...allEmployees].sort((a, b) =>
+    a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
+  );
+  sorted.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.empNo;
+    o.textContent = `${e.lastName}, ${e.firstName} (${e.empNo})`;
+    if (e.empNo === current) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
 function renderHist() {
-  const q    = document.getElementById('hist-q').value.toLowerCase();
-  const sort = document.getElementById('hist-sort').value;
+  const q      = document.getElementById('hist-q').value.toLowerCase();
+  const fe     = document.getElementById('hist-fe') ? document.getElementById('hist-fe').value : '';
+  const sort   = document.getElementById('hist-sort').value;
 
   let data = jobHistory.filter(h => {
+    /* If an employee filter is selected, match by empNo */
+    if (fe && !empNoMatch(h.empNo, fe)) return false;
     const name = enByEmpNo(h.empNo).toLowerCase();
     return `${name} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)} ${h.empNo}`
       .toLowerCase().includes(q);
@@ -756,6 +822,11 @@ function viewProf(id) {
         </tr>`).join('')
     : `<tr><td colspan="6" class="tbl-empty">No history records.</td></tr>`;
 
+  const hasSep  = e.sepDate && e.sepDate !== '';
+  const badge   = hasSep
+    ? `<span class="badge b-sep" style="font-size:11px">Separated</span>`
+    : `<span class="badge b-active" style="font-size:11px">Active</span>`;
+
   document.getElementById('profile-content').innerHTML = `
     <div class="pp">
       <div class="pp-head">
@@ -765,9 +836,7 @@ function viewProf(id) {
           <div class="prole">${jd(e.jobId)} · ${dn(e.deptId)}</div>
           <div class="pid">${e.empNo}</div>
         </div>
-        <div style="margin-left:auto">
-          <span class="badge b-active" style="font-size:11px">Active</span>
-        </div>
+        <div style="margin-left:auto">${badge}</div>
       </div>
       <div class="pp-body">
         <div class="pst">Personal Information</div>
@@ -777,7 +846,7 @@ function viewProf(id) {
           <div class="pf"><label>First Name</label> <div class="v">${e.firstName}</div></div>
           <div class="pf"><label>Gender</label>     <div class="v">${displayGender(e.gender)}</div></div>
           <div class="pf"><label>Hire Date</label>  <div class="v">${fmt(e.hireDate)}</div></div>
-          <div class="pf"><label>Sep Date</label>   <div class="v">${e.sepDate ? fmt(e.sepDate) : '—'}</div></div>
+          <div class="pf"><label>Sep Date</label>   <div class="v">${hasSep ? fmt(e.sepDate) : '—'}</div></div>
           <div class="pf"><label>Email</label>      <div class="v">${e.email || '—'}</div></div>
           <div class="pf"><label>Phone</label>      <div class="v">${e.phone || '—'}</div></div>
         </div>
