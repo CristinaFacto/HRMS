@@ -152,7 +152,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
 .reg-info .reg-detail{font-size:11px;color:var(--muted);margin-top:1px}
 .reg-actions{display:flex;gap:6px;flex-wrap:wrap}
 .reg-note{font-size:11px;color:var(--muted);font-style:italic;margin-top:4px}
-/* Toast notification */
 .toast{position:fixed;bottom:24px;right:24px;background:#1E3A5F;color:#fff;padding:10px 18px;border-radius:4px;font-size:12px;font-family:Arial,sans-serif;z-index:9999;display:none;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 .toast.show{display:flex}
 .toast.success{background:#166534}
@@ -662,7 +661,6 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 let CURRENT_USER = 'superadmin';
 let CURRENT_USER_EMAIL = '';
 
-// Format timestamp to readable numeric date and time (e.g., "05/12/2026 10:30 AM")
 function formatDate(timestamp){
   if(!timestamp)return '--';
   try{
@@ -674,7 +672,6 @@ function formatDate(timestamp){
   }catch(e){return timestamp;}
 }
 
-// ── Toast helper ─────────────────────────────────────────────────────────────
 function showToast(msg, type='info', duration=3000){
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -683,7 +680,6 @@ function showToast(msg, type='info', duration=3000){
   setTimeout(()=>t.classList.remove('show'), duration);
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
 let statusCheckInterval=null;
 async function initAuth(){
   const { data: { session } } = await sb.auth.getSession();
@@ -691,7 +687,6 @@ async function initAuth(){
     const uid = session.user.id;
     const { data: prof } = await sb.from('profiles').select('username,email,full_name,role,status').eq('id', uid).single();
     if(prof){
-      // Block check: if user is blocked, sign out and redirect
       if(prof.status === 'blocked' || prof.status === 'inactive'){
         await sb.auth.signOut();
         window.location.href = prof.status === 'blocked' ? 'blocked.html' : 'deactivated.html';
@@ -702,59 +697,35 @@ async function initAuth(){
       CURRENT_USER_EMAIL = prof.email || '';
       document.getElementById('sb-username').textContent = display;
       document.getElementById('topbar-username').textContent = display;
-      
-      // ── Start periodic status check to catch real-time blocks ──
       startStatusCheckListener(uid);
     }
   } else {
-    // Try anonymous session for demo
     await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   }
 }
 
-// ── Check status every 3 seconds to catch real-time blocks ──
 function startStatusCheckListener(uid){
   if(statusCheckInterval)clearInterval(statusCheckInterval);
-  console.log('Starting status check for user:', uid);
   statusCheckInterval=setInterval(async ()=>{
     try{
       const {data:prof,error}=await sb.from('profiles').select('status').eq('id',uid).single();
-      if(error){
-        console.warn('Status check error:',error.message);
-        return;
-      }
-      if(prof){
-        console.log('Current status:', prof.status);
-        if(prof.status==='blocked'){
-          clearInterval(statusCheckInterval);
-          console.log('🚫 BLOCKED! Showing modal...');
-          const modal=document.getElementById('mo-blocked');
-          if(modal){
-            console.log('Modal found, adding open class');
-            modal.classList.add('open');
-            setTimeout(()=>{
-              console.log('Auto redirecting...');
-              redirectToBlocked();
-            },6000);
-          } else {
-            console.error('❌ Modal mo-blocked not found!');
-            setTimeout(()=>redirectToBlocked(),2000);
-          }
+      if(error){ console.warn('Status check error:',error.message); return; }
+      if(prof && prof.status==='blocked'){
+        clearInterval(statusCheckInterval);
+        const modal=document.getElementById('mo-blocked');
+        if(modal){
+          modal.classList.add('open');
+          setTimeout(()=>redirectToBlocked(), 6000);
+        } else {
+          setTimeout(()=>redirectToBlocked(), 2000);
         }
       }
-    }catch(err){
-      console.error('Status check exception:',err);
-    }
+    }catch(err){ console.error('Status check exception:',err); }
   },3000);
 }
 
-// Redirect to blocked page and sign out
 async function redirectToBlocked(){
-  try{
-    console.log('Signing out user...');
-    await sb.auth.signOut().catch(e=>console.warn('Signout error:',e));
-  }catch(err){}
-  console.log('Redirecting to blocked.html');
+  try{ await sb.auth.signOut().catch(e=>console.warn('Signout error:',e)); }catch(err){}
   window.location.href='blocked.html';
 }
 
@@ -805,7 +776,6 @@ async function loadAllData(){
       const emp=employees.find(e=>e.empNo===h.empNo);
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
-    // Load all profiles — separate active accounts from registrations
     sysUsers=(userRes.data||[])
       .filter(u=>u.status==='active'||u.status==='approved'||u.status==='blocked')
       .map((u,idx)=>({
@@ -1140,9 +1110,6 @@ function renderUsers(){
   }).join('');
 }
 
-// ── BLOCK / UNBLOCK ── THE CRITICAL FIX ──────────────────────────────────────
-// Sets status='blocked' or status='active' in the profiles table.
-// Your login page MUST check this status on sign-in and refuse entry if blocked.
 async function toggleBlockUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
   const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
@@ -1156,8 +1123,6 @@ async function toggleBlockUser(id){
     action+' User',
     action+' account "'+u.email+'"? '+(willBlock?'They will immediately lose access to the system and cannot log in.':'They will be able to log in again.'),
     async function(){
-      // ── Write to Supabase profiles table ─────────────────────────────────
-      // This is what actually prevents login — your login page must check status field.
       if(u.supabaseId){
         const {error}=await sb.from('profiles')
           .update({
@@ -1169,7 +1134,6 @@ async function toggleBlockUser(id){
 
         if(error){
           showToast('Supabase error: '+error.message+'. Blocked locally only.','error',5000);
-          // Proceed with local update anyway so UI reflects intent
         } else {
           showToast(
             willBlock
@@ -1182,13 +1146,7 @@ async function toggleBlockUser(id){
         showToast('No Supabase ID — blocked locally only.','error',4000);
       }
 
-      // ── Update local state ────────────────────────────────────────────────
       u.blocked=willBlock;
-
-      // Also update registrations list so All Registrations stays consistent
-      const reg=registrations.find(r=>r.supabaseId===u.supabaseId);
-      // (no status change needed here — approved stays approved)
-
       logAudit(willBlock?'BLOCK':'RESTORE','User',u.email,
         (willBlock?'Blocked':'Unblocked')+' by '+CURRENT_USER+'. Supabase status set to '+newStatus+'.');
 
@@ -1201,24 +1159,46 @@ async function toggleBlockUser(id){
   );
 }
 
+// ── DELETE USER — sets status to 'deactivated' in Supabase ───────────────────
 async function deleteUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
   const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
   if(isSelf){showToast('You cannot delete your own account.','error');return;}
   if(u.role==='superadmin'){showToast('You cannot delete another Super Admin account.','error');return;}
-  askConfirm('Delete User','Delete user "'+u.email+'"? This will deactivate their account.',async function(){
-    if(u.supabaseId){
-      const {error}=await sb.from('profiles')
-        .update({ status: 'deactivated' })  // soft delete — sets inactive
-        .eq('id', u.supabaseId);
-      if(error) showToast('Supabase error: '+error.message,'error',4000);
-      else showToast('User deactivated successfully.','success');
-    }
-    logAudit('DELETE','User',u.email,'Deactivated by '+CURRENT_USER);
-    const idx=sysUsers.findIndex(x=>x.id===id);
-    if(idx>-1) sysUsers.splice(idx,1);
-    renderUsers();renderUserStats();updatePendingBadges();
-  },'Delete','btn-danger');
+
+  askConfirm(
+    'Delete User',
+    'Delete user "'+u.email+'"? Their account will be deactivated and they will no longer be able to log in.',
+    async function(){
+      if(u.supabaseId){
+        // Explicitly set status = 'deactivated' — NOT 'inactive'
+        const { error } = await sb
+          .from('profiles')
+          .update({ status: 'deactivated' })
+          .eq('id', u.supabaseId);
+
+        if(error){
+          showToast('Supabase error: '+error.message,'error',4000);
+          return; // Stop — don't remove from UI if DB write failed
+        }
+        showToast('User "'+u.email+'" has been deactivated successfully.','success');
+      } else {
+        showToast('No Supabase ID found — removed locally only.','error',4000);
+      }
+
+      logAudit('DELETE','User',u.email,'Deactivated (status: deactivated) by '+CURRENT_USER);
+
+      // Remove from local sysUsers list so they disappear from Active Accounts
+      const idx=sysUsers.findIndex(x=>x.id===id);
+      if(idx>-1) sysUsers.splice(idx,1);
+
+      renderUsers();
+      renderUserStats();
+      updatePendingBadges();
+    },
+    'Delete',
+    'btn-danger'
+  );
 }
 
 function openAddUser(){
@@ -1423,9 +1403,7 @@ function permDeleteProfEmp(id){const e=gE(id);askConfirm('Permanently Delete','T
 
 function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',async function(){await sb.auth.signOut();window.location.href='index.html#login';},'Log Out','btn-danger');}
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
 initAuth().then(loadAllData);
 </script>
--->
 </body>
 </html>
