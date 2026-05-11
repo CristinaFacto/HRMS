@@ -165,26 +165,52 @@
 
   async function handleLogin(email, password) {
     setLoading(true);
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { setLoading(false); showMessage(error.message); return; }
 
-    // Check status FIRST
+    // Step 1: Sign in
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      showMessage(error.message);
+      return;
+    }
+
+    // Step 2: Fetch profile — maybeSingle() won't crash if no row exists
     const { data: profile, error: profileError } = await sb
       .from('profiles')
       .select('role, status')
       .eq('id', data.user.id)
-      .single();
+      .maybeSingle();
 
     setLoading(false);
-    if (profileError || !profile) { showMessage('Could not load user profile.'); return; }
 
-    if (profile.status !== 'active') {
+    // Step 3: Supabase-level error (e.g. RLS blocking the read)
+    if (profileError) {
+      showMessage('Could not load profile: ' + profileError.message);
+      return;
+    }
+
+    // Step 4: No profile row exists at all
+    if (!profile) {
+      showMessage('No profile found for this account. Please contact your administrator.');
+      return;
+    }
+
+    // ── KEY FIX ──────────────────────────────────────────────────────────────
+    // Your superAdmin.html sets status = 'active' when approving users,
+    // but the old login checked for 'approved'. This accepts BOTH values
+    // so manually-set users and superAdmin-approved users both get through.
+    // ─────────────────────────────────────────────────────────────────────────
+    const status = (profile.status || '').toLowerCase();
+    const ALLOWED_STATUSES = ['active', 'approved'];
+
+    if (!ALLOWED_STATUSES.includes(status)) {
+      // pending / rejected / blocked / inactive → waiting page
       window.location.href = 'waiting.html';
       return;
     }
 
-    // Then redirect by role
-    const role = profile.role?.toLowerCase();
+    // Step 6: Redirect by role
+    const role = (profile.role || '').toLowerCase();
     if (role === 'superadmin') {
       window.location.href = 'superAdmin.html';
     } else if (role === 'admin') {
