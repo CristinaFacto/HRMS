@@ -346,7 +346,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
           window.location.href = 'blocked.html';
           return;
         }
-        if (prof && prof.status === 'inactive') {
+        if (prof && prof.status === 'deactivated') {
           await sb.auth.signOut();
           window.location.href = 'deactivated.html';
           return;
