@@ -203,9 +203,12 @@
     const status = (profile.status || '').toLowerCase();
     const ALLOWED_STATUSES = ['active', 'approved'];
 
-    if (status === 'blocked' || status === 'inactive') {
-      // blocked/inactive users → blocked page
+    if (status === 'blocked') {
       window.location.href = 'blocked.html';
+      return;
+    }
+    if (status === 'inactive') {
+      window.location.href = 'deactivated.html';
       return;
     }
 
