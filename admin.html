@@ -660,6 +660,7 @@ async function loadAllData(){
       .map((u,idx)=>({
         id:idx+1,
         username:u.username||u.email||'',
+        email:u.email||'',
         firstName:u.first_name||'',
         lastName:u.last_name||'',
         fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
@@ -669,6 +670,7 @@ async function loadAllData(){
         approvedBy:u.approved_by||'',
         deleted:false,
         blocked:u.status==='blocked',
+        supabaseId:u.id,
       }));
     registrations=(userRes.data||[])
       .filter(u=>u.status==='pending'||u.status==='inactive'||u.status==='rejected')
@@ -687,6 +689,7 @@ async function loadAllData(){
         reviewedAt:u.updated_at||null,
         note:'',
         empId:null,
+        supabaseId:u.id,
       }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
@@ -1075,17 +1078,21 @@ function renderPending(){
       '</div></div>';
   }).join('');
 }
-function approveReg(id){
+async function approveReg(id){
   const r=registrations.find(x=>x.id===id);if(!r)return;
-  askConfirm('Approve Registration','Approve registration for "'+(r.email||r.username)+'" as '+r.requestedRole.toUpperCase()+'?',function(){
+  askConfirm('Approve Registration','Approve registration for "'+(r.email||r.username)+'" as '+r.requestedRole.toUpperCase()+'?',async function(){
+    const match = r.supabaseId ? sb.from('profiles').update({status:'active',role:r.requestedRole,approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('id',r.supabaseId)
+      : sb.from('profiles').update({status:'active',role:r.requestedRole,approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('email',r.email||r.username);
+    const {error} = await match;
+    if(error){alert('Error approving user: '+error.message);return;}
     r.status='approved';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();
-    sysUsers.push({id:sysUsers.length+10,username:r.username,firstName:r.firstName,lastName:r.lastName,role:r.requestedRole,empId:r.empId,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false});
+    sysUsers.push({id:sysUsers.length+10,username:r.username,firstName:r.firstName,lastName:r.lastName,fullName:r.fullName,role:r.requestedRole,empId:r.empId,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false,supabaseId:r.supabaseId||null,email:r.email});
     logAudit('RESTORE','User',r.username,'Registration approved. Role: '+r.requestedRole);
     renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
   },'Approve','btn-success');
 }
 function openRejectModal(id){const r=registrations.find(x=>x.id===id);if(!r)return;pendingRejectId=id;document.getElementById('reject-note').value='';document.getElementById('reject-for').textContent='Rejecting: '+r.firstName+' '+r.lastName+' ('+(r.email||r.username)+')';om('mo-reject');}
-function confirmReject(){const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;const note=document.getElementById('reject-note').value.trim()||'No reason provided.';r.status='rejected';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();r.note=note;logAudit('BLOCK','User',r.username,'Registration rejected: '+note);cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();}
+async function confirmReject(){const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;const note=document.getElementById('reject-note').value.trim()||'No reason provided.';const match = r.supabaseId ? await sb.from('profiles').update({status:'rejected',approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('id',r.supabaseId) : await sb.from('profiles').update({status:'rejected',approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('email',r.email||r.username); if(match.error){alert('Error rejecting user: '+match.error.message);return;} r.status='rejected';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();r.note=note;logAudit('BLOCK','User',r.username,'Registration rejected: '+note);cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();}
 function renderAllReg(){
   const q=document.getElementById('allreg-q').value.toLowerCase();
   const fs=document.getElementById('allreg-fs').value;
