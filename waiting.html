@@ -148,7 +148,6 @@
       <p>Name: <span id="userName">—</span></p>
       <p>Email: <span id="userEmail">—</span></p>
     </div>
-
     <div class="approved-msg hidden" id="approvedMsg">Your account is approved. Redirecting now…</div>
 
     <p class="poll-status">
@@ -204,7 +203,7 @@
 
       const status = (profile.status || '').trim().toLowerCase();
 
-      // Handle all status cases
+      // ── Route by status ─────────────────────────────────────
       if (status === 'blocked') {
         clearInterval(pollInterval);
         window.location.href = 'blocked.html';
@@ -218,16 +217,16 @@
       }
 
       if (status === 'active' || status === 'approved') {
-        // ✅ FIX: actually redirect approved users
         clearInterval(pollInterval);
         document.getElementById('approvedMsg').classList.remove('hidden');
         document.getElementById('spinner').style.display = 'none';
-        setTimeout(() => redirectByRole(profile.role), 1500);
+        redirectByRole(profile.role);
         return;
       }
 
-      // status is 'inactive' or anything else — stay on this page and keep polling
-    } // ✅ FIX: closing brace for checkStatus (was missing before)
+      // For 'inactive', 'pending', or any other status:
+      // Do nothing — stay on this page and keep polling.
+    }
 
     // ── Init ────────────────────────────────────────────────────
     async function init() {
