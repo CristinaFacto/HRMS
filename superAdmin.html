@@ -700,24 +700,49 @@ async function initAuth(){
   }
 }
 
-// ── Check status every 5 seconds to catch real-time blocks ──
+// ── Check status every 3 seconds to catch real-time blocks ──
 function startStatusCheckListener(uid){
   if(statusCheckInterval)clearInterval(statusCheckInterval);
+  console.log('Starting status check for user:', uid);
   statusCheckInterval=setInterval(async ()=>{
-    const {data:prof}=await sb.from('profiles').select('status').eq('id',uid).single();
-    if(prof && prof.status==='blocked'){
-      clearInterval(statusCheckInterval);
-      // Show blocked notification modal
-      om('mo-blocked');
-      // Auto redirect after 5 seconds if user doesn't click
-      setTimeout(()=>redirectToBlocked(),5000);
+    try{
+      const {data:prof,error}=await sb.from('profiles').select('status').eq('id',uid).single();
+      if(error){
+        console.warn('Status check error:',error.message);
+        return;
+      }
+      if(prof){
+        console.log('Current status:', prof.status);
+        if(prof.status==='blocked'){
+          clearInterval(statusCheckInterval);
+          console.log('🚫 BLOCKED! Showing modal...');
+          const modal=document.getElementById('mo-blocked');
+          if(modal){
+            console.log('Modal found, adding open class');
+            modal.classList.add('open');
+            setTimeout(()=>{
+              console.log('Auto redirecting...');
+              redirectToBlocked();
+            },6000);
+          } else {
+            console.error('❌ Modal mo-blocked not found!');
+            setTimeout(()=>redirectToBlocked(),2000);
+          }
+        }
+      }
+    }catch(err){
+      console.error('Status check exception:',err);
     }
-  },5000);
+  },3000);
 }
 
 // Redirect to blocked page and sign out
 async function redirectToBlocked(){
-  await sb.auth.signOut();
+  try{
+    console.log('Signing out user...');
+    await sb.auth.signOut().catch(e=>console.warn('Signout error:',e));
+  }catch(err){}
+  console.log('Redirecting to blocked.html');
   window.location.href='blocked.html';
 }
 
@@ -1394,33 +1419,6 @@ function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',asy
 // ── INIT ──────────────────────────────────────────────────────────────────────
 initAuth().then(loadAllData);
 </script>
-
-<!--
-  ════════════════════════════════════════════════════════════════════════
-  LOGIN PAGE INTEGRATION REQUIRED
-  ════════════════════════════════════════════════════════════════════════
-  For the block to actually prevent access, your LOGIN PAGE (index.html)
-  must check the user's status after sign-in. Add this to your login flow:
-
-  const { data: { user } } = await sb.auth.signInWithPassword({ email, password });
-  if (user) {
-    const { data: profile } = await sb.from('profiles')
-      .select('status, role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.status === 'blocked') {
-      await sb.auth.signOut();
-      showError('Your account has been blocked. Contact your administrator.');
-      return;
-    }
-
-    // Redirect based on role
-    if (profile?.role === 'superadmin') window.location.href = 'superadmin.html';
-    else if (profile?.role === 'admin')  window.location.href = 'admin.html';
-    else                                  window.location.href = 'dashboard.html';
-  }
-  ════════════════════════════════════════════════════════════════════════
 -->
 </body>
 </html>
