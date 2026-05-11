@@ -373,11 +373,15 @@ tbody td{padding:8px 12px;vertical-align:middle}
     statusCheckInterval = setInterval(async () => {
       try {
         const { data: prof, error } = await sb.from('profiles').select('status').eq('id', uid).single();
-        if (prof && (prof.status === 'inactive' || prof.status === 'blocked')) {
-          // User got blocked! Sign out and redirect
+        if(prof.status === 'blocked'){
           clearInterval(statusCheckInterval);
           await sb.auth.signOut();
           window.location.href = 'blocked.html';
+        }
+        if(prof.status === 'inactive'){
+          clearInterval(statusCheckInterval);
+          await sb.auth.signOut();
+          window.location.href = 'deactivated.html';
         }
       } catch (err) {
         console.warn('Status check error:', err.message);
