@@ -672,7 +672,7 @@ async function loadAllData(){
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
     sysUsers=(userRes.data||[])
-      .filter(u=>u.status!=='inactive')
+      .filter(u=>u.status==='inactive' || u.status==='pending')
       .map((u,idx)=>({
         id:idx+1,
         username:u.username||u.email||'',
