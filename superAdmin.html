@@ -256,7 +256,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="az">Sort: A → Z</option>
           <option value="za">Sort: Z → A</option>
         </select>
-        <label class="del-toggle"><input type="checkbox" id="emp-show-all" onchange="renderEmp()"/> Show blocked/inactive</label>
       </div>
       <div class="tw">
         <table>
@@ -288,7 +287,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="az">Sort: A → Z</option>
           <option value="za">Sort: Z → A</option>
         </select>
-        <label class="del-toggle"><input type="checkbox" id="hist-show-all" onchange="renderHist()"/> Show blocked</label>
       </div>
       <div class="tw">
         <table>
@@ -824,11 +822,10 @@ function renderEmp(){
   const q=document.getElementById('emp-q').value.toLowerCase();
   const fd=document.getElementById('emp-fd').value;
   const fs=document.getElementById('emp-fs').value;
-  const all=document.getElementById('emp-show-all').checked;
   const sortDir=document.getElementById('emp-sort').value;
   let data=employees.filter(e=>{
     const hidden=e.deleted||e.blocked;
-    if(!all&&fs!=='blocked'&&fs!=='inactive'&&hidden)return false;
+    if(fs!=='blocked'&&fs!=='inactive'&&hidden)return false;
     if(fs==='active'&&(e.deleted||e.blocked))return false;
     if(fs==='blocked'&&!e.blocked)return false;
     if(fs==='inactive'&&!e.deleted)return false;
@@ -900,9 +897,8 @@ function saveEmp(){
 
 function renderHist(){
   const q=document.getElementById('hist-q').value.toLowerCase();
-  const all=document.getElementById('hist-show-all').checked;
   const sortDir=document.getElementById('hist-sort').value;
-  let data=jobHistory.filter(h=>{if(!all&&h.deleted)return false;return (en(h.empId)+' '+jc(h.jobId)+' '+jd(h.jobId)+' '+dc(h.deptId)+' '+dn(h.deptId)).toLowerCase().includes(q);}).sort((a,b)=>{
+  let data=jobHistory.filter(h=>{if(h.deleted)return false;return (en(h.empId)+' '+jc(h.jobId)+' '+jd(h.jobId)+' '+dc(h.deptId)+' '+dn(h.deptId)).toLowerCase().includes(q);}).sort((a,b)=>{
     const nameA=en(a.empId), nameB=en(b.empId);
     const cmp=nameA.localeCompare(nameB);
     return sortDir==='za'?-cmp:cmp;
