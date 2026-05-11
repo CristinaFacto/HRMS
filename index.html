@@ -178,7 +178,7 @@
     setLoading(false);
     if (profileError || !profile) { showMessage('Could not load user profile.'); return; }
 
-    if (profile.status !== 'active') {
+    if (profile.status !== 'approved') {
       window.location.href = 'waiting.html';
       return;
     }
