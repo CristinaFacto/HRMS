@@ -21,6 +21,7 @@
     <h2>Signing you in…</h2>
     <p>Please wait while we check your account.</p>
   </div>
+
   <script>
     const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
     const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
@@ -32,6 +33,7 @@
       const { data: { session } } = await sb.auth.getSession();
 
       if (!session) {
+        // No session found — send back to login
         window.location.href = 'index.html';
         return;
       }
@@ -49,30 +51,20 @@
         return;
       }
 
-      const status = (profile.status || '').toLowerCase();
-      const role = (profile.role || '').toLowerCase();
-
-      if (status === 'blocked') {
-        window.location.href = 'blocked.html';
-        return;
-      }
-      if (status === 'inactive') {
-        window.location.href = 'deactivated.html';
-        return;
-      }
-      if (status === 'active' || status === 'approved') {
-        if (role === 'superadmin') {
-          window.location.href = 'superAdmin.html';
-        } else if (role === 'admin') {
-          window.location.href = 'admin.html';
-        } else {
-          window.location.href = 'user.html';
-        }
+      if (profile.status !== 'approved') {
+        window.location.href = 'waiting.html';
         return;
       }
 
-      // pending, rejected, or anything else → waiting
-      window.location.href = 'waiting.html';
+      // Approved — redirect by role
+      const role = profile.role?.toLowerCase();
+      if (role === 'superadmin') {
+        window.location.href = 'superAdmin.html';
+      } else if (role === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'user.html';
+      }
     }
 
     checkUser();
