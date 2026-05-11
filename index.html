@@ -78,204 +78,154 @@
   </div>
 
   <script>
-    // ── Supabase init ──────────────────────────────────────────────
-    const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
-    const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
-    const { createClient } = supabase;
-    const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+  const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
+  const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    // ── State ──────────────────────────────────────────────────────
-    let isLogin = false;
+  let isLogin = false;
 
-    // Auto switch to login if #login is in URL
-    if (window.location.hash === '#login') {
-      document.addEventListener('DOMContentLoaded', () => toggleMode());
-    }
+  if (window.location.hash === '#login') {
+    document.addEventListener('DOMContentLoaded', () => toggleMode());
+  }
 
-    // ── Helpers ────────────────────────────────────────────────────
-    function showMessage(text, type = 'error') {
-      const el = document.getElementById('message');
-      el.textContent = text;
-      el.className = type === 'error' ? 'error-msg' : 'success-msg';
-    }
-    function clearMessage() {
-      const el = document.getElementById('message');
-      el.textContent = '';
-      el.className = '';
-    }
-    function setLoading(loading) {
-      document.getElementById('submitBtn').disabled = loading;
-      document.getElementById('googleBtn').disabled = loading;
-      document.getElementById('submitBtn').querySelector('.btn-label').textContent =
-        loading ? 'Please wait…' : (isLogin ? 'Login' : 'Sign up');
-    }
+  function showMessage(text, type = 'error') {
+    const el = document.getElementById('message');
+    el.textContent = text;
+    el.className = type === 'error' ? 'error-msg' : 'success-msg';
+  }
+  function clearMessage() {
+    const el = document.getElementById('message');
+    el.textContent = '';
+    el.className = '';
+  }
+  function setLoading(loading) {
+    document.getElementById('submitBtn').disabled = loading;
+    document.getElementById('googleBtn').disabled = loading;
+    document.getElementById('submitBtn').querySelector('.btn-label').textContent =
+      loading ? 'Please wait…' : (isLogin ? 'Login' : 'Sign up');
+  }
 
-    // ── Redirect helper based on profile ──────────────────────────
-    async function redirectByProfile(userId) {
-      const { data: profile, error: profileError } = await sb
-        .from('profiles')
-        .select('role, status')
-        .eq('id', userId)
-        .single();
+  const pwInput  = document.getElementById('passwordInput');
+  const pwToggle = document.getElementById('pwToggle');
+  const eyeIcon  = document.getElementById('eyeIcon');
+  const eyeOpen  = `<path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>`;
+  const eyeSlash = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
 
-      if (profileError || !profile) {
-        showMessage('Could not load user profile.');
-        return;
-      }
+  pwToggle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const showing = pwInput.type === 'text';
+    pwInput.type = showing ? 'password' : 'text';
+    eyeIcon.innerHTML = showing ? eyeOpen : eyeSlash;
+    pwToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  });
 
-      // Check status first — if not active, send to waiting page
-      if (profile.status !== 'active') {
-        window.location.href = 'waiting.html';
-        return;
-      }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('submitBtn').click();
+  });
 
-      // Redirect based on role
-      const role = profile.role?.toLowerCase();
-      if (role === 'superadmin') {
-        window.location.href = 'superAdmin.html';
-      } else if (role === 'admin') {
-        window.location.href = 'admin.html';
-      } else {
-        window.location.href = 'user.html';
-      }
-    }
+  function toggleMode() {
+    isLogin = !isLogin;
+    clearMessage();
+    pwInput.type = 'password';
+    eyeIcon.innerHTML = eyeOpen;
+    document.getElementById('title').innerText = isLogin ? 'Login' : 'Sign up';
+    document.getElementById('registerFields').classList.toggle('hidden', isLogin);
+    document.getElementById('loginExtra').classList.toggle('hidden', !isLogin);
+    document.getElementById('submitBtn').querySelector('.btn-label').textContent =
+      isLogin ? 'Login' : 'Sign up';
+    document.getElementById('googleBtn').querySelector('.btn-label').textContent =
+      isLogin ? 'Sign in with Google' : 'Register with Google';
+    document.getElementById('switchText').innerText =
+      isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login';
+  }
 
-    // ── Show/hide password toggle ──────────────────────────────────
-    const pwInput  = document.getElementById('passwordInput');
-    const pwToggle = document.getElementById('pwToggle');
-    const eyeIcon  = document.getElementById('eyeIcon');
+  async function handleSignup(email, password) {
+    const firstName = document.getElementById('firstNameInput').value.trim();
+    const lastName  = document.getElementById('lastNameInput').value.trim();
+    const username  = document.getElementById('usernameInput').value.trim();
+    if (!firstName || !lastName || !username) { showMessage('Please fill in all fields.'); return; }
 
-    const eyeOpen  = `<path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>`;
-    const eyeSlash = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
-
-    pwToggle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      const showing = pwInput.type === 'text';
-      pwInput.type = showing ? 'password' : 'text';
-      eyeIcon.innerHTML = showing ? eyeOpen : eyeSlash;
-      pwToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    setLoading(true);
+    const { data, error } = await sb.auth.signUp({
+      email, password,
+      options: { data: { first_name: firstName, last_name: lastName, username } }
     });
+    setLoading(false);
 
-    // ── Enter key submits ──────────────────────────────────────────
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        document.getElementById('submitBtn').click();
-      }
-    });
+    if (error) { showMessage(error.message); return; }
+    showMessage(
+      data.user?.identities?.length === 0
+        ? 'An account with this email already exists.'
+        : 'Account created! Please check your email to confirm, then log in.',
+      'success'
+    );
+    toggleMode();
+  }
 
-    // ── Toggle sign-up / login ─────────────────────────────────────
-    function toggleMode() {
-      isLogin = !isLogin;
-      clearMessage();
+  async function handleLogin(email, password) {
+    setLoading(true);
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { setLoading(false); showMessage(error.message); return; }
 
-      pwInput.type = 'password';
-      eyeIcon.innerHTML = eyeOpen;
+    // Check status FIRST
+    const { data: profile, error: profileError } = await sb
+      .from('profiles')
+      .select('role, status')
+      .eq('id', data.user.id)
+      .single();
 
-      document.getElementById('title').innerText = isLogin ? 'Login' : 'Sign up';
-      document.getElementById('registerFields').classList.toggle('hidden', isLogin);
-      document.getElementById('loginExtra').classList.toggle('hidden', !isLogin);
+    setLoading(false);
+    if (profileError || !profile) { showMessage('Could not load user profile.'); return; }
 
-      document.getElementById('submitBtn').querySelector('.btn-label').textContent =
-        isLogin ? 'Login' : 'Sign up';
-      document.getElementById('googleBtn').querySelector('.btn-label').textContent =
-        isLogin ? 'Sign in with Google' : 'Register with Google';
-      document.getElementById('switchText').innerText =
-        isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login';
+    if (profile.status !== 'approved') {
+      window.location.href = 'waiting.html';
+      return;
     }
 
-    // ── Sign up ────────────────────────────────────────────────────
-    async function handleSignup(email, password) {
-      const firstName = document.getElementById('firstNameInput').value.trim();
-      const lastName  = document.getElementById('lastNameInput').value.trim();
-      const username  = document.getElementById('usernameInput').value.trim();
-
-      if (!firstName || !lastName || !username) {
-        showMessage('Please fill in all fields.'); return;
-      }
-
-      setLoading(true);
-      const { data, error } = await sb.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { first_name: firstName, last_name: lastName, username }
-        }
-      });
-      setLoading(false);
-
-      if (error) { showMessage(error.message); return; }
-
-      showMessage(
-        data.user && data.user.identities && data.user.identities.length === 0
-          ? 'An account with this email already exists.'
-          : 'Account created! Please check your email to confirm, then log in.',
-        'success'
-      );
-      toggleMode();
+    // Then redirect by role
+    const role = profile.role?.toLowerCase();
+    if (role === 'superadmin') {
+      window.location.href = 'superAdmin.html';
+    } else if (role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'user.html';
     }
+  }
 
-    // ── Login ──────────────────────────────────────────────────────
-    async function handleLogin(email, password) {
-      setLoading(true);
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      setLoading(false);
+  document.getElementById('forgotBtn').addEventListener('click', async () => {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email) { showMessage('Enter your email above first.'); return; }
+    setLoading(true);
+    const { error } = await sb.auth.resetPasswordForEmail(email);
+    setLoading(false);
+    if (error) { showMessage(error.message); return; }
+    showMessage('Password reset email sent!', 'success');
+  });
 
-      if (error) { showMessage(error.message); return; }
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    clearMessage();
+    const email    = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    if (!email || !password) { showMessage('Email and password are required.'); return; }
+    if (isLogin) { await handleLogin(email, password); }
+    else         { await handleSignup(email, password); }
+  });
 
-      await redirectByProfile(data.user.id);
-    }
-
-    // ── Handle Google OAuth redirect on page load ──────────────────
-    // After Google OAuth, Supabase redirects back here with a session.
-    // We check for an active session and redirect accordingly.
-    (async () => {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) {
-        await redirectByProfile(session.user.id);
-      }
-    })();
-
-    // ── Forgot password ────────────────────────────────────────────
-    document.getElementById('forgotBtn').addEventListener('click', async () => {
-      const email = document.getElementById('emailInput').value.trim();
-      if (!email) { showMessage('Enter your email above first.'); return; }
-
-      setLoading(true);
-      const { error } = await sb.auth.resetPasswordForEmail(email);
-      setLoading(false);
-
-      if (error) { showMessage(error.message); return; }
-      showMessage('Password reset email sent!', 'success');
-    });
-
-    // ── Submit button ──────────────────────────────────────────────
-    document.getElementById('submitBtn').addEventListener('click', async () => {
-      clearMessage();
-      const email    = document.getElementById('emailInput').value.trim();
-      const password = document.getElementById('passwordInput').value;
-
-      if (!email || !password) { showMessage('Email and password are required.'); return; }
-
-      if (isLogin) {
-        await handleLogin(email, password);
-      } else {
-        await handleSignup(email, password);
+  // Google OAuth — redirects to auth-callback.html to check status
+  document.getElementById('googleBtn').addEventListener('click', async () => {
+    clearMessage();
+    setLoading(true);
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://hrms-chi-seven.vercel.app/auth-callback.html'
       }
     });
-
-    // ── Google OAuth ───────────────────────────────────────────────
-    document.getElementById('googleBtn').addEventListener('click', async () => {
-      clearMessage();
-      setLoading(true);
-      const { error } = await sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + window.location.pathname
-        }
-      });
-      setLoading(false);
-      if (error) showMessage(error.message);
-    });
-  </script>
+    setLoading(false);
+    if (error) showMessage(error.message);
+  });
+</script>
 </body>
 </html>
