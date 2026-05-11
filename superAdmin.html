@@ -410,7 +410,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
         </div>
         <div class="tw"><table>
           <thead><tr>
-            <th>Username</th><th>Full Name</th><th>Role</th>
+            <th>Email</th><th>Full Name</th><th>Role</th>
             <th>Registered</th><th>Approved By</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="users-tbody"></tbody>
@@ -555,7 +555,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div class="mh"><h3 id="mo-user-title">Add User</h3><button class="mc-btn" onclick="cm('mo-user')">x</button></div>
     <div class="mb">
       <div class="f2">
-        <div class="fr"><label>Username</label><input id="fu-user" placeholder="username"/></div>
+        <div class="fr"><label>Email</label><input id="fu-user" placeholder="email@company.com"/></div>
         <div class="fr"><label>Password</label><input type="password" id="fu-pass" placeholder="password"/></div>
       </div>
       <div class="f2">
@@ -978,7 +978,7 @@ function renderUsers(){
         '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteUser('+u.id+')">Delete</button>';
     }
     return '<tr class="'+(u.blocked?'blk-row':'')+'">'+
-      '<td><strong>'+(u.username||u.email||'--')+'</strong></td>'+
+      '<td><strong>'+(u.email||'--')+'</strong></td>'+
       '<td>'+u.fullName+'</td>'+
       '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
       '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt?u.registeredAt.slice(0,10):'--')+'</td>'+
