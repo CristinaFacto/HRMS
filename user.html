@@ -44,7 +44,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display
 .ph-left h2{font-size:17px;color:var(--primary)}
 .ph-left p{font-size:11px;color:var(--muted);margin-top:2px}
 
-/* ── BUTTON (view only) ── */
+/* ── BUTTON ── */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px;font-family:Arial,sans-serif;font-weight:bold;border:none;border-radius:var(--r);cursor:pointer;transition:opacity .15s;text-transform:uppercase;letter-spacing:.5px}
 .btn:hover{opacity:.85}
 .btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
@@ -99,7 +99,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
 .ht td{padding:7px 9px;border-bottom:1px solid var(--border)}
 .ht tr:last-child td{border-bottom:none}
 
-/* ── MODAL (confirm logout only) ── */
+/* ── MODAL ── */
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
 .mo.open{display:flex}
 .modal{background:#fff;border-radius:var(--r);width:360px;max-width:95vw;border:1px solid var(--border)}
@@ -184,6 +184,10 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="Female">Female</option>
           <option value="Other">Other</option>
         </select>
+        <select id="emp-sort" onchange="renderEmp()">
+          <option value="az">Sort: A → Z</option>
+          <option value="za">Sort: Z → A</option>
+        </select>
       </div>
       <div class="tw">
         <table>
@@ -215,6 +219,10 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search history…" oninput="renderHist()"/>
         <select id="hist-fe" onchange="renderHist()"><option value="">All Employees</option></select>
+        <select id="hist-sort" onchange="renderHist()">
+          <option value="az">Sort: A → Z (Employee)</option>
+          <option value="za">Sort: Z → A (Employee)</option>
+        </select>
       </div>
       <div class="tw">
         <table>
@@ -243,6 +251,10 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="filter-row">
         <input type="text" id="dept-q" placeholder="Search departments…" oninput="renderDepts()"/>
+        <select id="dept-sort" onchange="renderDepts()">
+          <option value="az">Sort: A → Z</option>
+          <option value="za">Sort: Z → A</option>
+        </select>
       </div>
       <div class="tw">
         <table>
@@ -314,34 +326,28 @@ tbody td{padding:8px 12px;vertical-align:middle}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
-   // ── Supabase init ──────────────────────────────────────────────
+  // ── Supabase init ──────────────────────────────────────────────
   const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
   const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // Sign in anonymously to access data
   sb.auth.signInAnonymously().then(() => {
     console.log('✅ Signed in anonymously to Supabase');
   }).catch(err => {
     console.warn('Anonymous sign-in not available, using public access:', err.message);
   });
 
-
 /* ════════════════════════════════════
-   DATA  (active / non-blocked only)
+   DATA
 ════════════════════════════════════ */
 let departments = [];
 let jobs = [];
 let employees = [];
 let jobHistory = [];
-
 let pendingFn = null;
 
 async function loadAllData() {
-  console.log("Loading data from Supabase...");
-  console.log("Supabase URL:", SUPABASE_URL);
-
   try {
     const [empRes, deptRes, jobRes, histRes] = await Promise.all([
       sb.from('employee').select('*'),
@@ -350,58 +356,18 @@ async function loadAllData() {
       sb.from('jobhistory').select('*'),
     ]);
 
-    console.log("EMP Response:", empRes);
-    console.log("DEPT Response:", deptRes);
-    console.log("JOBS Response:", jobRes);
-    console.log("HIST Response:", histRes);
+    if (empRes.error)  { console.error("❌ EMP ERROR:", empRes.error);  alert("Error loading employees: " + empRes.error.message); }
+    if (deptRes.error) { console.error("❌ DEPT ERROR:", deptRes.error); alert("Error loading departments: " + deptRes.error.message); }
+    if (jobRes.error)  { console.error("❌ JOB ERROR:", jobRes.error);  alert("Error loading jobs: " + jobRes.error.message); }
+    if (histRes.error) { console.error("❌ HIST ERROR:", histRes.error); alert("Error loading job history: " + histRes.error.message); }
 
-    // Debug: Show first record from each table
-    if (empRes.data && empRes.data.length > 0) {
-      console.log("🔍 First employee record:", empRes.data[0]);
-    }
-    if (deptRes.data && deptRes.data.length > 0) {
-      console.log("🔍 First department record:", deptRes.data[0]);
-    }
-    if (jobRes.data && jobRes.data.length > 0) {
-      console.log("🔍 First job record:", jobRes.data[0]);
-    }
-    if (histRes.data && histRes.data.length > 0) {
-      console.log("🔍 First job history record:", histRes.data[0]);
-    }
+    departments = (deptRes.data || []).map((d, idx) => ({
+      id: idx + 1,
+      code: d.deptcode || d.deptCode || d.code || d.dept_code || '',
+      name: d.deptname || d.deptName || d.name || d.dept_name || '',
+      desc: d.description || d.desc || ''
+    }));
 
-    if (empRes.error) {
-      console.error("❌ EMP ERROR:", empRes.error);
-      alert("Error loading employees: " + empRes.error.message);
-    }
-    if (deptRes.error) {
-      console.error("❌ DEPT ERROR:", deptRes.error);
-      alert("Error loading departments: " + deptRes.error.message);
-    }
-    if (jobRes.error) {
-      console.error("❌ JOB ERROR:", jobRes.error);
-      alert("Error loading jobs: " + jobRes.error.message);
-    }
-    if (histRes.error) {
-      console.error("❌ HIST ERROR:", histRes.error);
-      alert("Error loading job history: " + histRes.error.message);
-    }
-
-    // Map departments - handle both field name variations
-    departments = (deptRes.data || []).map((d, idx) => {
-      console.log(`🔍 Mapping department ${idx}:`, d);
-      const mapped = {
-        id: idx + 1,
-        code: d.deptcode || d.deptCode || d.code || d.dept_code || '',
-        name: d.deptname || d.deptName || d.name || d.dept_name || '',
-        desc: d.description || d.desc || ''
-      };
-      console.log(`✅ Mapped department:`, mapped);
-      return mapped;
-    });
-
-    console.log("✅ Departments loaded:", departments.length, departments);
-
-    // Map jobs
     jobs = (jobRes.data || []).map((j, idx) => ({
       id: idx + 1,
       code: j.jobcode || j.jobCode || j.code || j.job_code || '',
@@ -409,21 +375,11 @@ async function loadAllData() {
       deptId: j.deptid || j.deptId || j.dept_id || 1
     }));
 
-    console.log("✅ Jobs loaded:", jobs.length, jobs);
-
-    // Map job history first to find current job/dept/salary for each employee
     jobHistory = (histRes.data || []).map((h, idx) => {
-      const jobCode = h.jobcode || h.jobCode || h.job_code || '';
+      const jobCode  = h.jobcode  || h.jobCode  || h.job_code  || '';
       const deptCode = h.deptcode || h.deptCode || h.dept_code || '';
-
-      console.log(`Mapping job history ${idx}:`, { jobCode, deptCode, h });
-
-      const jobMatch = jobs.find(j => j.code === jobCode);
+      const jobMatch  = jobs.find(j => j.code === jobCode);
       const deptMatch = departments.find(d => d.code === deptCode);
-
-      console.log(`Job match for ${jobCode}:`, jobMatch);
-      console.log(`Dept match for ${deptCode}:`, deptMatch);
-
       return {
         id: idx + 1,
         empId: h.empno || h.empNo || h.emp_id || '',
@@ -434,41 +390,31 @@ async function loadAllData() {
       };
     });
 
-    console.log("✅ Job History loaded:", jobHistory.length, jobHistory);
-
-    // Map employees - find their current job/dept from latest history (only active, non-blocked)
+    // Active employees only (no deleted/blocked/separated)
     employees = (empRes.data || []).filter(e => {
-      // Filter out deleted/blocked employees for user view
       return !(e.deleted || e.sepdate || e.sep_date || e.blocked);
     }).map((e, idx) => {
       const empNo = e.empno || e.emp_no || '';
-      const hist = jobHistory.filter(h => h.empId === empNo).sort((a, b) =>
-        new Date(b.effDate) - new Date(a.effDate)
-      )[0];
-
-      console.log(`Employee ${empNo} history:`, hist);
-
+      const hist = jobHistory.filter(h => h.empId === empNo)
+        .sort((a, b) => new Date(b.effDate) - new Date(a.effDate))[0];
       return {
         id: idx + 1,
-        empNo: empNo,
-        lastName: e.lastname || e.last_name || '',
-        firstName: e.firstname || e.first_name || '',
-        gender: e.gender || '',
-        birthdate: e.birthdate || e.birth_date || '',
-        hireDate: e.hiredate || e.hire_date || '',
-        sepDate: e.sepdate || e.sep_date || null,
-        username: e.username || '',
-        email: e.email || '',
-        phone: e.phone || '',
+        empNo,
+        lastName:  e.lastname   || e.last_name  || '',
+        firstName: e.firstname  || e.first_name || '',
+        gender:    e.gender     || '',
+        birthdate: e.birthdate  || e.birth_date || '',
+        hireDate:  e.hiredate   || e.hire_date  || '',
+        sepDate:   e.sepdate    || e.sep_date   || null,
+        username:  e.username   || '',
+        email:     e.email      || '',
+        phone:     e.phone      || '',
         deptId: hist?.deptId || 1,
-        jobId: hist?.jobId || 1,
+        jobId:  hist?.jobId  || 1,
         salary: hist?.salary || 0
       };
     });
 
-    console.log("✅ Employees loaded:", employees.length, employees);
-
-    console.log("✅ All data loaded successfully!");
     renderEmp();
     renderStats();
   } catch (error) {
@@ -480,44 +426,44 @@ async function loadAllData() {
 /* ════════════════════════════════════
    HELPERS
 ════════════════════════════════════ */
-const gD  = id => departments.find(d=>d.id===id);
-const gJ  = id => jobs.find(j=>j.id===id);
-const gE  = id => employees.find(e=>e.id===id);
-const dn  = id => { const d=gD(id); return d?d.name:'—'; };
-const dc  = id => { const d=gD(id); return d?d.code:'—'; };
-const jd  = id => { const j=gJ(id); return j?j.desc:'—'; };
-const jc  = id => { const j=gJ(id); return j?j.code:'—'; };
-const en  = id => { const e=gE(id); return e?`${e.lastName}, ${e.firstName}`:'—'; };
-const ini = e  => (e.firstName[0]+e.lastName[0]).toUpperCase();
-const fmt = d  => d ? d : '—';
-const fmtSal = s => s ? '₱'+Number(s).toLocaleString() : '—';
+const gD  = id => departments.find(d => d.id === id);
+const gJ  = id => jobs.find(j => j.id === id);
+const gE  = id => employees.find(e => e.id === id);
+const dn  = id => { const d = gD(id); return d ? d.name : '—'; };
+const dc  = id => { const d = gD(id); return d ? d.code : '—'; };
+const jd  = id => { const j = gJ(id); return j ? j.desc : '—'; };
+const jc  = id => { const j = gJ(id); return j ? j.code : '—'; };
+const en  = id => { const e = gE(id); return e ? `${e.lastName}, ${e.firstName}` : '—'; };
+const ini = e  => ((e.firstName[0] || '') + (e.lastName[0] || '')).toUpperCase();
+const fmt    = d => d ? d : '—';
+const fmtSal = s => s ? '₱' + Number(s).toLocaleString() : '—';
 
 /* ════════════════════════════════════
    NAVIGATION
 ════════════════════════════════════ */
-function nav(el, page){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+function nav(el, page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
   const t = {
-    employees:'Employees','job-history':'Job History',
-    departments:'Departments',jobs:'Job Positions',profile:'Employee Profile'
+    employees: 'Employees', 'job-history': 'Job History',
+    departments: 'Departments', jobs: 'Job Positions', profile: 'Employee Profile'
   };
-  document.getElementById('topbar-title').textContent = t[page]||page;
-  if(page==='employees')   { renderEmp(); renderStats(); }
-  if(page==='job-history') renderHist();
-  if(page==='departments') renderDepts();
-  if(page==='jobs')        renderJobs();
+  document.getElementById('topbar-title').textContent = t[page] || page;
+  if (page === 'employees')   { renderEmp(); renderStats(); }
+  if (page === 'job-history') renderHist();
+  if (page === 'departments') renderDepts();
+  if (page === 'jobs')        renderJobs();
 }
 
 /* ════════════════════════════════════
-   MODAL (logout only)
+   MODAL
 ════════════════════════════════════ */
 const om = id => document.getElementById(id).classList.add('open');
 const cm = id => document.getElementById(id).classList.remove('open');
-function doConfirm(){ if(pendingFn) pendingFn(); cm('mo-confirm'); }
-function askConfirm(title, msg, fn, btn='Confirm'){
+function doConfirm() { if (pendingFn) pendingFn(); cm('mo-confirm'); }
+function askConfirm(title, msg, fn, btn = 'Confirm') {
   document.getElementById('conf-title').textContent = title;
   document.getElementById('conf-msg').textContent   = msg;
   document.getElementById('conf-ok').textContent    = btn;
@@ -526,58 +472,67 @@ function askConfirm(title, msg, fn, btn='Confirm'){
 }
 
 /* ════════════════════════════════════
-   STATS
+   STATS  (counts Male, Female, Other)
 ════════════════════════════════════ */
-function renderStats(){
-  const total = employees.length;
-  const depts = new Set(employees.map(e=>e.deptId)).size;
-  const male  = employees.filter(e=>e.gender==='Male').length;
-  const fem   = employees.filter(e=>e.gender==='Female').length;
-  document.getElementById('emp-stats').innerHTML=`
+function renderStats() {
+  const total  = employees.length;
+  const depts  = new Set(employees.map(e => e.deptId)).size;
+  const male   = employees.filter(e => e.gender === 'Male').length;
+  const female = employees.filter(e => e.gender === 'Female').length;
+  const other  = employees.filter(e => e.gender !== 'Male' && e.gender !== 'Female').length;
+  document.getElementById('emp-stats').innerHTML = `
     <div class="sc ac"><div class="n">${total}</div><div class="l">Active Employees</div></div>
     <div class="sc"><div class="n">${depts}</div><div class="l">Departments</div></div>
     <div class="sc"><div class="n">${male}</div><div class="l">Male</div></div>
-    <div class="sc"><div class="n">${fem}</div><div class="l">Female</div></div>`;
+    <div class="sc"><div class="n">${female}</div><div class="l">Female</div></div>
+    ${other > 0 ? `<div class="sc"><div class="n">${other}</div><div class="l">Other</div></div>` : ''}`;
 }
 
 /* ════════════════════════════════════
    EMPLOYEES
 ════════════════════════════════════ */
-function popDeptFilter(selId){
+function popDeptFilter(selId) {
   const s = document.getElementById(selId), v = s.value;
   s.innerHTML = '<option value="">All Departments</option>';
-  departments.forEach(d=>{
-    const o=document.createElement('option');
-    o.value=d.id; o.textContent=d.name;
-    if(String(d.id)===v) o.selected=true;
+  departments.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d.id; o.textContent = d.name;
+    if (String(d.id) === v) o.selected = true;
     s.appendChild(o);
   });
 }
 
-function renderEmp(){
+function renderEmp() {
   popDeptFilter('emp-fd');
-  const q  = document.getElementById('emp-q').value.toLowerCase();
-  const fd = document.getElementById('emp-fd').value;
-  const fg = document.getElementById('emp-fg').value;
+  const q    = document.getElementById('emp-q').value.toLowerCase();
+  const fd   = document.getElementById('emp-fd').value;
+  const fg   = document.getElementById('emp-fg').value;
+  const sort = document.getElementById('emp-sort').value;
 
-  let data = employees.filter(e=>{
-    if(fd && String(e.deptId)!==fd) return false;
-    if(fg && e.gender!==fg)         return false;
+  let data = employees.filter(e => {
+    if (fd && String(e.deptId) !== fd) return false;
+    if (fg && e.gender !== fg)         return false;
     return `${e.empNo} ${e.lastName} ${e.firstName} ${jd(e.jobId)} ${dn(e.deptId)}`
       .toLowerCase().includes(q);
-  }).sort((a,b)=>a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName));
+  });
+
+  // Sort A-Z or Z-A by Last Name then First Name
+  data.sort((a, b) => {
+    const cmp = a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName);
+    return sort === 'za' ? -cmp : cmp;
+  });
 
   const tb = document.getElementById('emp-tbody');
-  if(!data.length){
-    tb.innerHTML=`<tr><td colspan="10" class="tbl-empty">No employees found.</td></tr>`;
+  if (!data.length) {
+    tb.innerHTML = `<tr><td colspan="10" class="tbl-empty">No employees found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(e=>`
+  tb.innerHTML = data.map(e => `
     <tr>
       <td>${e.empNo}</td>
       <td><strong>${e.lastName}</strong></td>
       <td>${e.firstName}</td>
-      <td>${e.gender||'—'}</td>
+      <td>${e.gender || '—'}</td>
       <td>${fmt(e.hireDate)}</td>
       <td>${e.sepDate ? fmt(e.sepDate) : '—'}</td>
       <td>${jd(e.jobId)}</td>
@@ -592,33 +547,43 @@ function renderEmp(){
 /* ════════════════════════════════════
    JOB HISTORY
 ════════════════════════════════════ */
-function renderHist(){
-  const q   = document.getElementById('hist-q').value.toLowerCase();
-  const fe  = document.getElementById('hist-fe').value;
-  const sel = document.getElementById('hist-fe'), cv = sel.value;
+function renderHist() {
+  const q    = document.getElementById('hist-q').value.toLowerCase();
+  const fe   = document.getElementById('hist-fe').value;
+  const sort = document.getElementById('hist-sort').value;
+  const sel  = document.getElementById('hist-fe'), cv = sel.value;
 
-  sel.innerHTML='<option value="">All Employees</option>';
-  employees.forEach(e=>{
-    const o=document.createElement('option');
-    o.value=e.id; o.textContent=`${e.empNo} – ${e.lastName}, ${e.firstName}`;
-    if(String(e.id)===cv) o.selected=true;
+  sel.innerHTML = '<option value="">All Employees</option>';
+  employees.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.id; o.textContent = `${e.empNo} – ${e.lastName}, ${e.firstName}`;
+    if (String(e.id) === cv) o.selected = true;
     sel.appendChild(o);
   });
 
-  let data = jobHistory.filter(h=>{
-    if(fe && String(h.empId)!==fe) return false;
+  let data = jobHistory.filter(h => {
+    if (fe && String(h.empId) !== fe) return false;
     return `${en(h.empId)} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)}`
       .toLowerCase().includes(q);
-  }).sort((a,b)=>b.effDate.localeCompare(a.effDate));
+  });
+
+  // Sort by employee name A-Z or Z-A
+  data.sort((a, b) => {
+    const ea = gE(a.empId), eb = gE(b.empId);
+    const na = ea ? `${ea.lastName} ${ea.firstName}` : '';
+    const nb = eb ? `${eb.lastName} ${eb.firstName}` : '';
+    const cmp = na.localeCompare(nb);
+    return sort === 'za' ? -cmp : cmp;
+  });
 
   const tb = document.getElementById('hist-tbody');
-  if(!data.length){
-    tb.innerHTML=`<tr><td colspan="8" class="tbl-empty">No history records found.</td></tr>`;
+  if (!data.length) {
+    tb.innerHTML = `<tr><td colspan="8" class="tbl-empty">No history records found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(h=>`
+  tb.innerHTML = data.map(h => `
     <tr>
-      <td>JH-${String(h.id).padStart(3,'0')}</td>
+      <td>JH-${String(h.id).padStart(3, '0')}</td>
       <td>${en(h.empId)}</td>
       <td>${jc(h.jobId)}</td>
       <td>${jd(h.jobId)}</td>
@@ -632,48 +597,54 @@ function renderHist(){
 /* ════════════════════════════════════
    DEPARTMENTS
 ════════════════════════════════════ */
-function renderDepts(){
-  const q  = document.getElementById('dept-q').value.toLowerCase();
-  const ec = id => employees.filter(e=>e.deptId===id).length;
+function renderDepts() {
+  const q    = document.getElementById('dept-q').value.toLowerCase();
+  const sort = document.getElementById('dept-sort').value;
+  const ec   = id => employees.filter(e => e.deptId === id).length;
 
-  let data = departments.filter(d=>
+  let data = departments.filter(d =>
     `${d.code} ${d.name} ${d.desc}`.toLowerCase().includes(q)
   );
 
+  data.sort((a, b) => {
+    const cmp = a.name.localeCompare(b.name);
+    return sort === 'za' ? -cmp : cmp;
+  });
+
   const tb = document.getElementById('dept-tbody');
-  if(!data.length){
-    tb.innerHTML=`<tr><td colspan="4" class="tbl-empty">No departments found.</td></tr>`;
+  if (!data.length) {
+    tb.innerHTML = `<tr><td colspan="4" class="tbl-empty">No departments found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(d=>`
+  tb.innerHTML = data.map(d => `
     <tr>
       <td><strong>${d.code}</strong></td>
       <td>${d.name}</td>
-      <td style="color:var(--muted);max-width:260px">${d.desc||'—'}</td>
+      <td style="color:var(--muted);max-width:260px">${d.desc || '—'}</td>
       <td>${ec(d.id)}</td>
     </tr>`).join('');
 }
 
 /* ════════════════════════════════════
-   JOB POSITIONS
+   JOB POSITIONS  (no sort filter per spec)
 ════════════════════════════════════ */
-function renderJobs(){
+function renderJobs() {
   popDeptFilter('jobs-fd');
   const q  = document.getElementById('jobs-q').value.toLowerCase();
   const fd = document.getElementById('jobs-fd').value;
-  const ec = id => employees.filter(e=>e.jobId===id).length;
+  const ec = id => employees.filter(e => e.jobId === id).length;
 
-  let data = jobs.filter(j=>{
-    if(fd && String(j.deptId)!==fd) return false;
+  let data = jobs.filter(j => {
+    if (fd && String(j.deptId) !== fd) return false;
     return `${j.code} ${j.desc} ${dn(j.deptId)}`.toLowerCase().includes(q);
   });
 
   const tb = document.getElementById('jobs-tbody');
-  if(!data.length){
-    tb.innerHTML=`<tr><td colspan="4" class="tbl-empty">No job positions found.</td></tr>`;
+  if (!data.length) {
+    tb.innerHTML = `<tr><td colspan="4" class="tbl-empty">No job positions found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(j=>`
+  tb.innerHTML = data.map(j => `
     <tr>
       <td><strong>${j.code}</strong></td>
       <td>${j.desc}</td>
@@ -683,17 +654,17 @@ function renderJobs(){
 }
 
 /* ════════════════════════════════════
-   PROFILE  (read-only)
+   PROFILE  (read-only, no edit/delete)
 ════════════════════════════════════ */
-function viewProf(id){
-  const e = gE(id); if(!e) return;
+function viewProf(id) {
+  const e = gE(id); if (!e) return;
 
   const hist = jobHistory
-    .filter(h=>h.empId===id)
-    .sort((a,b)=>b.effDate.localeCompare(a.effDate));
+    .filter(h => h.empId === e.empNo)
+    .sort((a, b) => b.effDate.localeCompare(a.effDate));
 
   const rows = hist.length
-    ? hist.map(h=>`
+    ? hist.map(h => `
         <tr>
           <td>${jc(h.jobId)}</td>
           <td>${jd(h.jobId)}</td>
@@ -704,7 +675,7 @@ function viewProf(id){
         </tr>`).join('')
     : `<tr><td colspan="6" class="tbl-empty">No history records.</td></tr>`;
 
-  document.getElementById('profile-content').innerHTML=`
+  document.getElementById('profile-content').innerHTML = `
     <div class="pp">
       <div class="pp-head">
         <div class="ava">${ini(e)}</div>
@@ -724,11 +695,11 @@ function viewProf(id){
           <div class="pf"><label>Emp No</label>      <div class="v">${e.empNo}</div></div>
           <div class="pf"><label>Last Name</label>   <div class="v">${e.lastName}</div></div>
           <div class="pf"><label>First Name</label>  <div class="v">${e.firstName}</div></div>
-          <div class="pf"><label>Gender</label>      <div class="v">${e.gender||'—'}</div></div>
+          <div class="pf"><label>Gender</label>      <div class="v">${e.gender || '—'}</div></div>
           <div class="pf"><label>Hire Date</label>   <div class="v">${fmt(e.hireDate)}</div></div>
-          <div class="pf"><label>Sep Date</label>    <div class="v">${e.sepDate?fmt(e.sepDate):'—'}</div></div>
-          <div class="pf"><label>Email</label>       <div class="v">${e.email||'—'}</div></div>
-          <div class="pf"><label>Phone</label>       <div class="v">${e.phone||'—'}</div></div>
+          <div class="pf"><label>Sep Date</label>    <div class="v">${e.sepDate ? fmt(e.sepDate) : '—'}</div></div>
+          <div class="pf"><label>Email</label>       <div class="v">${e.email || '—'}</div></div>
+          <div class="pf"><label>Phone</label>       <div class="v">${e.phone || '—'}</div></div>
         </div>
 
         <div class="pst">Current Assignment</div>
@@ -762,20 +733,20 @@ function viewProf(id){
       </div>
     </div>`;
 
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-profile').classList.add('active');
-  document.getElementById('topbar-title').textContent='Employee Profile';
+  document.getElementById('topbar-title').textContent = 'Employee Profile';
 }
 
 /* ════════════════════════════════════
    LOGOUT
 ════════════════════════════════════ */
-function doLogout(){
-  askConfirm('Log Out','Are you sure you want to log out?',async ()=>{
+function doLogout() {
+  askConfirm('Log Out', 'Are you sure you want to log out?', async () => {
     await sb.auth.signOut();
     window.location.href = 'index.html#login';
-  },'Log Out');
+  }, 'Log Out');
 }
 
 /* ════════════════════════════════════
