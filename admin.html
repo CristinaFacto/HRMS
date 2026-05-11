@@ -636,9 +636,14 @@ async function initAuth(){
     const { data: prof } = await sb.from('profiles').select('username,email,full_name,status').eq('id', uid).single();
     if(prof){
       // Block check: if user is inactive, sign out and redirect
-      if(prof.status === 'inactive'){
+      if(prof.status === 'blocked'){
         await sb.auth.signOut();
         window.location.href = 'blocked.html';
+        return;
+      }
+      if(prof.status === 'inactive'){
+        await sb.auth.signOut();
+        window.location.href = 'deactivated.html';
         return;
       }
       const display = prof.username || prof.full_name || prof.email || 'admin';
