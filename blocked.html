@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Blocked - HRMS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1E3A5F 0%, #2a4a7c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+      text-align: center;
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: #fef3c7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    h1 {
+      color: #c0392b;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .message-box {
+      background: #fef3c7;
+      border-left: 4px solid #92400e;
+      padding: 16px;
+      border-radius: 4px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .message-box p {
+      color: #92400e;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .info-list {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 4px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .info-list p {
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .info-list p:last-child {
+      margin-bottom: 0;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    button {
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    button:hover {
+      opacity: 0.85;
+    }
+    .btn-primary {
+      background: #1E3A5F;
+      color: white;
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    .logo {
+      margin-bottom: 32px;
+    }
+    .logo-text {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6b7280;
+      font-weight: bold;
+    }
+    .logo-title {
+      font-size: 18px;
+      color: #1E3A5F;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-text">HRMS</div>
+      <div class="logo-title">HR Management System</div>
+    </div>
+
+    <div class="icon">🚫</div>
+    
+    <h1>Account Blocked</h1>
+    
+    <p class="subtitle">
+      Your account has been restricted and you cannot access the system at this time.
+    </p>
+
+    <div class="message-box">
+      <p>
+        <strong>Why am I seeing this?</strong><br><br>
+        Your account has been blocked by your administrator. This typically occurs due to security concerns or policy violations. You will not be able to log in until this restriction is lifted.
+      </p>
+    </div>
+
+    <div class="info-list">
+      <p><strong>What should I do?</strong></p>
+      <p>• Contact your HR administrator or manager</p>
+      <p>• Request them to review your account status</p>
+      <p>• Do not attempt to bypass this restriction</p>
+    </div>
+
+    <div class="button-group">
+      <button class="btn-secondary" onclick="goHome()">Go Home</button>
+      <button class="btn-primary" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    function logout() {
+      // Sign out from Supabase if possible
+      const SUPABASE_URL = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
+      const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwcW14dmdlaHR5cWl2a3VpbHR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTAwNjkwMDAsImV4cCI6MTk5NjY0NTAwMH0.BLd3QGsNXH4x_8mO7EbR4PqPl6fLBaeLH8RlbI6ylUE';
+      
+      const { createClient } = supabase;
+      const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+      
+      sb.auth.signOut().then(() => {
+        window.location.href = 'index.html#login';
+      }).catch(() => {
+        window.location.href = 'index.html#login';
+      });
+    }
+  </script>
+  <script async defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>
