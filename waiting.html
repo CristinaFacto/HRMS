@@ -214,14 +214,14 @@
         window.location.href = 'deactivated.html';
         return;
       }
-      if (status === 'active' || status === 'approved') {
+      if (status === 'approved') {
         clearInterval(pollInterval);
         document.getElementById('spinner').style.borderTopColor = '#22C55E';
         const approvedMsg = document.getElementById('approvedMsg');
         if (approvedMsg) approvedMsg.classList.remove('hidden');
         setTimeout(() => redirectByRole(role), 1500);
       }
-    }
+    
 
     // ── Init ────────────────────────────────────────────────────
     async function init() {
