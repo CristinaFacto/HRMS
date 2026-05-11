@@ -722,7 +722,7 @@ async function loadAllData(){
         email:u.email||'',
         empNo:u.emp_id||'',
         requestedRole:u.requested_role||u.role||'user',
-        status:(u.status==='pending')?'pending':(u.status==='rejected')?'rejected':(u.status==='inactive')?'inactive':(u.status==='approved'||u.status==='active')?'approved':'pending',
+        status:(u.status==='pending')?'pending':(u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='approved'||u.status==='active')?'approved':'pending',
         submittedAt:u.created_at||'',
         reviewedBy:u.approved_by||null,
         note:'',
