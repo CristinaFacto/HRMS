@@ -176,7 +176,15 @@
     // ── Check profile status ────────────────────────────────────
     async function checkStatus(userId) {
       const { data: sessionData } = await sb.auth.getSession();
-      const email = sessionData?.session?.user?.email;
+      
+      // Check if session still exists
+      if (!sessionData?.session) {
+        clearInterval(pollInterval);
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      const email = sessionData.session.user.email;
 
       let { data: profile, error } = await sb
         .from('profiles')
@@ -194,7 +202,19 @@
         profile = fallback.data || profile;
       }
 
-      if (error || !profile) return;
+      if (error) {
+        // Database error — redirect to login
+        clearInterval(pollInterval);
+        window.location.href = 'index.html';
+        return;
+      }
+
+      if (!profile) {
+        // Profile not found — redirect to login
+        clearInterval(pollInterval);
+        window.location.href = 'index.html';
+        return;
+      }
 
       // Populate user info box
       document.getElementById('userInfo').style.display = 'block';
