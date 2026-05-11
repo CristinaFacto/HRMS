@@ -329,13 +329,28 @@ tbody td{padding:8px 12px;vertical-align:middle}
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
+  let statusCheckInterval = null;
+
   // ── Sign in & set username display ────────────────────────────
   async function initAuth() {
     try {
       // Try to get existing session first
       const { data: { session } } = await sb.auth.getSession();
       if (session?.user) {
+        // Check if user is blocked before loading anything
+        const uid = session.user.id;
+        const { data: prof } = await sb.from('profiles').select('status').eq('id', uid).single();
+        
+        if (prof && prof.status === 'inactive') {
+          // User is blocked - sign out and redirect
+          await sb.auth.signOut();
+          window.location.href = 'blocked.html';
+          return;
+        }
+        
         setUsernameDisplay(session.user);
+        // Start listening for status changes
+        startStatusCheckListener(uid);
         return;
       }
       // Fall back to anonymous
@@ -346,6 +361,24 @@ tbody td{padding:8px 12px;vertical-align:middle}
     } catch (err) {
       console.warn('Auth init error:', err.message);
     }
+  }
+
+  // ── Check status every 3 seconds to catch real-time blocks ──
+  function startStatusCheckListener(uid) {
+    if (statusCheckInterval) clearInterval(statusCheckInterval);
+    statusCheckInterval = setInterval(async () => {
+      try {
+        const { data: prof, error } = await sb.from('profiles').select('status').eq('id', uid).single();
+        if (prof && prof.status === 'inactive') {
+          // User got blocked! Sign out and redirect
+          clearInterval(statusCheckInterval);
+          await sb.auth.signOut();
+          window.location.href = 'blocked.html';
+        }
+      } catch (err) {
+        console.warn('Status check error:', err.message);
+      }
+    }, 3000);
   }
 
   function setUsernameDisplay(user) {
