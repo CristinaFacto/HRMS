@@ -341,10 +341,14 @@ tbody td{padding:8px 12px;vertical-align:middle}
         const uid = session.user.id;
         const { data: prof } = await sb.from('profiles').select('status').eq('id', uid).single();
         
-        if (prof && (prof.status === 'inactive' || prof.status === 'blocked')) {
-          // User is blocked - sign out and redirect
+        if (prof && prof.status === 'blocked') {
           await sb.auth.signOut();
           window.location.href = 'blocked.html';
+          return;
+        }
+        if (prof && prof.status === 'inactive') {
+          await sb.auth.signOut();
+          window.location.href = 'deactivated.html';
           return;
         }
         
