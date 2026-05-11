@@ -1136,7 +1136,7 @@ function blockUser(id){
   const action=u.blocked?'Unblock':'Block';
   askConfirm(action+' User',action+' account "'+u.username+'"?',async function(){
     const willBlock = !u.blocked;
-    const newStatus = willBlock ? 'inactive' : 'active';
+    const newStatus = willBlock ? 'blocked' : 'active';
 
     // ── Write to Supabase profiles table ─────────────────────────────────
     if(u.supabaseId){
@@ -1152,6 +1152,14 @@ function blockUser(id){
           ? 'User "'+u.username+'" has been blocked. They cannot log in.'
           : 'User "'+u.username+'" has been unblocked. They can log in again.'
         );
+        // ── If blocking and user is currently logged in, sign them out immediately ──
+        if(willBlock){
+          const {data:{session}}=await sb.auth.getSession();
+          if(session && session.user && session.user.id===u.supabaseId){
+            await sb.auth.signOut();
+            window.location.href='blocked.html';
+          }
+        }
       }
     } else {
       alert('No Supabase ID — blocked locally only.');
