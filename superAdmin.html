@@ -411,7 +411,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="tw"><table>
           <thead><tr>
             <th>Email</th><th>Full Name</th><th>Role</th>
-            <th>Registered</th><th>Status</th><th>Actions</th>
+           <th>Registered</th><th>Approved By</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="users-tbody"></tbody>
         </table></div>
@@ -1093,7 +1093,8 @@ function renderUsers(){
       '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
      
       '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt||'--')+'</td>'+
-      '<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
+'<td style="font-size:10px;color:var(--muted)">'+(u.approvedBy||'--')+'</td>'+
+'<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
       '<td class="ns" style="white-space:nowrap">'+actionBtns+'</td></tr>';
   }).join('');
 }
