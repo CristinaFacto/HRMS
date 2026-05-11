@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Waiting for Approval</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #1E3A5F;
+      --accent: #F2C94C;
+      --border: #E5E7EB;
+      --muted: #6B7280;
+      --bg: #F3F4F6;
+    }
+    * { box-sizing: border-box; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(16,24,40,0.06);
+      padding: 40px 32px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 56px;
+      height: 56px;
+      border: 5px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      background: #FEF9EC;
+      color: #B45309;
+      border: 1px solid #F2C94C;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 14px;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    /* User info box */
+    .user-info {
+      background: #F9FAFB;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .user-info p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .user-info p span {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Poll status */
+    .poll-status {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .poll-status .dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: #22C55E;
+      border-radius: 50%;
+      margin-right: 5px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Sign out */
+    .btn-signout {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      color: var(--primary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-signout:hover { background: #F3F4F6; }
+
+    .approved-msg {
+      color: #16A34A;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner" id="spinner"></div>
+    <div class="badge">Pending Approval</div>
+    <h1>You're on the waitlist!</h1>
+    <p class="subtitle">
+      Your account has been created. An admin will review and approve your access shortly.
+      You'll be redirected automatically once approved.
+    </p>
+
+    <div class="user-info" id="userInfo" style="display:none;">
+      <p>Name: <span id="userName">—</span></p>
+      <p>Email: <span id="userEmail">—</span></p>
+    </div>
+
+    <p class="poll-status">
+      <span class="dot"></span>Checking approval status every 10 seconds…
+    </p>
+
+    <p class="approved-msg hidden" id="approvedMsg">✅ Approved! Redirecting you now…</p>
+
+    <button class="btn-signout" id="signOutBtn">Sign Out</button>
+  </div>
+
+  <script>
+    const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
+    const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    let pollInterval = null;
+
+    // ── Redirect based on role ──────────────────────────────────
+    function redirectByRole(role) {
+      const r = role?.toLowerCase();
+      if (r === 'superadmin') window.location.href = 'superAdmin.html';
+      else if (r === 'admin')  window.location.href = 'admin.html';
+      else                     window.location.href = 'user.html';
+    }
+
+    // ── Check profile status ────────────────────────────────────
+    async function checkStatus(userId) {
+      const { data: profile, error } = await sb
+        .from('profiles')
+        .select('status, role, full_name, email')
+        .eq('id', userId)
+        .single();
+
+      if (error || !profile) return;
+
+      // Populate user info box
+      document.getElementById('userInfo').style.display = 'block';
+      document.getElementById('userName').textContent  = profile.full_name || '—';
+      document.getElementById('userEmail').textContent = profile.email || '—';
+
+      // If approved, stop polling and redirect
+      if (profile.status === 'active') {
+        clearInterval(pollInterval);
+        document.getElementById('spinner').style.borderTopColor = '#22C55E';
+        document.getElementById('approvedMsg').classList.remove('hidden');
+        setTimeout(() => redirectByRole(profile.role), 1500);
+      }
+    }
+
+    // ── Init ────────────────────────────────────────────────────
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+
+      // No session → back to login
+      if (!session) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const userId = session.user.id;
+
+      // Check immediately on load
+      await checkStatus(userId);
+
+      // Then poll every 10 seconds
+      pollInterval = setInterval(() => checkStatus(userId), 10000);
+    }
+
+    // ── Sign out ────────────────────────────────────────────────
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      clearInterval(pollInterval);
+      await sb.auth.signOut();
+      window.location.href = 'index.html';
+    });
+
+    init();
+  </script>
+</body>
+</html>
