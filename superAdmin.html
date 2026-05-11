@@ -1172,15 +1172,11 @@ async function deleteUser(id){
     async function(){
       if(u.supabaseId){
         // Explicitly set status = 'deactivated' — NOT 'inactive'
-        const { error } = await sb
-          .from('profiles')
+        const {error}=await sb.from('profiles')
           .update({ status: 'deactivated' })
           .eq('id', u.supabaseId);
-
-        if(error){
-          showToast('Supabase error: '+error.message,'error',4000);
-          return; // Stop — don't remove from UI if DB write failed
-        }
+        if(error) showToast('Supabase error: '+error.message,'error',4000);
+        else showToast('User deactivated successfully.','success');
         showToast('User "'+u.email+'" has been deactivated successfully.','success');
       } else {
         showToast('No Supabase ID found — removed locally only.','error',4000);
