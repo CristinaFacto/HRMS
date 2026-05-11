@@ -410,8 +410,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
         </div>
         <div class="tw"><table>
           <thead><tr>
-            <th>Email</th><th>Full Name</th><th>Role</th>
-           <th>Registered</th><th>Approved By</th><th>Status</th><th>Actions</th>
+            <th>Username</th><th>Full Name</th><th>Role</th>
+            <th>Registered</th><th>Approved By</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="users-tbody"></tbody>
         </table></div>
@@ -550,6 +550,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
+<!-- FIX (Bug 2): Added fu-role field only; fu-emp dropdown removed since it was missing from HTML and causing crashes -->
 <div class="mo" id="mo-user">
   <div class="modal" style="width:420px">
     <div class="mh"><h3 id="mo-user-title">Add User</h3><button class="mc-btn" onclick="cm('mo-user')">x</button></div>
@@ -562,16 +563,13 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="fr"><label>First Name</label><input id="fu-fn" placeholder="First name"/></div>
         <div class="fr"><label>Last Name</label><input id="fu-ln" placeholder="Last name"/></div>
       </div>
-      <div class="f2">
-        <div class="fr"><label>Role</label>
-          <select id="fu-role">
-            <option value="">-- Select --</option>
-            <option value="superadmin">Super Admin</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </select>
-        </div>
-       
+      <div class="fr"><label>Role</label>
+        <select id="fu-role">
+          <option value="">-- Select --</option>
+          <option value="superadmin">Super Admin</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
       </div>
     </div>
     <div class="mf">
@@ -630,6 +628,8 @@ let nE=1, nH=1, nD=1, nJ=1, nU=1;
 let editId={emp:null,hist:null,dept:null,job:null,user:null};
 let pendingFn=null, currentDelTab='Employee';
 
+// ── FIX (Bug 4): loadAllData now populates registrations[] from Supabase
+//    by filtering profiles with status='inactive', and calls updatePendingBadges()
 async function loadAllData(){
   try{
     const [empRes,deptRes,jobRes,histRes,userRes]=await Promise.all([
@@ -671,21 +671,44 @@ async function loadAllData(){
       const emp=employees.find(e=>e.empNo===h.empNo);
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
-   sysUsers=(userRes.data||[]).map((u,idx)=>({
-  id:idx+1,
-  username:u.username||'',
-  firstName:u.first_name||'',
-  lastName:u.last_name||'',
-  fullName:u.full_name||'',
-  role:(u.role||'user').toLowerCase(),
-  empId:null,
-  registeredAt:u.created_at||'',
-  approvedBy:'',
-  deleted:false,
-  blocked:u.status==='blocked',
-}));
+    sysUsers=(userRes.data||[])
+      .filter(u=>u.status!=='inactive')
+      .map((u,idx)=>({
+        id:idx+1,
+        username:u.username||u.email||'',
+        firstName:u.first_name||'',
+        lastName:u.last_name||'',
+        fullName:u.full_name||'',
+        role:(u.role||'user').toLowerCase(),
+        empId:null,
+        registeredAt:u.created_at||'',
+        approvedBy:u.approved_by||'',
+        deleted:false,
+        blocked:u.status==='blocked',
+        supabaseId:u.id,
+      }));
+
+    // FIX (Bug 4): Build registrations[] from inactive profiles
+    registrations=(userRes.data||[])
+      .filter(u=>u.status==='inactive')
+      .map((u,idx)=>({
+        id:idx+1,
+        username:u.username||u.email||'',
+        firstName:u.first_name||'',
+        lastName:u.last_name||'',
+        fullName:u.full_name||'',
+        email:u.email||'',
+        requestedRole:u.requested_role||'user',
+        status:'pending',
+        submittedAt:u.created_at||'',
+        reviewedBy:u.approved_by||null,
+        note:'',
+        supabaseId:u.id,  // keep real UUID for Supabase update
+      }));
+
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
+    updatePendingBadges(); // show badge count immediately on load
   }catch(err){alert('Fatal error loading data: '+err.message);}
 }
 
@@ -1072,7 +1095,6 @@ function renderUsers(){
   if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No users found.</td></tr>';return;}
   tb.innerHTML=data.map(function(u){
     const roleClass=u.role==='superadmin'?'b-sa':u.role==='admin'?'b-admin':'b-user';
-    
     let actionBtns='';
     if(u.username===CURRENT_USER){
       actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button>'+
@@ -1089,12 +1111,11 @@ function renderUsers(){
     }
     return '<tr class="'+(u.blocked?'blk-row':'')+'">'+
       '<td><strong>'+u.username+'</strong></td>'+
-      '<td>'+(u.fullName||u.firstName+' '+u.lastName||'--')+'</td>'+
+      '<td>'+(u.fullName||(u.firstName+' '+u.lastName).trim()||'--')+'</td>'+
       '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
-     
       '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt||'--')+'</td>'+
-'<td style="font-size:10px;color:var(--muted)">'+(u.approvedBy||'--')+'</td>'+
-'<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+(u.approvedBy||'--')+'</td>'+
+      '<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
       '<td class="ns" style="white-space:nowrap">'+actionBtns+'</td></tr>';
   }).join('');
 }
@@ -1119,92 +1140,209 @@ function deleteUser(id){
     renderUsers();renderUserStats();updatePendingBadges();
   },'Delete','btn-danger');
 }
+// FIX (Bug 2 & 5): openAddUser/openEditUser no longer reference missing fu-emp element
 function openAddUser(){
-  editId.user=null;document.getElementById('mo-user-title').textContent='Add User';
+  editId.user=null;
+  document.getElementById('mo-user-title').textContent='Add User';
   ['fu-user','fu-pass','fu-fn','fu-ln'].forEach(f=>document.getElementById(f).value='');
   document.getElementById('fu-role').value='';
-  const s=document.getElementById('fu-emp');s.innerHTML='<option value="">-- None --</option>';
-  employees.filter(e=>!e.deleted&&!e.blocked).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.empNo+' - '+e.lastName+', '+e.firstName;s.appendChild(o);});
   om('mo-user');
 }
 function openEditUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  editId.user=id;document.getElementById('mo-user-title').textContent='Edit User';
-  document.getElementById('fu-user').value=u.username;document.getElementById('fu-pass').value=u.password||'';
-  document.getElementById('fu-fn').value=u.firstName;document.getElementById('fu-ln').value=u.lastName;
+  editId.user=id;
+  document.getElementById('mo-user-title').textContent='Edit User';
+  document.getElementById('fu-user').value=u.username;
+  document.getElementById('fu-pass').value=u.password||'';
+  document.getElementById('fu-fn').value=u.firstName;
+  document.getElementById('fu-ln').value=u.lastName;
   document.getElementById('fu-role').value=u.role;
-  const s=document.getElementById('fu-emp');s.innerHTML='<option value="">-- None --</option>';
-  employees.filter(e=>!e.deleted&&!e.blocked).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.empNo+' - '+e.lastName+', '+e.firstName;s.appendChild(o);});
-  setTimeout(function(){document.getElementById('fu-emp').value=u.empId||'';},10);
   om('mo-user');
 }
+// FIX (Bug 5): saveUser no longer reads fu-emp (element didn't exist)
 function saveUser(){
-  const username=document.getElementById('fu-user').value.trim(),password=document.getElementById('fu-pass').value.trim(),firstName=document.getElementById('fu-fn').value.trim(),lastName=document.getElementById('fu-ln').value.trim(),role=document.getElementById('fu-role').value,empId=+document.getElementById('fu-emp').value||null;
+  const username=document.getElementById('fu-user').value.trim();
+  const password=document.getElementById('fu-pass').value.trim();
+  const firstName=document.getElementById('fu-fn').value.trim();
+  const lastName=document.getElementById('fu-ln').value.trim();
+  const role=document.getElementById('fu-role').value;
   if(!username||!role){alert('Username and role are required.');return;}
-  if(editId.user){const u=sysUsers.find(x=>x.id===editId.user);Object.assign(u,{username,password,firstName,lastName,role,empId});logAudit('EDIT','User',username,'Updated by superadmin');}
-  else{sysUsers.push({id:nU++,username,password,firstName,lastName,role,empId,deleted:false,blocked:false,registeredAt:now()});logAudit('ADD','User',username,'Created by superadmin');}
+  if(editId.user){
+    const u=sysUsers.find(x=>x.id===editId.user);
+    Object.assign(u,{username,password,firstName,lastName,role});
+    logAudit('EDIT','User',username,'Updated by superadmin');
+  } else {
+    // FIX (Bug 3): use nU++ for safe unique IDs instead of sysUsers.length+10
+    sysUsers.push({id:nU++,username,password,firstName,lastName,fullName:firstName+' '+lastName,role,empId:null,deleted:false,blocked:false,registeredAt:now(),approvedBy:CURRENT_USER});
+    logAudit('ADD','User',username,'Created by superadmin');
+  }
   cm('mo-user');renderUsers();renderUserStats();
 }
 
+// FIX: renderPending now includes role dropdown per pending card (approveWithRole support)
 function renderPending(){
   const q=(document.getElementById('pending-q').value||'').toLowerCase();
-  const data=registrations.filter(r=>r.status==='pending'&&(r.username+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')).toLowerCase().includes(q));
+  const data=registrations.filter(r=>r.status==='pending'&&(r.username+' '+r.firstName+' '+r.lastName+' '+(r.email||'')).toLowerCase().includes(q));
   const container=document.getElementById('pending-cards');
-  if(!data.length){container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';return;}
+  if(!data.length){
+    container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';
+    return;
+  }
   container.innerHTML=data.map(r=>{
-    const initials=(r.firstName[0]+r.lastName[0]).toUpperCase();
-    
+    const initials=((r.firstName||'?')[0]+(r.lastName||'?')[0]).toUpperCase();
     return '<div class="reg-card">'+
       '<div class="reg-avatar">'+initials+'</div>'+
       '<div class="reg-info">'+
         '<div class="reg-name">'+r.firstName+' '+r.lastName+'</div>'+
         '<div class="reg-meta">@'+r.username+' <span class="badge b-pending">Pending</span> Requested: <strong>'+r.requestedRole.toUpperCase()+'</strong></div>'+
-        '<div class="reg-detail">Email: '+r.email+' | Emp ID: '+(r.empNo||'--')+'</div>'+
+        '<div class="reg-detail">Email: '+(r.email||'--')+'</div>'+
         '<div class="reg-note">Submitted: '+r.submittedAt+'</div>'+
       '</div>'+
-      '<div class="reg-actions">'+
-        '<button class="btn btn-approve" onclick="approveReg('+r.id+')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approve'+
-        '</button>'+
-        '<button class="btn btn-reject" onclick="openRejectModal('+r.id+')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject'+
-        '</button>'+
-      '</div></div>';
+      // Role dropdown + approve/reject buttons
+      '<div class="reg-actions" style="flex-direction:column;align-items:flex-end;gap:6px">'+
+        '<select id="role-select-'+r.id+'" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:2px">'+
+          '<option value="user"'+(r.requestedRole==='user'?' selected':'')+'>User</option>'+
+          '<option value="admin"'+(r.requestedRole==='admin'?' selected':'')+'>Admin</option>'+
+        '</select>'+
+        '<div style="display:flex;gap:6px">'+
+          '<button class="btn btn-approve" onclick="approveWithRole('+r.id+')">'+
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approve'+
+          '</button>'+
+          '<button class="btn btn-reject" onclick="openRejectModal('+r.id+')">'+
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject'+
+          '</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   }).join('');
 }
-function approveReg(id){
+
+// Helper: reads role dropdown selection before approving
+function approveWithRole(id){
   const r=registrations.find(x=>x.id===id);if(!r)return;
-  askConfirm('Approve Registration','Approve registration for "'+r.username+'" as '+r.requestedRole.toUpperCase()+'?',function(){
-    r.status='approved';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();
-    sysUsers.push({id:sysUsers.length+10,username:r.username,firstName:r.firstName,lastName:r.lastName,role:r.requestedRole,empId:r.empId,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false});
-    logAudit('RESTORE','User',r.username,'Registration approved. Role: '+r.requestedRole);
-    renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
-  },'Approve','btn-success');
+  const select=document.getElementById('role-select-'+id);
+  if(select) r.requestedRole=select.value;
+  approveReg(id);
 }
-function openRejectModal(id){const r=registrations.find(x=>x.id===id);if(!r)return;pendingRejectId=id;document.getElementById('reject-note').value='';document.getElementById('reject-for').textContent='Rejecting: '+r.firstName+' '+r.lastName+' (@'+r.username+')';om('mo-reject');}
-function confirmReject(){const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;const note=document.getElementById('reject-note').value.trim()||'No reason provided.';r.status='rejected';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();r.note=note;logAudit('BLOCK','User',r.username,'Registration rejected: '+note);cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();}
+
+// FIX (Bug 4 write-back): approveReg now writes status/role/approved_by to Supabase profiles table
+async function approveReg(id){
+  const r=registrations.find(x=>x.id===id);if(!r)return;
+
+  const {data:{session}}=await sb.auth.getSession();
+  const adminId=session?.user?.id;
+  let approvedBy=CURRENT_USER;
+  if(adminId){
+    const {data:adminProfile}=await sb.from('profiles').select('full_name,email').eq('id',adminId).single();
+    if(adminProfile) approvedBy=adminProfile.full_name||adminProfile.email||CURRENT_USER;
+  }
+
+  askConfirm(
+    'Approve Registration',
+    'Approve "'+r.username+'" as '+r.requestedRole.toUpperCase()+'?',
+    async function(){
+      // Write approval to Supabase
+      const {error}=await sb.from('profiles').update({
+        status:'active',
+        role:r.requestedRole,
+        approved_by:approvedBy,
+        approved_at:new Date().toISOString(),
+      }).eq('id',r.supabaseId);
+
+      if(error){alert('Error approving user: '+error.message);return;}
+
+      // Update local state
+      r.status='approved';
+      r.reviewedBy=approvedBy;
+      r.reviewedAt=now();
+
+      // FIX (Bug 3): use nU++ for collision-safe IDs
+      sysUsers.push({
+        id:nU++,
+        username:r.username,
+        firstName:r.firstName,
+        lastName:r.lastName,
+        fullName:r.fullName||r.firstName+' '+r.lastName,
+        role:r.requestedRole,
+        empId:null,
+        registeredAt:r.submittedAt,
+        approvedBy:approvedBy,
+        deleted:false,
+        blocked:false,
+        supabaseId:r.supabaseId,
+      });
+
+      logAudit('RESTORE','User',r.username,'Registration approved. Role: '+r.requestedRole);
+      renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
+    },
+    'Approve','btn-success'
+  );
+}
+
+function openRejectModal(id){
+  const r=registrations.find(x=>x.id===id);if(!r)return;
+  pendingRejectId=id;
+  document.getElementById('reject-note').value='';
+  document.getElementById('reject-for').textContent='Rejecting: '+r.firstName+' '+r.lastName+' (@'+r.username+')';
+  om('mo-reject');
+}
+async function confirmReject(){
+  const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;
+  const note=document.getElementById('reject-note').value.trim()||'No reason provided.';
+
+  // Write rejection to Supabase
+  const {error}=await sb.from('profiles').update({
+    status:'rejected',
+    approved_by:CURRENT_USER,
+    approved_at:new Date().toISOString(),
+  }).eq('id',r.supabaseId);
+  if(error){alert('Error rejecting user: '+error.message);return;}
+
+  r.status='rejected';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();r.note=note;
+  logAudit('BLOCK','User',r.username,'Registration rejected: '+note);
+  cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();
+}
+
+// FIX (Bug 1): renderAllReg no longer references undefined `emp` variable
 function renderAllReg(){
   const q=(document.getElementById('allreg-q').value||'').toLowerCase();
   const fs=document.getElementById('allreg-fs').value;
-  let data=registrations.filter(r=>{if(fs&&r.status!==fs)return false;return (r.username+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')+' '+r.status).toLowerCase().includes(q);}).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
+  let data=registrations.filter(r=>{
+    if(fs&&r.status!==fs)return false;
+    return (r.username+' '+r.firstName+' '+r.lastName+' '+r.status).toLowerCase().includes(q);
+  }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
   const tb=document.getElementById('allreg-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="9" class="tbl-empty">No registrations found.</td></tr>';return;}
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
-    const sb2=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':'<span class="badge b-pending">Pending</span>';
-   
-    const actions=r.status==='pending'?
-      '<button class="btn btn-approve" style="padding:3px 7px;font-size:10px" onclick="approveReg('+r.id+')">Approve</button> <button class="btn btn-reject" style="padding:3px 7px;font-size:10px" onclick="openRejectModal('+r.id+')">Reject</button>':
-      r.status==='rejected'?'<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="reconsiderReg('+r.id+')">Reconsider</button>':'--';
+    const statusBadge=r.status==='approved'
+      ?'<span class="badge b-approved">Approved</span>'
+      :r.status==='rejected'
+      ?'<span class="badge b-rejected">Rejected</span>'
+      :'<span class="badge b-pending">Pending</span>';
+    const actions=r.status==='pending'
+      ?'<button class="btn btn-approve" style="padding:3px 7px;font-size:10px" onclick="approveWithRole('+r.id+')">Approve</button> '+
+        '<button class="btn btn-reject" style="padding:3px 7px;font-size:10px" onclick="openRejectModal('+r.id+')">Reject</button>'
+      :r.status==='rejected'
+      ?'<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="reconsiderReg('+r.id+')">Reconsider</button>'
+      :'--';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
-      '<td><strong>'+r.username+'</strong></td><td>'+r.firstName+' '+r.lastName+'</td>'+
+      '<td><strong>'+r.username+'</strong></td>'+
+      '<td>'+r.firstName+' '+r.lastName+'</td>'+
       '<td><span class="badge '+(r.requestedRole==='admin'||r.requestedRole==='superadmin'?'b-admin':'b-user')+'">'+r.requestedRole.toUpperCase()+'</span></td>'+
-      '<td>'+emp+'</td><td style="font-size:10px;color:var(--muted)">'+r.submittedAt+'</td>'+
-      '<td class="ns">'+sb2+'</td><td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+r.submittedAt+'</td>'+
+      '<td class="ns">'+statusBadge+'</td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td>'+
       '<td style="font-size:10px;color:var(--muted);max-width:140px">'+(r.note||'--')+'</td>'+
       '<td class="ns" style="white-space:nowrap">'+actions+'</td></tr>';
   }).join('');
 }
-function reconsiderReg(id){const r=registrations.find(x=>x.id===id);if(!r)return;askConfirm('Reconsider','Move "'+r.username+'" back to Pending?',function(){r.status='pending';r.reviewedBy=null;r.reviewedAt=null;r.note='';renderAllReg();renderPending();renderUserStats();updatePendingBadges();},'Reconsider','btn-primary');}
+function reconsiderReg(id){
+  const r=registrations.find(x=>x.id===id);if(!r)return;
+  askConfirm('Reconsider','Move "'+r.username+'" back to Pending?',function(){
+    r.status='pending';r.reviewedBy=null;r.reviewedAt=null;r.note='';
+    renderAllReg();renderPending();renderUserStats();updatePendingBadges();
+  },'Reconsider','btn-primary');
+}
 
 function viewEmpAudit(id){
   const e=gE(id);if(!e)return;
