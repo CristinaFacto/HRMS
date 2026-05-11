@@ -631,6 +631,24 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
+<!-- Blocked Notification Modal -->
+<div class="mo" id="mo-blocked">
+  <div class="modal" style="width:400px">
+    <div class="mh"><h3 style="color:#c0392b">⚠️ Account Blocked</h3></div>
+    <div class="mb">
+      <p style="font-size:13px;line-height:1.6;color:var(--text);margin-bottom:12px">
+        <strong>Your account has been blocked by an administrator.</strong>
+      </p>
+      <p style="font-size:12px;line-height:1.5;color:var(--muted)">
+        You will be redirected to the blocked page. You cannot access the system until this restriction is lifted. Please contact your administrator for more information.
+      </p>
+    </div>
+    <div class="mf">
+      <button class="btn btn-danger" style="width:100%" onclick="redirectToBlocked()">OK, Take Me There</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -689,11 +707,18 @@ function startStatusCheckListener(uid){
     const {data:prof}=await sb.from('profiles').select('status').eq('id',uid).single();
     if(prof && prof.status==='blocked'){
       clearInterval(statusCheckInterval);
-      showToast('Your account has been blocked. You are being signed out.','error',3000);
-      await sb.auth.signOut();
-      setTimeout(()=>window.location.href='blocked.html',1500);
+      // Show blocked notification modal
+      om('mo-blocked');
+      // Auto redirect after 5 seconds if user doesn't click
+      setTimeout(()=>redirectToBlocked(),5000);
     }
   },5000);
+}
+
+// Redirect to blocked page and sign out
+async function redirectToBlocked(){
+  await sb.auth.signOut();
+  window.location.href='blocked.html';
 }
 
 let departments=[], jobs=[], employees=[], jobHistory=[], sysUsers=[], registrations=[], auditLog=[];
