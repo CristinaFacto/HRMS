@@ -690,7 +690,7 @@ async function loadAllData(){
 
     // FIX (Bug 4): Build registrations[] from inactive profiles
     registrations=(userRes.data||[])
-      .filter(u=>u.status==='inactive')
+      .filter(u=>u.status==='pending')
       .map((u,idx)=>({
         id:idx+1,
         username:u.username||u.email||'',
