@@ -187,11 +187,15 @@
   }
 
   // ── Login ──────────────────────────────────────────────────────
-  async function handleLogin(email, password) {
-    setLoading(true);
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+// CURRENT — only checks role, ignores status
+async function handleLogin(email, password) { ... redirects by role only }
 
-    if (error) { setLoading(false); showMessage(error.message); return; }
+// NEEDED — checks status FIRST
+if (profile.status !== 'active') {
+  window.location.href = 'waiting.html';  // ← stop here if not approved
+  return;
+}
+// then redirect by role
 
     // ── Fetch role from profiles table ──
     const { data: profile, error: profileError } = await sb
