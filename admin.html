@@ -666,7 +666,7 @@ function startStatusCheckListener(uid){
       }
       if(prof){
         console.log('Current status:', prof.status);
-        if(prof.status === 'inactive'){
+        if(prof.status === 'blocked'){
           clearInterval(statusCheckInterval);
           console.log('🚫 BLOCKED! Showing modal...');
           const modal = document.getElementById('mo-blocked');
