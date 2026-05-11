@@ -654,6 +654,7 @@ function showToast(msg, type='info', duration=3000){
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
+let statusCheckInterval=null;
 async function initAuth(){
   const { data: { session } } = await sb.auth.getSession();
   if(session && session.user){
@@ -671,11 +672,28 @@ async function initAuth(){
       CURRENT_USER_EMAIL = prof.email || '';
       document.getElementById('sb-username').textContent = display;
       document.getElementById('topbar-username').textContent = display;
+      
+      // ── Start periodic status check to catch real-time blocks ──
+      startStatusCheckListener(uid);
     }
   } else {
     // Try anonymous session for demo
     await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   }
+}
+
+// ── Check status every 5 seconds to catch real-time blocks ──
+function startStatusCheckListener(uid){
+  if(statusCheckInterval)clearInterval(statusCheckInterval);
+  statusCheckInterval=setInterval(async ()=>{
+    const {data:prof}=await sb.from('profiles').select('status').eq('id',uid).single();
+    if(prof && prof.status==='blocked'){
+      clearInterval(statusCheckInterval);
+      showToast('Your account has been blocked. You are being signed out.','error',3000);
+      await sb.auth.signOut();
+      setTimeout(()=>window.location.href='index.html#login',1500);
+    }
+  },5000);
 }
 
 let departments=[], jobs=[], employees=[], jobHistory=[], sysUsers=[], registrations=[], auditLog=[];
@@ -1097,6 +1115,14 @@ async function toggleBlockUser(id){
               : 'User "'+u.email+'" has been unblocked. They can log in again.',
             willBlock?'error':'success'
           );
+          // ── If blocking and user is currently logged in, sign them out immediately ──
+          if(willBlock){
+            const {data:{session}}=await sb.auth.getSession();
+            if(session && session.user && session.user.id===u.supabaseId){
+              await sb.auth.signOut();
+              window.location.href='index.html#login';
+            }
+          }
         }
       } else {
         showToast('No Supabase ID — blocked locally only.','error',4000);
