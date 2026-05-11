@@ -587,6 +587,24 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
+<!-- Blocked Notification Modal -->
+<div class="mo" id="mo-blocked">
+  <div class="modal" style="width:400px">
+    <div class="mh"><h3 style="color:#c0392b">⚠️ Account Blocked</h3></div>
+    <div class="mb">
+      <p style="font-size:13px;line-height:1.6;color:var(--text);margin-bottom:12px">
+        <strong>You have been blocked by an administrator.</strong>
+      </p>
+      <p style="font-size:12px;line-height:1.5;color:var(--muted)">
+        You will be redirected to the blocked page. You cannot access the system until this restriction is lifted. Please contact your administrator for more information.
+      </p>
+    </div>
+    <div class="mf">
+      <button class="btn btn-danger" style="width:100%" onclick="redirectToBlocked()">OK, Take Me There</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
@@ -595,20 +613,78 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let CURRENT_USER = 'admin';
+let CURRENT_USER_EMAIL = '';
+let statusCheckInterval = null;
 
 async function initAuth(){
   await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   const { data: { session } } = await sb.auth.getSession();
   if(session && session.user){
     const uid = session.user.id;
-    const { data: prof } = await sb.from('profiles').select('username,email,full_name').eq('id', uid).single();
+    const { data: prof } = await sb.from('profiles').select('username,email,full_name,status').eq('id', uid).single();
     if(prof){
+      // Block check: if user is inactive, sign out and redirect
+      if(prof.status === 'inactive'){
+        await sb.auth.signOut();
+        window.location.href = 'blocked.html';
+        return;
+      }
       const display = prof.username || prof.full_name || prof.email || 'admin';
       CURRENT_USER = display;
+      CURRENT_USER_EMAIL = prof.email || '';
       document.getElementById('sb-username').textContent = display;
       document.getElementById('topbar-username').textContent = display;
+
+      // ── Start periodic status check to catch real-time blocks ──
+      startStatusCheckListener(uid);
     }
   }
+}
+
+// ── Check status every 3 seconds to catch real-time blocks ──
+function startStatusCheckListener(uid){
+  if(statusCheckInterval) clearInterval(statusCheckInterval);
+  console.log('Starting status check for user:', uid);
+  statusCheckInterval = setInterval(async ()=>{
+    try{
+      const {data:prof,error} = await sb.from('profiles').select('status').eq('id',uid).single();
+      if(error){
+        console.warn('Status check error:',error.message);
+        return;
+      }
+      if(prof){
+        console.log('Current status:', prof.status);
+        if(prof.status === 'inactive'){
+          clearInterval(statusCheckInterval);
+          console.log('🚫 BLOCKED! Showing modal...');
+          const modal = document.getElementById('mo-blocked');
+          if(modal){
+            console.log('Modal found, adding open class');
+            modal.classList.add('open');
+            setTimeout(()=>{
+              console.log('Auto redirecting...');
+              redirectToBlocked();
+            },6000);
+          } else {
+            console.error('❌ Modal mo-blocked not found!');
+            setTimeout(()=>redirectToBlocked(),2000);
+          }
+        }
+      }
+    }catch(err){
+      console.error('Status check exception:',err);
+    }
+  },3000);
+}
+
+// Redirect to blocked page and sign out
+async function redirectToBlocked(){
+  try{
+    console.log('Signing out user...');
+    await sb.auth.signOut().catch(e=>console.warn('Signout error:',e));
+  }catch(err){}
+  console.log('Redirecting to blocked.html');
+  window.location.href='blocked.html';
 }
 
 let departments=[], jobs=[], employees=[], jobHistory=[], sysUsers=[], registrations=[], auditLog=[];
@@ -1045,10 +1121,36 @@ function blockUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
   if(u.role==='admin'||u.role==='superadmin'){alert('You cannot block Admin or Super Admin accounts.');return;}
   const action=u.blocked?'Unblock':'Block';
-  askConfirm(action+' User',action+' account "'+u.username+'"?',function(){
-    u.blocked=!u.blocked;
-    logAudit(u.blocked?'BLOCK':'RESTORE','User',u.username,(u.blocked?'Blocked':'Unblocked')+' by admin');
-    renderUsers();renderUserStats();updatePendingBadges();
+  askConfirm(action+' User',action+' account "'+u.username+'"?',async function(){
+    const willBlock = !u.blocked;
+    const newStatus = willBlock ? 'inactive' : 'active';
+
+    // ── Write to Supabase profiles table ─────────────────────────────────
+    if(u.supabaseId){
+      const {error} = await sb.from('profiles')
+        .update({ status: newStatus })
+        .eq('id', u.supabaseId);
+
+      if(error){
+        alert('Supabase error: '+error.message+'. Blocked locally only.');
+        // Proceed with local update anyway
+      } else {
+        alert(willBlock
+          ? 'User "'+u.username+'" has been blocked. They cannot log in.'
+          : 'User "'+u.username+'" has been unblocked. They can log in again.'
+        );
+      }
+    } else {
+      alert('No Supabase ID — blocked locally only.');
+    }
+
+    // ── Update local state ────────────────────────────────────────────────
+    u.blocked = willBlock;
+    logAudit(willBlock?'BLOCK':'RESTORE','User',u.username,(willBlock?'Blocked':'Unblocked')+' by admin');
+
+    renderUsers();
+    renderUserStats();
+    updatePendingBadges();
   },action,u.blocked?'btn-success':'btn-block');
 }
 
