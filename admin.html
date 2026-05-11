@@ -693,6 +693,7 @@ async function loadAllData(){
       }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
+    updatePendingBadges();
   }catch(err){alert('Fatal error loading data: '+err.message);}
 }
 
