@@ -59,7 +59,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display
 .filter-row input,.filter-row select{font-family:Arial,sans-serif;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--text);outline:none}
 .filter-row input:focus,.filter-row select:focus{border-color:var(--primary)}
 .filter-row input{min-width:190px}
-.del-toggle{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}
 .tw{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead tr{background:var(--primary);color:#fff}
@@ -153,6 +152,11 @@ tbody td{padding:8px 12px;vertical-align:middle}
 .reg-info .reg-detail{font-size:11px;color:var(--muted);margin-top:1px}
 .reg-actions{display:flex;gap:6px;flex-wrap:wrap}
 .reg-note{font-size:11px;color:var(--muted);font-style:italic;margin-top:4px}
+/* Toast notification */
+.toast{position:fixed;bottom:24px;right:24px;background:#1E3A5F;color:#fff;padding:10px 18px;border-radius:4px;font-size:12px;font-family:Arial,sans-serif;z-index:9999;display:none;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.toast.show{display:flex}
+.toast.success{background:#166534}
+.toast.error{background:#c0392b}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:#c1c8d0;border-radius:3px}
 </style>
@@ -411,7 +415,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div id="um-accounts" class="tab-panel active">
         <div class="stats" id="user-stats"></div>
-        <!-- FIX: Added sort A-Z / Z-A to User Management -->
         <div class="filter-row">
           <input type="text" id="users-q" placeholder="Search users..." oninput="renderUsers()"/>
           <select id="users-fr" onchange="renderUsers()">
@@ -440,7 +443,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div id="pending-cards"></div>
       </div>
       <div id="um-all" class="tab-panel">
-        <!-- FIX: Removed Note column from All Registrations -->
         <div class="filter-row">
           <input type="text" id="allreg-q" placeholder="Search registrations..." oninput="renderAllReg()"/>
           <select id="allreg-fs" onchange="renderAllReg()">
@@ -483,7 +485,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <input id="fe-empno" placeholder="12345" maxlength="5" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
           <span style="font-size:10px;color:var(--muted);margin-top:3px;display:block">Please only select numbers. (5 digits)</span>
         </div>
-        <div class="fr"><label>Email</label><input type="email" id="fe-user" placeholder="email@company.com"/></div>
+        <div class="fr"><label>Username</label><input type="text" id="fe-user" placeholder="username"/></div>
       </div>
       <div class="f2">
         <div class="fr"><label>Last Name</label><input id="fe-ln" placeholder="Last name"/></div>
@@ -568,7 +570,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- FIX: Removed password field from Edit User modal - only shown on Add -->
 <div class="mo" id="mo-user">
   <div class="modal" style="width:420px">
     <div class="mh"><h3 id="mo-user-title">Add User</h3><button class="mc-btn" onclick="cm('mo-user')">x</button></div>
@@ -630,6 +631,9 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
@@ -638,19 +642,39 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let CURRENT_USER = 'superadmin';
+let CURRENT_USER_EMAIL = '';
 
+// ── Toast helper ─────────────────────────────────────────────────────────────
+function showToast(msg, type='info', duration=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(type==='success'?'success':type==='error'?'error':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
 async function initAuth(){
-  await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   const { data: { session } } = await sb.auth.getSession();
   if(session && session.user){
     const uid = session.user.id;
-    const { data: prof } = await sb.from('profiles').select('username,email,full_name').eq('id', uid).single();
+    const { data: prof } = await sb.from('profiles').select('username,email,full_name,role,status').eq('id', uid).single();
     if(prof){
+      // Block check: if user is blocked, sign out and redirect
+      if(prof.status === 'blocked'){
+        await sb.auth.signOut();
+        window.location.href = 'index.html#blocked';
+        return;
+      }
       const display = prof.username || prof.full_name || prof.email || 'superadmin';
       CURRENT_USER = display;
+      CURRENT_USER_EMAIL = prof.email || '';
       document.getElementById('sb-username').textContent = display;
       document.getElementById('topbar-username').textContent = display;
     }
+  } else {
+    // Try anonymous session for demo
+    await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   }
 }
 
@@ -701,6 +725,7 @@ async function loadAllData(){
       const emp=employees.find(e=>e.empNo===h.empNo);
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
+    // Load all profiles — separate active accounts from registrations
     sysUsers=(userRes.data||[])
       .filter(u=>u.status==='active'||u.status==='approved'||u.status==='blocked')
       .map((u,idx)=>({
@@ -727,7 +752,7 @@ async function loadAllData(){
         email:u.email||'',
         empNo:u.emp_id||'',
         requestedRole:u.requested_role||u.role||'user',
-        status:(u.status==='pending')?'pending':(u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='approved'||u.status==='active')?'approved':'pending',
+        status:(u.status==='pending'||u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='approved'||u.status==='active'||u.status==='blocked')?'approved':'pending',
         submittedAt:u.created_at||'',
         reviewedBy:u.approved_by||null,
         note:'',
@@ -736,7 +761,9 @@ async function loadAllData(){
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
     updatePendingBadges();
-  }catch(err){alert('Fatal error loading data: '+err.message);}
+  }catch(err){
+    showToast('Error loading data: '+err.message,'error',5000);
+  }
 }
 
 const gD=id=>departments.find(d=>d.id===id);
@@ -749,7 +776,7 @@ const jc=id=>{const j=gJ(id);return j?j.code:'--';};
 const en=id=>{const e=gE(Number(id));return e?(e.lastName+', '+e.firstName):'--';};
 const ini=e=>(e.firstName[0]+e.lastName[0]).toUpperCase();
 const fmt=d=>d?d:'--';
-const fmtSal=s=>s?'P'+Number(s).toLocaleString():'--';
+const fmtSal=s=>s?'₱'+Number(s).toLocaleString():'--';
 const now=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
 function logAudit(action,entity,record,note){auditLog.unshift({id:nextAuditId++,timestamp:now(),user:CURRENT_USER,action,entity,record,note:note||''});}
 function pendingCount(){return registrations.filter(r=>r.status==='pending').length;}
@@ -859,7 +886,7 @@ function renderEmp(){
       '<td class="ns" style="white-space:nowrap">'+
         '<button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf('+e.id+')">View</button> '+
         '<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditEmp('+e.id+')">Edit</button> '+
-        ' <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="softDeleteOneEmp('+e.id+')">Delete</button>'+
+        '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="softDeleteOneEmp('+e.id+')">Delete</button>'+
         (e.deleted||e.blocked?' <button class="btn btn-danger" style="padding:3px 7px;font-size:10px;background:#7f1d1d" onclick="permDeleteOneEmp('+e.id+')">Perm. Del</button>':'')+
       '</td></tr>';
   }).join('');
@@ -991,7 +1018,6 @@ function switchUMTab(btn,panel){
   if(panel==='um-all')renderAllReg();
 }
 
-// FIX: Block button now updates Supabase status to 'blocked'/'active' to actually restrict access
 function renderUsers(){
   const q=document.getElementById('users-q').value.toLowerCase();
   const fr=document.getElementById('users-fr').value;
@@ -1011,7 +1037,8 @@ function renderUsers(){
   tb.innerHTML=data.map(function(u){
     const roleClass=u.role==='superadmin'?'b-sa':u.role==='admin'?'b-admin':'b-user';
     let actionBtns='';
-    if(u.email===CURRENT_USER){
+    const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
+    if(isSelf){
       actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">You</span>';
     }else if(u.role==='superadmin'){
       actionBtns='<span style="font-size:10px;color:var(--muted);font-style:italic">Protected (Super Admin)</span>';
@@ -1033,46 +1060,89 @@ function renderUsers(){
   }).join('');
 }
 
-// FIX: Block now writes to Supabase so the user actually cannot log in
+// ── BLOCK / UNBLOCK ── THE CRITICAL FIX ──────────────────────────────────────
+// Sets status='blocked' or status='active' in the profiles table.
+// Your login page MUST check this status on sign-in and refuse entry if blocked.
 async function toggleBlockUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  if(u.email===CURRENT_USER){alert('You cannot block your own account.');return;}
-  if(u.role==='superadmin'){alert('You cannot block another Super Admin account.');return;}
+  const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
+  if(isSelf){showToast('You cannot block your own account.','error');return;}
+  if(u.role==='superadmin'){showToast('You cannot block another Super Admin account.','error');return;}
   const willBlock=!u.blocked;
   const newStatus=willBlock?'blocked':'active';
   const action=willBlock?'Block':'Unblock';
-  askConfirm(action+' User',action+' account "'+u.email+'"? '+(willBlock?'They will not be able to log in.':'They will be able to log in again.'),async function(){
-    if(u.supabaseId){
-      const {error}=await sb.from('profiles').update({status:newStatus}).eq('id',u.supabaseId);
-      if(error){alert('Error updating user status: '+error.message);return;}
-    }
-    u.blocked=willBlock;
-    logAudit(willBlock?'BLOCK':'RESTORE','User',u.email,(willBlock?'Blocked':'Unblocked')+' by superadmin');
-    renderUsers();renderUserStats();updatePendingBadges();
-  },action,willBlock?'btn-block':'btn-success');
+
+  askConfirm(
+    action+' User',
+    action+' account "'+u.email+'"? '+(willBlock?'They will immediately lose access to the system and cannot log in.':'They will be able to log in again.'),
+    async function(){
+      // ── Write to Supabase profiles table ─────────────────────────────────
+      // This is what actually prevents login — your login page must check status field.
+      if(u.supabaseId){
+        const {error}=await sb.from('profiles')
+          .update({
+            status: newStatus,
+            blocked_by: willBlock ? CURRENT_USER : null,
+            blocked_at: willBlock ? new Date().toISOString() : null,
+          })
+          .eq('id', u.supabaseId);
+
+        if(error){
+          showToast('Supabase error: '+error.message+'. Blocked locally only.','error',5000);
+          // Proceed with local update anyway so UI reflects intent
+        } else {
+          showToast(
+            willBlock
+              ? 'User "'+u.email+'" has been blocked. They cannot log in.'
+              : 'User "'+u.email+'" has been unblocked. They can log in again.',
+            willBlock?'error':'success'
+          );
+        }
+      } else {
+        showToast('No Supabase ID — blocked locally only.','error',4000);
+      }
+
+      // ── Update local state ────────────────────────────────────────────────
+      u.blocked=willBlock;
+
+      // Also update registrations list so All Registrations stays consistent
+      const reg=registrations.find(r=>r.supabaseId===u.supabaseId);
+      // (no status change needed here — approved stays approved)
+
+      logAudit(willBlock?'BLOCK':'RESTORE','User',u.email,
+        (willBlock?'Blocked':'Unblocked')+' by '+CURRENT_USER+'. Supabase status set to '+newStatus+'.');
+
+      renderUsers();
+      renderUserStats();
+      updatePendingBadges();
+    },
+    action,
+    willBlock?'btn-block':'btn-success'
+  );
 }
 
-function deleteUser(id){
+async function deleteUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  if(u.email===CURRENT_USER){alert('You cannot delete your own account.');return;}
-  if(u.role==='superadmin'){alert('You cannot delete another Super Admin account.');return;}
-  askConfirm('Delete User','Permanently delete user "'+u.email+'"?',async function(){
+  const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
+  if(isSelf){showToast('You cannot delete your own account.','error');return;}
+  if(u.role==='superadmin'){showToast('You cannot delete another Super Admin account.','error');return;}
+  askConfirm('Delete User','Permanently delete user "'+u.email+'"? This cannot be undone.',async function(){
     if(u.supabaseId){
-      await sb.from('profiles').update({status:'inactive'}).eq('id',u.supabaseId);
+      const {error}=await sb.from('profiles').update({status:'inactive'}).eq('id',u.supabaseId);
+      if(error)showToast('Supabase error: '+error.message,'error',4000);
+      else showToast('User deleted successfully.','success');
     }
-    logAudit('DELETE','User',u.email,'Permanently deleted by superadmin');
+    logAudit('DELETE','User',u.email,'Permanently deleted by '+CURRENT_USER);
     const idx=sysUsers.findIndex(x=>x.id===id);if(idx>-1)sysUsers.splice(idx,1);
     renderUsers();renderUserStats();updatePendingBadges();
   },'Delete','btn-danger');
 }
 
-// FIX: openAddUser shows password field; openEditUser hides it
 function openAddUser(){
   editId.user=null;
   document.getElementById('mo-user-title').textContent='Add User';
   ['fu-user','fu-pass','fu-fn','fu-ln'].forEach(f=>document.getElementById(f).value='');
   document.getElementById('fu-role').value='';
-  // Show password row for new users
   document.getElementById('fu-pass-row').style.display='';
   om('mo-user');
 }
@@ -1085,7 +1155,6 @@ function openEditUser(id){
   document.getElementById('fu-fn').value=u.firstName;
   document.getElementById('fu-ln').value=u.lastName;
   document.getElementById('fu-role').value=u.role;
-  // Hide password row when editing
   document.getElementById('fu-pass-row').style.display='none';
   om('mo-user');
 }
@@ -1099,10 +1168,10 @@ function saveUser(){
   if(editId.user){
     const u=sysUsers.find(x=>x.id===editId.user);
     Object.assign(u,{email,firstName,lastName,role,fullName:firstName+' '+lastName});
-    logAudit('EDIT','User',email,'Updated by superadmin');
+    logAudit('EDIT','User',email,'Updated by '+CURRENT_USER);
   }else{
     sysUsers.push({id:nU++,email,password,firstName,lastName,fullName:firstName+' '+lastName,role,empId:null,deleted:false,blocked:false,registeredAt:now(),approvedBy:CURRENT_USER});
-    logAudit('ADD','User',email,'Created by superadmin');
+    logAudit('ADD','User',email,'Created by '+CURRENT_USER);
   }
   cm('mo-user');renderUsers();renderUserStats();
 }
@@ -1161,10 +1230,11 @@ async function approveReg(id){
       const {error}=await sb.from('profiles').update({
         status:'active',role:r.requestedRole,approved_by:CURRENT_USER,approved_at:new Date().toISOString(),
       }).eq('id',r.supabaseId);
-      if(error){alert('Error approving user: '+error.message);return;}
+      if(error){showToast('Error approving user: '+error.message,'error',4000);return;}
       r.status='approved';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();
-      sysUsers.push({id:nU++,username:r.username,firstName:r.firstName,lastName:r.lastName,fullName:r.fullName,role:r.requestedRole,empId:null,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false,supabaseId:r.supabaseId});
+      sysUsers.push({id:nU++,username:r.username,firstName:r.firstName,lastName:r.lastName,fullName:r.fullName,email:r.email,role:r.requestedRole,empId:null,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false,supabaseId:r.supabaseId});
       logAudit('RESTORE','User',r.fullName||r.username,'Approved as '+r.requestedRole+' by '+CURRENT_USER);
+      showToast('User approved successfully.','success');
       renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
     },
     'Approve','btn-success'
@@ -1181,13 +1251,13 @@ async function confirmReject(){
   const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;
   const note=document.getElementById('reject-note').value.trim()||'No reason provided.';
   const {error}=await sb.from('profiles').update({status:'rejected',approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('id',r.supabaseId);
-  if(error){alert('Error rejecting user: '+error.message);return;}
+  if(error){showToast('Error rejecting user: '+error.message,'error',4000);return;}
   r.status='rejected';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();r.note=note;
   logAudit('BLOCK','User',r.fullName||r.username,'Registration rejected: '+note);
+  showToast('Registration rejected.','error');
   cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();
 }
 
-// FIX: Removed Note column from All Registrations table
 function renderAllReg(){
   const q=(document.getElementById('allreg-q').value||'').toLowerCase();
   const fs=document.getElementById('allreg-fs').value;
@@ -1204,8 +1274,6 @@ function renderAllReg(){
       ?'<span class="badge b-approved">Approved</span>'
       :r.status==='rejected'
       ?'<span class="badge b-rejected">Rejected</span>'
-      :r.status==='inactive'
-      ?'<span class="badge b-blk">Inactive</span>'
       :'<span class="badge b-pending">Pending</span>';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td>'+(r.fullName||((r.firstName+' '+r.lastName).trim())||'--')+'</td>'+
@@ -1272,7 +1340,36 @@ function permDeleteProfEmp(id){const e=gE(id);askConfirm('Permanently Delete','T
 
 function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',async function(){await sb.auth.signOut();window.location.href='index.html#login';},'Log Out','btn-danger');}
 
+// ── INIT ──────────────────────────────────────────────────────────────────────
 initAuth().then(loadAllData);
 </script>
+
+<!--
+  ════════════════════════════════════════════════════════════════════════
+  LOGIN PAGE INTEGRATION REQUIRED
+  ════════════════════════════════════════════════════════════════════════
+  For the block to actually prevent access, your LOGIN PAGE (index.html)
+  must check the user's status after sign-in. Add this to your login flow:
+
+  const { data: { user } } = await sb.auth.signInWithPassword({ email, password });
+  if (user) {
+    const { data: profile } = await sb.from('profiles')
+      .select('status, role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.status === 'blocked') {
+      await sb.auth.signOut();
+      showError('Your account has been blocked. Contact your administrator.');
+      return;
+    }
+
+    // Redirect based on role
+    if (profile?.role === 'superadmin') window.location.href = 'superadmin.html';
+    else if (profile?.role === 'admin')  window.location.href = 'admin.html';
+    else                                  window.location.href = 'dashboard.html';
+  }
+  ════════════════════════════════════════════════════════════════════════
+-->
 </body>
 </html>
