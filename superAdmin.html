@@ -672,12 +672,17 @@ async function loadAllData(){
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
     sysUsers=(userRes.data||[]).map((u,idx)=>({
-      id:idx+1,username:u.username||'',password:u.password||'',
-      firstName:u.first_name||u.firstName||'',lastName:u.last_name||u.lastName||'',
-      role:u.role||'user',empId:u.emp_id||u.empId||null,
-      registeredAt:u.registered_at||u.registeredAt||'',approvedBy:u.approved_by||u.approvedBy||'',
-      deleted:u.deleted||false,blocked:u.blocked||false
-    }));
+  id:idx+1,
+  username:u.username||'',
+  firstName:u.first_name||'',
+  lastName:u.last_name||'',
+  role:(u.role||'user').toLowerCase(),
+  empId:null,
+  registeredAt:u.created_at||'',
+  approvedBy:'',
+  deleted:false,
+  blocked:u.status==='blocked',
+}));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
   }catch(err){alert('Fatal error loading data: '+err.message);}
