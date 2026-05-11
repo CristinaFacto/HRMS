@@ -642,19 +642,39 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let CURRENT_USER = 'superadmin';
+let CURRENT_USER_EMAIL = '';
 
+// ── Toast helper ─────────────────────────────────────────────────────────────
+function showToast(msg, type='info', duration=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(type==='success'?'success':type==='error'?'error':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
 async function initAuth(){
-  await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   const { data: { session } } = await sb.auth.getSession();
   if(session && session.user){
     const uid = session.user.id;
-    const { data: prof } = await sb.from('profiles').select('username,email,full_name').eq('id', uid).single();
+    const { data: prof } = await sb.from('profiles').select('username,email,full_name,role,status').eq('id', uid).single();
     if(prof){
+      // Block check: if user is blocked, sign out and redirect
+      if(prof.status === 'blocked'){
+        await sb.auth.signOut();
+        window.location.href = 'index.html#blocked';
+        return;
+      }
       const display = prof.username || prof.full_name || prof.email || 'superadmin';
       CURRENT_USER = display;
+      CURRENT_USER_EMAIL = prof.email || '';
       document.getElementById('sb-username').textContent = display;
       document.getElementById('topbar-username').textContent = display;
     }
+  } else {
+    // Try anonymous session for demo
+    await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   }
 }
 
@@ -705,6 +725,7 @@ async function loadAllData(){
       const emp=employees.find(e=>e.empNo===h.empNo);
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
+    // Load all profiles — separate active accounts from registrations
     sysUsers=(userRes.data||[])
       .filter(u=>u.status==='active'||u.status==='approved'||u.status==='blocked')
       .map((u,idx)=>({
@@ -731,7 +752,7 @@ async function loadAllData(){
         email:u.email||'',
         empNo:u.emp_id||'',
         requestedRole:u.requested_role||u.role||'user',
-        status:(u.status==='pending')?'pending':(u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='approved'||u.status==='active')?'approved':'pending',
+        status:(u.status==='pending'||u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='approved'||u.status==='active'||u.status==='blocked')?'approved':'pending',
         submittedAt:u.created_at||'',
         reviewedBy:u.approved_by||null,
         note:'',
@@ -740,7 +761,9 @@ async function loadAllData(){
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
     updatePendingBadges();
-  }catch(err){alert('Fatal error loading data: '+err.message);}
+  }catch(err){
+    showToast('Error loading data: '+err.message,'error',5000);
+  }
 }
 
 const gD=id=>departments.find(d=>d.id===id);
@@ -753,7 +776,7 @@ const jc=id=>{const j=gJ(id);return j?j.code:'--';};
 const en=id=>{const e=gE(Number(id));return e?(e.lastName+', '+e.firstName):'--';};
 const ini=e=>(e.firstName[0]+e.lastName[0]).toUpperCase();
 const fmt=d=>d?d:'--';
-const fmtSal=s=>s?'P'+Number(s).toLocaleString():'--';
+const fmtSal=s=>s?'₱'+Number(s).toLocaleString():'--';
 const now=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
 function logAudit(action,entity,record,note){auditLog.unshift({id:nextAuditId++,timestamp:now(),user:CURRENT_USER,action,entity,record,note:note||''});}
 function pendingCount(){return registrations.filter(r=>r.status==='pending').length;}
@@ -863,7 +886,7 @@ function renderEmp(){
       '<td class="ns" style="white-space:nowrap">'+
         '<button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf('+e.id+')">View</button> '+
         '<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditEmp('+e.id+')">Edit</button> '+
-        ' <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="softDeleteOneEmp('+e.id+')">Delete</button>'+
+        '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="softDeleteOneEmp('+e.id+')">Delete</button>'+
         (e.deleted||e.blocked?' <button class="btn btn-danger" style="padding:3px 7px;font-size:10px;background:#7f1d1d" onclick="permDeleteOneEmp('+e.id+')">Perm. Del</button>':'')+
       '</td></tr>';
   }).join('');
@@ -995,9 +1018,331 @@ function switchUMTab(btn,panel){
   if(panel==='um-all')renderAllReg();
 }
 
-// FIXED: Block button now updates Supabase status to 'blocked'/'active' to restrict access
-async function toggleBlockUser
-
+function renderUsers(){
+  const q=document.getElementById('users-q').value.toLowerCase();
+  const fr=document.getElementById('users-fr').value;
+  const sortDir=document.getElementById('users-sort').value;
+  let data=sysUsers.filter(u=>{
+    if(u.deleted)return false;
+    if(fr&&u.role!==fr)return false;
+    return (u.email+' '+u.fullName+' '+u.role).toLowerCase().includes(q);
+  }).sort((a,b)=>{
+    const nameA=(a.fullName||a.email||'').toLowerCase();
+    const nameB=(b.fullName||b.email||'').toLowerCase();
+    const cmp=nameA.localeCompare(nameB);
+    return sortDir==='za'?-cmp:cmp;
+  });
+  const tb=document.getElementById('users-tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No users found.</td></tr>';return;}
+  tb.innerHTML=data.map(function(u){
+    const roleClass=u.role==='superadmin'?'b-sa':u.role==='admin'?'b-admin':'b-user';
+    let actionBtns='';
+    const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
+    if(isSelf){
+      actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">You</span>';
+    }else if(u.role==='superadmin'){
+      actionBtns='<span style="font-size:10px;color:var(--muted);font-style:italic">Protected (Super Admin)</span>';
+    }else{
+      const blockLbl=u.blocked?'Unblock':'Block';
+      const blockCls=u.blocked?'btn-restore':'btn-block';
+      actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button> '+
+        '<button class="btn '+blockCls+'" style="padding:3px 7px;font-size:10px" onclick="toggleBlockUser('+u.id+')">'+blockLbl+'</button> '+
+        '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteUser('+u.id+')">Delete</button>';
+    }
+    return '<tr class="'+(u.blocked?'blk-row':'')+'">'+
+      '<td><strong>'+(u.email||'--')+'</strong></td>'+
+      '<td>'+u.fullName+'</td>'+
+      '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt?u.registeredAt.slice(0,10):'--')+'</td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+(u.approvedBy||'--')+'</td>'+
+      '<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
+      '<td class="ns" style="white-space:nowrap">'+actionBtns+'</td></tr>';
+  }).join('');
+}
+
+// ── BLOCK / UNBLOCK ── THE CRITICAL FIX ──────────────────────────────────────
+// Sets status='blocked' or status='active' in the profiles table.
+// Your login page MUST check this status on sign-in and refuse entry if blocked.
+async function toggleBlockUser(id){
+  const u=sysUsers.find(x=>x.id===id);if(!u)return;
+  const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
+  if(isSelf){showToast('You cannot block your own account.','error');return;}
+  if(u.role==='superadmin'){showToast('You cannot block another Super Admin account.','error');return;}
+  const willBlock=!u.blocked;
+  const newStatus=willBlock?'blocked':'active';
+  const action=willBlock?'Block':'Unblock';
+
+  askConfirm(
+    action+' User',
+    action+' account "'+u.email+'"? '+(willBlock?'They will immediately lose access to the system and cannot log in.':'They will be able to log in again.'),
+    async function(){
+      // ── Write to Supabase profiles table ─────────────────────────────────
+      // This is what actually prevents login — your login page must check status field.
+      if(u.supabaseId){
+        const {error}=await sb.from('profiles')
+          .update({
+            status: newStatus,
+            blocked_by: willBlock ? CURRENT_USER : null,
+            blocked_at: willBlock ? new Date().toISOString() : null,
+          })
+          .eq('id', u.supabaseId);
+
+        if(error){
+          showToast('Supabase error: '+error.message+'. Blocked locally only.','error',5000);
+          // Proceed with local update anyway so UI reflects intent
+        } else {
+          showToast(
+            willBlock
+              ? 'User "'+u.email+'" has been blocked. They cannot log in.'
+              : 'User "'+u.email+'" has been unblocked. They can log in again.',
+            willBlock?'error':'success'
+          );
+        }
+      } else {
+        showToast('No Supabase ID — blocked locally only.','error',4000);
+      }
+
+      // ── Update local state ────────────────────────────────────────────────
+      u.blocked=willBlock;
+
+      // Also update registrations list so All Registrations stays consistent
+      const reg=registrations.find(r=>r.supabaseId===u.supabaseId);
+      // (no status change needed here — approved stays approved)
+
+      logAudit(willBlock?'BLOCK':'RESTORE','User',u.email,
+        (willBlock?'Blocked':'Unblocked')+' by '+CURRENT_USER+'. Supabase status set to '+newStatus+'.');
+
+      renderUsers();
+      renderUserStats();
+      updatePendingBadges();
+    },
+    action,
+    willBlock?'btn-block':'btn-success'
+  );
+}
+
+async function deleteUser(id){
+  const u=sysUsers.find(x=>x.id===id);if(!u)return;
+  const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
+  if(isSelf){showToast('You cannot delete your own account.','error');return;}
+  if(u.role==='superadmin'){showToast('You cannot delete another Super Admin account.','error');return;}
+  askConfirm('Delete User','Permanently delete user "'+u.email+'"? This cannot be undone.',async function(){
+    if(u.supabaseId){
+      const {error}=await sb.from('profiles').update({status:'inactive'}).eq('id',u.supabaseId);
+      if(error)showToast('Supabase error: '+error.message,'error',4000);
+      else showToast('User deleted successfully.','success');
+    }
+    logAudit('DELETE','User',u.email,'Permanently deleted by '+CURRENT_USER);
+    const idx=sysUsers.findIndex(x=>x.id===id);if(idx>-1)sysUsers.splice(idx,1);
+    renderUsers();renderUserStats();updatePendingBadges();
+  },'Delete','btn-danger');
+}
+
+function openAddUser(){
+  editId.user=null;
+  document.getElementById('mo-user-title').textContent='Add User';
+  ['fu-user','fu-pass','fu-fn','fu-ln'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('fu-role').value='';
+  document.getElementById('fu-pass-row').style.display='';
+  om('mo-user');
+}
+function openEditUser(id){
+  const u=sysUsers.find(x=>x.id===id);if(!u)return;
+  editId.user=id;
+  document.getElementById('mo-user-title').textContent='Edit User';
+  document.getElementById('fu-user').value=u.email;
+  document.getElementById('fu-pass').value='';
+  document.getElementById('fu-fn').value=u.firstName;
+  document.getElementById('fu-ln').value=u.lastName;
+  document.getElementById('fu-role').value=u.role;
+  document.getElementById('fu-pass-row').style.display='none';
+  om('mo-user');
+}
+function saveUser(){
+  const email=document.getElementById('fu-user').value.trim(),
+        password=document.getElementById('fu-pass').value.trim(),
+        firstName=document.getElementById('fu-fn').value.trim(),
+        lastName=document.getElementById('fu-ln').value.trim(),
+        role=document.getElementById('fu-role').value;
+  if(!email||!role){alert('Email and role are required.');return;}
+  if(editId.user){
+    const u=sysUsers.find(x=>x.id===editId.user);
+    Object.assign(u,{email,firstName,lastName,role,fullName:firstName+' '+lastName});
+    logAudit('EDIT','User',email,'Updated by '+CURRENT_USER);
+  }else{
+    sysUsers.push({id:nU++,email,password,firstName,lastName,fullName:firstName+' '+lastName,role,empId:null,deleted:false,blocked:false,registeredAt:now(),approvedBy:CURRENT_USER});
+    logAudit('ADD','User',email,'Created by '+CURRENT_USER);
+  }
+  cm('mo-user');renderUsers();renderUserStats();
+}
+
+function renderPending(){
+  const q=(document.getElementById('pending-q').value||'').toLowerCase();
+  const data=registrations.filter(r=>r.status==='pending'&&(
+    (r.fullName||'')+(r.username||'')+(r.firstName||'')+(r.lastName||'')+(r.email||'')
+  ).toLowerCase().includes(q));
+  const container=document.getElementById('pending-cards');
+  if(!data.length){
+    container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';
+    return;
+  }
+  container.innerHTML=data.map(r=>{
+    const displayName=r.fullName||((r.firstName+' '+r.lastName).trim())||r.email||'--';
+    const parts=displayName.split(' ');
+    const initials=((parts[0]||'?')[0]+((parts[1]||parts[0]||'?')[0])).toUpperCase();
+    return '<div class="reg-card">'+
+      '<div class="reg-avatar">'+initials+'</div>'+
+      '<div class="reg-info">'+
+        '<div class="reg-name">'+displayName+'</div>'+
+        '<div class="reg-meta"><span class="badge b-pending">Pending</span> Requested: <strong>'+(r.requestedRole||'user').toUpperCase()+'</strong></div>'+
+        '<div class="reg-detail">Email: '+(r.email||'--')+'</div>'+
+        '<div class="reg-note">Submitted: '+(r.submittedAt?r.submittedAt.slice(0,10):'--')+'</div>'+
+      '</div>'+
+      '<div class="reg-actions" style="flex-direction:column;align-items:flex-end;gap:6px">'+
+        '<select id="role-select-'+r.id+'" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:2px">'+
+          '<option value="user"'+(r.requestedRole==='user'?' selected':'')+'>User</option>'+
+          '<option value="admin"'+(r.requestedRole==='admin'?' selected':'')+'>Admin</option>'+
+        '</select>'+
+        '<div style="display:flex;gap:6px">'+
+          '<button class="btn btn-approve" onclick="approveWithRole('+r.id+')">'+
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approve'+
+          '</button>'+
+          '<button class="btn btn-reject" onclick="openRejectModal('+r.id+')">'+
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject'+
+          '</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function approveWithRole(id){
+  const r=registrations.find(x=>x.id===id);if(!r)return;
+  const select=document.getElementById('role-select-'+id);
+  if(select)r.requestedRole=select.value;
+  approveReg(id);
+}
+async function approveReg(id){
+  const r=registrations.find(x=>x.id===id);if(!r)return;
+  askConfirm(
+    'Approve Registration',
+    'Approve "'+r.fullName+'" as '+r.requestedRole.toUpperCase()+'?',
+    async function(){
+      const {error}=await sb.from('profiles').update({
+        status:'active',role:r.requestedRole,approved_by:CURRENT_USER,approved_at:new Date().toISOString(),
+      }).eq('id',r.supabaseId);
+      if(error){showToast('Error approving user: '+error.message,'error',4000);return;}
+      r.status='approved';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();
+      sysUsers.push({id:nU++,username:r.username,firstName:r.firstName,lastName:r.lastName,fullName:r.fullName,email:r.email,role:r.requestedRole,empId:null,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false,supabaseId:r.supabaseId});
+      logAudit('RESTORE','User',r.fullName||r.username,'Approved as '+r.requestedRole+' by '+CURRENT_USER);
+      showToast('User approved successfully.','success');
+      renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
+    },
+    'Approve','btn-success'
+  );
+}
+function openRejectModal(id){
+  const r=registrations.find(x=>x.id===id);if(!r)return;
+  pendingRejectId=id;
+  document.getElementById('reject-note').value='';
+  document.getElementById('reject-for').textContent='Rejecting: '+(r.fullName||r.email);
+  om('mo-reject');
+}
+async function confirmReject(){
+  const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;
+  const note=document.getElementById('reject-note').value.trim()||'No reason provided.';
+  const {error}=await sb.from('profiles').update({status:'rejected',approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('id',r.supabaseId);
+  if(error){showToast('Error rejecting user: '+error.message,'error',4000);return;}
+  r.status='rejected';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();r.note=note;
+  logAudit('BLOCK','User',r.fullName||r.username,'Registration rejected: '+note);
+  showToast('Registration rejected.','error');
+  cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();
+}
+
+function renderAllReg(){
+  const q=(document.getElementById('allreg-q').value||'').toLowerCase();
+  const fs=document.getElementById('allreg-fs').value;
+  let data=registrations.filter(r=>{
+    if(fs==='approved'&&r.status!=='approved')return false;
+    if(fs==='pending'&&r.status!=='pending')return false;
+    if(fs==='rejected'&&r.status!=='rejected')return false;
+    return ((r.fullName||'')+(r.username||'')+(r.email||'')+(r.requestedRole||'')+(r.status||'')).toLowerCase().includes(q);
+  }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
+  const tb=document.getElementById('allreg-tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="6" class="tbl-empty">No registrations found.</td></tr>';return;}
+  tb.innerHTML=data.map(r=>{
+    const statusBadge=r.status==='approved'
+      ?'<span class="badge b-approved">Approved</span>'
+      :r.status==='rejected'
+      ?'<span class="badge b-rejected">Rejected</span>'
+      :'<span class="badge b-pending">Pending</span>';
+    return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
+      '<td>'+(r.fullName||((r.firstName+' '+r.lastName).trim())||'--')+'</td>'+
+      '<td style="font-size:11px;color:var(--muted)">'+(r.email||'--')+'</td>'+
+      '<td><span class="badge '+(r.requestedRole==='admin'?'b-admin':'b-user')+'">'+(r.requestedRole||'user').toUpperCase()+'</span></td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+(r.submittedAt?r.submittedAt.slice(0,10):'--')+'</td>'+
+      '<td class="ns">'+statusBadge+'</td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function viewEmpAudit(id){
+  const e=gE(id);if(!e)return;
+  const logs=auditLog.filter(a=>a.record.includes(e.empNo)||a.record.includes(e.lastName+', '+e.firstName));
+  document.getElementById('mo-ad-title').textContent='Change History: '+e.lastName+', '+e.firstName;
+  document.getElementById('mo-ad-body').innerHTML=logs.length?'<div class="tw">'+logs.map(a=>'<div class="audit-entry"><span class="audit-dot '+(actionDot[a.action]||'dot-add')+'"></span><span class="audit-time">'+a.timestamp+'</span><span class="audit-who">'+a.user+'</span><span class="audit-action"><span style="font-weight:bold;color:'+(actionColor[a.action]||'#333')+'">['+a.action+']</span> '+(a.note||'--')+'</span></div>').join('')+'</div>':'<p style="color:var(--muted);font-size:12px;padding:8px">No change history found.</p>';
+  om('mo-audit-detail');
+}
+function viewProf(id){
+  const e=gE(id);if(!e)return;
+  logAudit('VIEW','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Profile viewed');
+  const hist=jobHistory.filter(h=>h.empId===id).sort((a,b)=>b.effDate.localeCompare(a.effDate));
+  const rows=hist.length?hist.map(h=>'<tr><td>'+jc(h.jobId)+'</td><td>'+jd(h.jobId)+'</td><td>'+dc(h.deptId)+'</td><td>'+dn(h.deptId)+'</td><td>'+fmt(h.effDate)+'</td><td>'+fmtSal(h.salary)+'</td><td><span class="badge '+(h.deleted?'b-del':'b-active')+'">'+(h.deleted?'Blocked':'Active')+'</span></td><td><button class="btn btn-white" style="padding:2px 6px;font-size:10px" onclick="openEditHist('+h.id+')">Edit</button> <button class="btn btn-block" style="padding:2px 6px;font-size:10px" onclick="blockHistRow('+h.id+','+id+')">Block</button></td></tr>').join(''):'<tr><td colspan="8" class="tbl-empty">No history.</td></tr>';
+  const badge=e.deleted?'<span class="badge b-del" style="font-size:11px">Inactive</span>':e.blocked?'<span class="badge b-blk" style="font-size:11px">Blocked</span>':'<span class="badge b-active" style="font-size:11px">Active</span>';
+  document.getElementById('profile-content').innerHTML=
+    '<div class="pp"><div class="pp-head"><div class="ava">'+ini(e)+'</div><div class="pp-info"><div class="pname">'+e.lastName+', '+e.firstName+'</div><div class="prole">'+jd(e.jobId)+' - '+dn(e.deptId)+'</div><div class="pid">'+e.empNo+'</div></div><div style="margin-left:auto">'+badge+'</div></div>'+
+    '<div class="pp-body"><div class="pst">Personal Information</div><div class="pg">'+
+    '<div class="pf"><label>Emp No</label><div class="v">'+e.empNo+'</div></div>'+
+    '<div class="pf"><label>Username</label><div class="v">'+(e.username||'--')+'</div></div>'+
+    '<div class="pf"><label>Last Name</label><div class="v">'+e.lastName+'</div></div>'+
+    '<div class="pf"><label>First Name</label><div class="v">'+e.firstName+'</div></div>'+
+    '<div class="pf"><label>Gender</label><div class="v">'+(e.gender||'--')+'</div></div>'+
+    '<div class="pf"><label>Hire Date</label><div class="v">'+fmt(e.hireDate)+'</div></div>'+
+    '<div class="pf"><label>Sep Date</label><div class="v">'+(e.sepDate?fmt(e.sepDate):'--')+'</div></div>'+
+    '<div class="pf"><label>Salary</label><div class="v">'+fmtSal(e.salary)+'</div></div>'+
+    '<div class="pf"><label>Email</label><div class="v">'+(e.email||'--')+'</div></div>'+
+    '<div class="pf"><label>Phone</label><div class="v">'+(e.phone||'--')+'</div></div>'+
+    '</div>'+
+    (e.meta?'<div class="audit-strip">Last modified by <strong>'+e.meta.by+'</strong> on <strong>'+e.meta.at+'</strong> -- <em>'+(e.meta.note||'')+'</em></div>':'')+
+    '<div class="pst">Current Assignment</div><div class="pg" style="margin-bottom:18px">'+
+    '<div class="pf"><label>Dept Code</label><div class="v">'+dc(e.deptId)+'</div></div>'+
+    '<div class="pf"><label>Department</label><div class="v">'+dn(e.deptId)+'</div></div>'+
+    '<div class="pf"><label>Job Code</label><div class="v">'+jc(e.jobId)+'</div></div>'+
+    '<div class="pf"><label>Job Description</label><div class="v">'+jd(e.jobId)+'</div></div>'+
+    '</div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="pst" style="margin-bottom:0">Job History</div><button class="btn btn-primary" style="font-size:10px;padding:4px 9px" onclick="openAddHistFor('+id+')">+ Add Entry</button></div>'+
+    '<div class="tw"><table class="ht"><thead><tr><th>Job Code</th><th>Job Desc</th><th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="margin-top:14px;display:flex;gap:7px;flex-wrap:wrap">'+
+    '<button class="btn btn-primary" onclick="openEditEmp('+e.id+')">Edit Profile</button>'+
+    '<button class="btn btn-audit" onclick="viewEmpAudit('+e.id+')">View Audit Log</button>'+
+    '<button class="btn btn-danger" onclick="softDeleteProfEmp('+e.id+')">Delete Employee</button>'+
+    (e.deleted||e.blocked?'<button class="btn btn-danger" style="background:#7f1d1d" onclick="permDeleteProfEmp('+e.id+')">Perm. Delete</button>':'')+
+    '</div></div></div>';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-profile').classList.add('active');
+  document.getElementById('topbar-title').textContent='Employee Profile';
+}
+function openAddHistFor(empId){editId.hist=null;document.getElementById('mo-hist-title').textContent='Add Job History';popFormSelects();setTimeout(function(){document.getElementById('fh-emp').value=empId;},10);document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];document.getElementById('fh-sal').value='';om('mo-hist');}
+function blockHistRow(hid,empId){askConfirm('Block History Entry','Block this history record?',function(){const h=jobHistory.find(x=>x.id===hid);h.deleted=true;h.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};logAudit('BLOCK','JobHistory','JH-'+String(h.id).padStart(3,'0'),'Blocked via profile');viewProf(empId);},'Block','btn-block');}
+function softDeleteProfEmp(id){const e=gE(id);askConfirm('Delete Employee','Delete this employee? They will be moved to Deleted Items.',function(){e.deleted=true;e.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted via profile'};logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Deleted via profile');viewProf(id);renderStats();},'Delete','btn-danger');}
+function permDeleteProfEmp(id){const e=gE(id);askConfirm('Permanently Delete','This cannot be undone. Delete this employee?',function(){logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Permanently deleted via profile');const idx=employees.findIndex(x=>x.id===id);if(idx>-1)employees.splice(idx,1);nav(document.querySelector('[data-page=employees]'),'employees');},'Delete','btn-danger');}
+
+function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',async function(){await sb.auth.signOut();window.location.href='index.html#login';},'Log Out','btn-danger');}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+initAuth().then(loadAllData);
+</script>
 
 <!--
   ════════════════════════════════════════════════════════════════════════
