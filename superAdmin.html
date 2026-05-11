@@ -692,9 +692,9 @@ async function initAuth(){
     const { data: prof } = await sb.from('profiles').select('username,email,full_name,role,status').eq('id', uid).single();
     if(prof){
       // Block check: if user is blocked, sign out and redirect
-      if(prof.status === 'blocked'){
+      if(prof.status === 'blocked' || prof.status === 'inactive'){
         await sb.auth.signOut();
-        window.location.href = 'blocked.html';
+        window.location.href = prof.status === 'blocked' ? 'blocked.html' : 'deactivated.html';
         return;
       }
       const display = prof.username || prof.full_name || prof.email || 'superadmin';
