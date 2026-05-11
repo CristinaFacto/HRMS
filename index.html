@@ -200,29 +200,32 @@
     // but the old login checked for 'approved'. This accepts BOTH values
     // so manually-set users and superAdmin-approved users both get through.
     // ─────────────────────────────────────────────────────────────────────────
-   const status = (profile.status || '').toLowerCase();
+  const status = (profile.status || '').trim().toLowerCase();
+  const role   = (profile.role   || '').trim().toLowerCase();
+  
+  if (status === 'blocked') {
+    window.location.href = 'blocked.html';
+    return;
+  }
+  
+  if (status === 'deactivated') {
+    window.location.href = 'deactivated.html';
+    return;
+  }
+  
+  if (status === 'active' || status === 'approved') {
+    if (role === 'superadmin') {
+      window.location.href = 'superAdmin.html';
+    } else if (role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'user.html';
+    }
+    return;
+  }
 
-if (status === 'blocked') {
-  window.location.href = 'blocked.html';
-  return;
-}
-
-if (status === 'deactivated') {
-  window.location.href = 'deactivated.html';
-  return;
-}
-
-if (status === 'inactive') {
-  window.location.href = 'waiting.html';
-  return;
-}
-
-if (status === 'active' || status === 'approved') {
-  // continue login
-} else {
-  window.location.href = 'waiting.html';
-  return;
-}
+// inactive, pending, or anything else → waiting
+window.location.href = 'waiting.html';
 
     // Step 6: Redirect by role
     const role = (profile.role || '').toLowerCase();
