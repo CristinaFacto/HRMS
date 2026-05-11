@@ -1051,18 +1051,19 @@ function blockUser(id){
 
 function renderPending(){
   const q=document.getElementById('pending-q').value.toLowerCase();
-  const data=registrations.filter(r=>r.status==='pending'&&((r.email||r.username)+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')).toLowerCase().includes(q));
+  const data=registrations.filter(r=>r.status==='pending'&&((r.fullName||'')+' '+(r.email||'')+' '+(r.username||'')+' '+(r.firstName||'')+' '+(r.lastName||'')+' '+(r.empNo||'')).toLowerCase().includes(q));
   const container=document.getElementById('pending-cards');
   if(!data.length){container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';return;}
   container.innerHTML=data.map(r=>{
-    const initials=(r.firstName[0]+r.lastName[0]).toUpperCase();
+    const displayName=(r.fullName||((r.firstName||'')+' '+(r.lastName||'')).trim()||r.email||r.username||'--');
+    const initials=(displayName.split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('')||'??').toUpperCase();
     return '<div class="reg-card">'+
       '<div class="reg-avatar">'+initials+'</div>'+ 
       '<div class="reg-info">'+
-        '<div class="reg-name">'+(r.fullName||((r.firstName||'')+' '+(r.lastName||'')).trim()||'--')+'</div>'+ 
-        '<div class="reg-meta">'+(r.email||r.username)+' <span class="badge b-pending">Pending</span> Requested: <strong>'+r.requestedRole.toUpperCase()+'</strong></div>'+ 
+        '<div class="reg-name">'+displayName+'</div>'+ 
+        '<div class="reg-meta">'+(r.email||r.username||'--')+' <span class="badge b-pending">Pending</span> Requested: <strong>'+((r.requestedRole||'user').toUpperCase())+'</strong></div>'+ 
         '<div class="reg-detail">Email: '+(r.email||'--')+' | Emp ID: '+(r.empNo||'--')+'</div>'+ 
-        '<div class="reg-note">Submitted: '+r.submittedAt+'</div>'+
+        '<div class="reg-note">Submitted: '+(r.submittedAt||'--')+'</div>'+
       '</div>'+
       '<div class="reg-actions">'+
         '<button class="btn btn-approve" onclick="approveReg('+r.id+')">'+
