@@ -380,7 +380,12 @@ let pendingFn    = null;
 
 /* ── empNo normalisation: strip whitespace and leading zeros for loose comparison ── */
 function normaliseEmpNo(v) {
-  return String(v == null ? '' : v).trim();
+  const s = String(v == null ? '' : v).trim();
+  // If it's a pure integer string, zero-pad to 5 digits to match DB varchar '00001'
+  if (s !== '' && /^\d+$/.test(s)) {
+    return s.padStart(5, '0');
+  }
+  return s;
 }
 
 /* Gender helpers */
@@ -474,7 +479,7 @@ async function loadAllData() {
         deptId:    hist ? hist.deptId : 1,
         jobId:     hist ? hist.jobId  : 1,
         salary:    hist ? hist.salary : 0,
-        isActive:  !(e.deleted || e.sepdate || e.sep_date || e.blocked)
+        isActive:  !(e.deleted || e.blocked)
       };
     });
 
