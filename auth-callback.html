@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Authenticating...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { margin: 0; background: #F3F4F6; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .card { background: white; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 8px 20px rgba(16,24,40,0.06); }
+    h2 { color: #1E3A5F; margin-bottom: 8px; }
+    p { color: #6B7280; font-size: 14px; }
+    .spinner { width: 36px; height: 36px; border: 4px solid #E5E7EB; border-top-color: #1E3A5F; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner"></div>
+    <h2>Signing you in…</h2>
+    <p>Please wait while we check your account.</p>
+  </div>
+
+  <script>
+    const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
+    const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    async function checkUser() {
+      // Wait for Supabase to finish processing the OAuth token from the URL
+      const { data: { session } } = await sb.auth.getSession();
+
+      if (!session) {
+        // No session found — send back to login
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Check their status and role in the profiles table
+      const { data: profile, error } = await sb
+        .from('profiles')
+        .select('status, role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error || !profile) {
+        // Profile not found yet (trigger might be slow) — send to waiting
+        window.location.href = 'waiting.html';
+        return;
+      }
+
+      if (profile.status !== 'approved') {
+        window.location.href = 'waiting.html';
+        return;
+      }
+
+      // Approved — redirect by role
+      const role = profile.role?.toLowerCase();
+      if (role === 'superadmin') {
+        window.location.href = 'superAdmin.html';
+      } else if (role === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'user.html';
+      }
+    }
+
+    checkUser();
+  </script>
+</body>
+</html>
