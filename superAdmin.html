@@ -713,7 +713,6 @@ async function loadAllData(){
         supabaseId:u.id,
       }));
     registrations=(userRes.data||[])
-      .filter(u=>u.status==='pending'||u.status==='inactive'||u.status==='rejected')
       .map((u,idx)=>({
         id:idx+1,
         username:u.username||u.email||'',
@@ -721,8 +720,8 @@ async function loadAllData(){
         lastName:u.last_name||'',
         fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
         email:u.email||'',
-        requestedRole:u.requested_role||'user',
-        status: u.status==='rejected'?'rejected':'pending',
+        requestedRole:u.requested_role||u.role||'user',
+        status:u.status==='approved'||u.status==='active'?'approved':u.status==='rejected'?'rejected':u.status==='inactive'?'inactive':u.status==='pending'?'pending':(u.status||'pending'),
         submittedAt:u.created_at||'',
         reviewedBy:u.approved_by||null,
         note:'',
@@ -1145,7 +1144,7 @@ function renderAllReg(){
     if(fs==='approved'&&r.status!=='approved')return false;
     if(fs==='pending'&&r.status!=='pending')return false;
     if(fs==='rejected'&&r.status!=='rejected')return false;
-    return ((r.fullName||'')+(r.username||'')+(r.email||'')+(r.status||'')).toLowerCase().includes(q);
+    return ((r.fullName||'')+(r.username||'')+(r.email||'')+(r.requestedRole||'')+(r.status||'')).toLowerCase().includes(q);
   }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
   const tb=document.getElementById('allreg-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No registrations found.</td></tr>';return;}
@@ -1154,6 +1153,8 @@ function renderAllReg(){
       ?'<span class="badge b-approved">Approved</span>'
       :r.status==='rejected'
       ?'<span class="badge b-rejected">Rejected</span>'
+      :r.status==='inactive'
+      ?'<span class="badge b-blk">Inactive</span>'
       :'<span class="badge b-pending">Pending</span>';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td>'+(r.fullName||((r.firstName+' '+r.lastName).trim())||'--')+'</td>'+
