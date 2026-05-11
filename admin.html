@@ -438,7 +438,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="tw"><table>
           <thead><tr>
             <th>Username</th><th>Full Name</th><th>Requested Role</th>
-            <th>Submitted</th><th>Status</th><th>Reviewed By</th><th>Note</th>
+            <th>Submitted</th><th>Status</th><th>Reviewed By</th>
           </tr></thead>
           <tbody id="allreg-tbody"></tbody>
         </table></div>
@@ -1206,15 +1206,14 @@ function renderAllReg(){
     return ((r.email||r.username)+' '+r.fullName+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')+' '+r.status).toLowerCase().includes(q);
   }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
   const tb=document.getElementById('allreg-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No registrations found.</td></tr>';return;}
+  if(!data.length){tb.innerHTML='<tr><td colspan="6" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
     const sb2=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':r.status==='inactive'?'<span class="badge b-blk">Inactive</span>':'<span class="badge b-pending">Pending</span>';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td><strong>'+(r.email||r.username)+'</strong></td><td>'+(r.fullName||((r.firstName||'')+' '+(r.lastName||'')).trim()||'--')+'</td>'+ 
       '<td><span class="badge '+(r.requestedRole==='admin'?'b-admin':'b-user')+'">'+r.requestedRole.toUpperCase()+'</span></td>'+
       '<td style="font-size:10px;color:var(--muted)">'+r.submittedAt+'</td>'+
-      '<td class="ns">'+sb2+'</td><td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td>'+
-      '<td style="font-size:10px;color:var(--muted);max-width:140px">'+(r.note||'--')+'</td></tr>';
+      '<td class="ns">'+sb2+'</td><td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td></tr>';
   }).join('');
 }
 function reconsiderReg(id){const r=registrations.find(x=>x.id===id);if(!r)return;askConfirm('Reconsider','Move "'+r.username+'" back to Pending?',function(){r.status='pending';r.reviewedBy=null;r.reviewedAt=null;r.note='';renderAllReg();renderPending();renderUserStats();updatePendingBadges();},'Reconsider','btn-primary');}
