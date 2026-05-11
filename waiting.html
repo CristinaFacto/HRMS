@@ -148,6 +148,7 @@
       <p>Name: <span id="userName">—</span></p>
       <p>Email: <span id="userEmail">—</span></p>
     </div>
+
     <div class="approved-msg hidden" id="approvedMsg">Your account is approved. Redirecting now…</div>
 
     <p class="poll-status">
@@ -177,6 +178,7 @@
     async function checkStatus(userId) {
       const { data: sessionData } = await sb.auth.getSession();
       const email = sessionData?.session?.user?.email;
+
       let { data: profile, error } = await sb
         .from('profiles')
         .select('status, role, full_name, email')
@@ -201,35 +203,31 @@
       document.getElementById('userEmail').textContent = profile.email || '—';
 
       const status = (profile.status || '').trim().toLowerCase();
-      const role = (profile.role || '').trim().toLowerCase();
 
-      // If blocked, stop polling and redirect to blocked page
-     if (status === 'blocked') {
+      // Handle all status cases
+      if (status === 'blocked') {
+        clearInterval(pollInterval);
         window.location.href = 'blocked.html';
         return;
       }
-      
+
       if (status === 'deactivated') {
+        clearInterval(pollInterval);
         window.location.href = 'deactivated.html';
         return;
       }
-      
-      if (status === 'inactive') {
-        window.location.href = 'waiting.html';
-        return;
-      }
-      
+
       if (status === 'active' || status === 'approved') {
+        // ✅ FIX: actually redirect approved users
         clearInterval(pollInterval);
         document.getElementById('approvedMsg').classList.remove('hidden');
         document.getElementById('spinner').style.display = 'none';
-        redirectByRole(profile.role);   // ← actually redirect them
-        return;
-      } else {
-        window.location.href = 'waiting.html';
+        setTimeout(() => redirectByRole(profile.role), 1500);
         return;
       }
-    }  
+
+      // status is 'inactive' or anything else — stay on this page and keep polling
+    } // ✅ FIX: closing brace for checkStatus (was missing before)
 
     // ── Init ────────────────────────────────────────────────────
     async function init() {
