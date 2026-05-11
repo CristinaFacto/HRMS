@@ -187,10 +187,9 @@
       document.getElementById('userEmail').textContent = profile.email || '—';
 
       // If approved, stop polling and redirect
-      if (profile.status === 'active') {
+      if (profile.status === 'active' || profile.status === 'approved') {
         clearInterval(pollInterval);
         document.getElementById('spinner').style.borderTopColor = '#22C55E';
-        document.getElementById('approvedMsg').classList.remove('hidden');
         setTimeout(() => redirectByRole(profile.role), 1500);
       }
     }
