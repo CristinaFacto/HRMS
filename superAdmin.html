@@ -410,7 +410,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
         </div>
         <div class="tw"><table>
           <thead><tr>
-            <th>Email</th><th>Full Name</th><th>Role</th><th>Linked Employee</th>
+            <th>Email</th><th>Full Name</th><th>Role</th>
             <th>Registered</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="users-tbody"></tbody>
@@ -434,7 +434,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
         </div>
         <div class="tw"><table>
           <thead><tr>
-            <th>Username</th><th>Full Name</th><th>Requested Role</th><th>Linked Employee</th>
+            <th>Username</th><th>Full Name</th><th>Requested Role</th>
             <th>Submitted</th><th>Status</th><th>Reviewed By</th><th>Note</th><th>Actions</th>
           </tr></thead>
           <tbody id="allreg-tbody"></tbody>
@@ -571,7 +571,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
             <option value="user">User</option>
           </select>
         </div>
-        <div class="fr"><label>Linked Employee</label><select id="fu-emp"><option value="">-- None --</option></select></div>
+       
       </div>
     </div>
     <div class="mf">
@@ -1072,7 +1072,7 @@ function renderUsers(){
   if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No users found.</td></tr>';return;}
   tb.innerHTML=data.map(function(u){
     const roleClass=u.role==='superadmin'?'b-sa':u.role==='admin'?'b-admin':'b-user';
-    const emp=u.empId?en(u.empId):'--';
+    
     let actionBtns='';
     if(u.username===CURRENT_USER){
       actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button>'+
@@ -1091,7 +1091,7 @@ function renderUsers(){
       '<td><strong>'+u.username+'</strong></td>'+
       '<td>'+(u.fullName||u.firstName+' '+u.lastName||'--')+'</td>'+
       '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
-      '<td>'+emp+'</td>'+
+     
       '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt||'--')+'</td>'+
       '<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
       '<td class="ns" style="white-space:nowrap">'+actionBtns+'</td></tr>';
@@ -1152,13 +1152,13 @@ function renderPending(){
   if(!data.length){container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';return;}
   container.innerHTML=data.map(r=>{
     const initials=(r.firstName[0]+r.lastName[0]).toUpperCase();
-    const emp=r.empId?en(r.empId):'--';
+    
     return '<div class="reg-card">'+
       '<div class="reg-avatar">'+initials+'</div>'+
       '<div class="reg-info">'+
         '<div class="reg-name">'+r.firstName+' '+r.lastName+'</div>'+
         '<div class="reg-meta">@'+r.username+' <span class="badge b-pending">Pending</span> Requested: <strong>'+r.requestedRole.toUpperCase()+'</strong></div>'+
-        '<div class="reg-detail">Email: '+r.email+' | Emp ID: '+(r.empNo||'--')+' | Linked: '+emp+'</div>'+
+        '<div class="reg-detail">Email: '+r.email+' | Emp ID: '+(r.empNo||'--')+'</div>'+
         '<div class="reg-note">Submitted: '+r.submittedAt+'</div>'+
       '</div>'+
       '<div class="reg-actions">'+
@@ -1190,7 +1190,7 @@ function renderAllReg(){
   if(!data.length){tb.innerHTML='<tr><td colspan="9" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
     const sb2=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':'<span class="badge b-pending">Pending</span>';
-    const emp=r.empId?en(r.empId):'--';
+   
     const actions=r.status==='pending'?
       '<button class="btn btn-approve" style="padding:3px 7px;font-size:10px" onclick="approveReg('+r.id+')">Approve</button> <button class="btn btn-reject" style="padding:3px 7px;font-size:10px" onclick="openRejectModal('+r.id+')">Reject</button>':
       r.status==='rejected'?'<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="reconsiderReg('+r.id+')">Reconsider</button>':'--';
