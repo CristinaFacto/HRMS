@@ -216,9 +216,9 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <p>View employment history records across all employees.</p>
         </div>
       </div>
+      <!-- CHANGED: Removed employee filter dropdown — search bar only -->
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search history…" oninput="renderHist()"/>
-        <select id="hist-fe" onchange="renderHist()"><option value="">All Employees</option></select>
         <select id="hist-sort" onchange="renderHist()">
           <option value="az">Sort: A → Z (Employee)</option>
           <option value="za">Sort: Z → A (Employee)</option>
@@ -323,106 +323,76 @@ tbody td{padding:8px 12px;vertical-align:middle}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
-  // ── Supabase init ──────────────────────────────────────────────
-  const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
-  const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  let statusCheckInterval = null;
+let statusCheckInterval = null;
 
-  // ── Sign in & set username display ────────────────────────────
-  async function initAuth() {
-    try {
-      // Try to get existing session first
-      const { data: { session } } = await sb.auth.getSession();
-      if (session?.user) {
-        // Check if user is blocked before loading anything
-        const uid = session.user.id;
-        const { data: prof } = await sb.from('profiles').select('status').eq('id', uid).single();
-        
-        if (prof && prof.status === 'blocked') {
-          await sb.auth.signOut();
-          window.location.href = 'blocked.html';
-          return;
-        }
-        if (prof && prof.status === 'deactivated') {
-          await sb.auth.signOut();
-          window.location.href = 'deactivated.html';
-          return;
-        }
-        
-        setUsernameDisplay(session.user);
-        // Start listening for status changes
-        startStatusCheckListener(uid);
-        return;
-      }
-      // Fall back to anonymous
-      const { data, error } = await sb.auth.signInAnonymously();
-      if (!error && data?.user) {
-        setUsernameDisplay(data.user);
-      }
-    } catch (err) {
-      console.warn('Auth init error:', err.message);
+/* ── Auth ── */
+async function initAuth() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      const uid = session.user.id;
+      const { data: prof } = await sb.from('profiles').select('status').eq('id', uid).single();
+      if (prof && prof.status === 'blocked') { await sb.auth.signOut(); window.location.href = 'blocked.html'; return; }
+      if (prof && prof.status === 'deactivated') { await sb.auth.signOut(); window.location.href = 'deactivated.html'; return; }
+      setUsernameDisplay(session.user);
+      startStatusCheckListener(uid);
+      return;
     }
-  }
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (!error && data?.user) setUsernameDisplay(data.user);
+  } catch (err) { console.warn('Auth init error:', err.message); }
+}
 
-  // ── Check status every 3 seconds to catch real-time blocks ──
-  function startStatusCheckListener(uid) {
-    if (statusCheckInterval) clearInterval(statusCheckInterval);
-    statusCheckInterval = setInterval(async () => {
-      try {
-        const { data: prof, error } = await sb.from('profiles').select('status').eq('id', uid).single();
-       if (prof && prof.status === 'blocked') {
-        await sb.auth.signOut();
-        window.location.href = 'blocked.html';
-        return;
-      }
-      if (prof && prof.status === 'deactivated') {
-        await sb.auth.signOut();
-        window.location.href = 'deactivated.html';
-        return;
-      }
-      if (prof && (prof.status === 'pending' || prof.status === 'rejected')) {
-        window.location.href = 'waiting.html';
-        return;
-      }
-      } catch (err) {
-        console.warn('Status check error:', err.message);
-      }
-    }, 3000);
-  }
+function startStatusCheckListener(uid) {
+  if (statusCheckInterval) clearInterval(statusCheckInterval);
+  statusCheckInterval = setInterval(async () => {
+    try {
+      const { data: prof } = await sb.from('profiles').select('status').eq('id', uid).single();
+      if (prof && prof.status === 'blocked')     { await sb.auth.signOut(); window.location.href = 'blocked.html'; return; }
+      if (prof && prof.status === 'deactivated') { await sb.auth.signOut(); window.location.href = 'deactivated.html'; return; }
+      if (prof && (prof.status === 'pending' || prof.status === 'rejected')) { window.location.href = 'waiting.html'; return; }
+    } catch (err) { console.warn('Status check error:', err.message); }
+  }, 3000);
+}
 
-  function setUsernameDisplay(user) {
-    // Prefer email username, then user_metadata.username, then truncated id
-    const uname =
-      (user.email ? user.email.split('@')[0] : null) ||
-      user.user_metadata?.username ||
-      user.user_metadata?.name ||
-      (user.id ? user.id.substring(0, 8) : 'user');
-
-    document.getElementById('sb-username').textContent  = uname;
-    document.getElementById('topbar-username').textContent = uname;
-  }
+function setUsernameDisplay(user) {
+  const uname = (user.email ? user.email.split('@')[0] : null)
+    || user.user_metadata?.username
+    || user.user_metadata?.name
+    || (user.id ? user.id.substring(0, 8) : 'user');
+  document.getElementById('sb-username').textContent    = uname;
+  document.getElementById('topbar-username').textContent = uname;
+}
 
 /* ════════════════════════════════════
-   DATA
+   DATA STORE
+   ─────────────────────────────────────
+   KEY FIX:
+   · employees     = ACTIVE only  (no deleted/blocked/separated) — used for display
+   · allEmployees  = ALL employees from DB                       — used for name lookup in Job History
+   This ensures every job history row can resolve a name even if
+   the employee has since been separated, blocked, or soft-deleted.
 ════════════════════════════════════ */
-let departments = [];
-let jobs = [];
-let employees = [];
-let jobHistory = [];
-let pendingFn = null;
+let departments  = [];
+let jobs         = [];
+let employees    = [];   // active only — shown in Employees page
+let allEmployees = [];   // all — used solely for name resolution in Job History
+let jobHistory   = [];
+let pendingFn    = null;
 
-// Normalize gender: store raw value, display maps M→Male, F→Female
+/* Gender helpers */
 function normalizeGender(raw) {
   if (!raw) return '';
   const v = String(raw).trim().toUpperCase();
   if (v === 'M') return 'M';
   if (v === 'F') return 'F';
-  return raw; // keep as-is for Other values
+  return raw;
 }
-
 function displayGender(raw) {
   if (!raw) return '—';
   const v = String(raw).trim().toUpperCase();
@@ -433,7 +403,6 @@ function displayGender(raw) {
 
 async function loadAllData() {
   await initAuth();
-
   try {
     const [empRes, deptRes, jobRes, histRes] = await Promise.all([
       sb.from('employee').select('*'),
@@ -442,93 +411,107 @@ async function loadAllData() {
       sb.from('jobhistory').select('*'),
     ]);
 
-    if (empRes.error)  { console.error("❌ EMP ERROR:", empRes.error);  alert("Error loading employees: " + empRes.error.message); }
-    if (deptRes.error) { console.error("❌ DEPT ERROR:", deptRes.error); alert("Error loading departments: " + deptRes.error.message); }
-    if (jobRes.error)  { console.error("❌ JOB ERROR:", jobRes.error);  alert("Error loading jobs: " + jobRes.error.message); }
-    if (histRes.error) { console.error("❌ HIST ERROR:", histRes.error); alert("Error loading job history: " + histRes.error.message); }
+    if (empRes.error)  { alert('Error loading employees: '   + empRes.error.message);  return; }
+    if (deptRes.error) { alert('Error loading departments: ' + deptRes.error.message); return; }
+    if (jobRes.error)  { alert('Error loading jobs: '        + jobRes.error.message);  return; }
+    if (histRes.error) { alert('Error loading job history: ' + histRes.error.message); return; }
 
+    /* ── Departments ── */
     departments = (deptRes.data || []).map((d, idx) => ({
-      id: idx + 1,
-      code: d.deptcode || d.deptCode || d.code || d.dept_code || '',
-      name: d.deptname || d.deptName || d.name || d.dept_name || '',
+      id:   idx + 1,
+      code: d.deptcode  || d.deptCode  || d.code      || d.dept_code || '',
+      name: d.deptname  || d.deptName  || d.name      || d.dept_name || '',
       desc: d.description || d.desc || ''
     }));
 
+    /* ── Jobs ── */
     jobs = (jobRes.data || []).map((j, idx) => ({
-      id: idx + 1,
-      code: j.jobcode || j.jobCode || j.code || j.job_code || '',
-      desc: j.jobdesc || j.jobDesc || j.description || j.desc || j.job_desc || '',
-      deptId: j.deptid || j.deptId || j.dept_id || 1
+      id:     idx + 1,
+      code:   j.jobcode  || j.jobCode  || j.code    || j.job_code  || '',
+      desc:   j.jobdesc  || j.jobDesc  || j.description || j.desc  || j.job_desc || '',
+      deptId: j.deptid   || j.deptId   || j.dept_id || 1
     }));
 
+    /* ── Job History ── (store raw empNo string for lookup) ── */
     jobHistory = (histRes.data || []).map((h, idx) => {
       const jobCode  = h.jobcode  || h.jobCode  || h.job_code  || '';
       const deptCode = h.deptcode || h.deptCode || h.dept_code || '';
       const jobMatch  = jobs.find(j => j.code === jobCode);
       const deptMatch = departments.find(d => d.code === deptCode);
       return {
-        id: idx + 1,
-        // FIX: store the raw empno string so we can match by empNo later
-        empNo: h.empno || h.empNo || h.emp_no || h.emp_id || '',
-        jobId: jobMatch?.id || 1,
-        deptId: deptMatch?.id || 1,
-        effDate: h.effdate || h.effDate || h.eff_date || '',
-        salary: h.salary || 0
+        id:      idx + 1,
+        empNo:   String(h.empno || h.empNo || h.emp_no || h.emp_id || '').trim(),
+        jobId:   jobMatch  ? jobMatch.id  : 1,
+        deptId:  deptMatch ? deptMatch.id : 1,
+        effDate: h.effdate  || h.effDate  || h.eff_date || '',
+        salary:  h.salary   || 0
       };
     });
 
-    // Active employees only (no deleted/blocked/separated)
-    employees = (empRes.data || []).filter(e => {
-      return !(e.deleted || e.sepdate || e.sep_date || e.blocked);
-    }).map((e, idx) => {
-      const empNo = e.empno || e.emp_no || '';
-      const hist = jobHistory.filter(h => h.empNo === empNo)
+    /* ══════════════════════════════════════════════════════════
+       BUILD allEmployees — includes EVERY row from the DB
+       (including separated / blocked / deleted).
+       We only need empNo, lastName, firstName for name resolution.
+    ══════════════════════════════════════════════════════════ */
+    allEmployees = (empRes.data || []).map((e, idx) => {
+      const empNo = String(e.empno || e.emp_no || '').trim();
+      const hist  = jobHistory
+        .filter(h => h.empNo === empNo)
         .sort((a, b) => new Date(b.effDate) - new Date(a.effDate))[0];
       return {
-        id: idx + 1,
+        id:        idx + 1,
         empNo,
-        lastName:  e.lastname   || e.last_name  || '',
-        firstName: e.firstname  || e.first_name || '',
+        lastName:  e.lastname  || e.last_name  || '',
+        firstName: e.firstname || e.first_name || '',
         gender:    normalizeGender(e.gender),
-        birthdate: e.birthdate  || e.birth_date || '',
-        hireDate:  e.hiredate   || e.hire_date  || '',
-        sepDate:   e.sepdate    || e.sep_date   || null,
-        username:  e.username   || '',
-        email:     e.email      || '',
-        phone:     e.phone      || '',
-        deptId: hist?.deptId || 1,
-        jobId:  hist?.jobId  || 1,
-        salary: hist?.salary || 0
+        hireDate:  e.hiredate  || e.hire_date  || '',
+        sepDate:   e.sepdate   || e.sep_date   || null,
+        username:  e.username  || '',
+        email:     e.email     || '',
+        phone:     e.phone     || '',
+        deptId:    hist ? hist.deptId : 1,
+        jobId:     hist ? hist.jobId  : 1,
+        salary:    hist ? hist.salary : 0,
+        /* flag whether this employee is considered active for display */
+        isActive:  !(e.deleted || e.sepdate || e.sep_date || e.blocked)
       };
     });
+
+    /* ── employees = active subset of allEmployees (for Employees page) ── */
+    employees = allEmployees.filter(e => e.isActive);
 
     renderEmp();
     renderStats();
-  } catch (error) {
-    console.error("❌ FATAL ERROR:", error);
-    alert("Fatal error loading data: " + error.message);
+  } catch (err) {
+    alert('Fatal error loading data: ' + err.message);
   }
 }
 
 /* ════════════════════════════════════
    HELPERS
 ════════════════════════════════════ */
-const gD  = id => departments.find(d => d.id === id);
-const gJ  = id => jobs.find(j => j.id === id);
-const gE  = id => employees.find(e => e.id === id);
-const gEByEmpNo = empNo => employees.find(e => e.empNo === empNo);
+const gD = id => departments.find(d => d.id === id);
+const gJ = id => jobs.find(j => j.id === id);
+const gE = id => employees.find(e => e.id === id);   // active employees only
+
+/* ── KEY FIX: look up name from allEmployees (not just active employees) ── */
+function enByEmpNo(empNo) {
+  const normalized = String(empNo).trim();
+  const e = allEmployees.find(x => x.empNo === normalized);
+  if (e && (e.lastName || e.firstName)) {
+    return `${e.lastName}, ${e.firstName}`.replace(/^, |, $/, '').trim();
+  }
+  // Fallback: return the empNo itself so the cell is never blank
+  return normalized || '—';
+}
+
 const dn  = id => { const d = gD(id); return d ? d.name : '—'; };
 const dc  = id => { const d = gD(id); return d ? d.code : '—'; };
 const jd  = id => { const j = gJ(id); return j ? j.desc : '—'; };
 const jc  = id => { const j = gJ(id); return j ? j.code : '—'; };
-// FIX: look up employee by empNo (string), not by numeric id
-const en  = empNo => {
-  const e = gEByEmpNo(empNo);
-  return e ? `${e.lastName}, ${e.firstName}` : empNo || '—';
-};
-const ini = e  => ((e.firstName[0] || '') + (e.lastName[0] || '')).toUpperCase();
 const fmt    = d => d ? d : '—';
 const fmtSal = s => s ? '₱' + Number(s).toLocaleString() : '—';
+const ini    = e => ((e.firstName[0] || '') + (e.lastName[0] || '')).toUpperCase();
 
 /* ════════════════════════════════════
    NAVIGATION
@@ -564,14 +547,14 @@ function askConfirm(title, msg, fn, btn = 'Confirm') {
 }
 
 /* ════════════════════════════════════
-   STATS — FIX: M = Male, F = Female
+   STATS
 ════════════════════════════════════ */
 function renderStats() {
   const total  = employees.length;
   const depts  = new Set(employees.map(e => e.deptId)).size;
   const male   = employees.filter(e => e.gender === 'M').length;
   const female = employees.filter(e => e.gender === 'F').length;
-  const other  = employees.filter(e => e.gender !== 'M' && e.gender !== 'F').length;
+  const other  = employees.filter(e => e.gender !== 'M' && e.gender !== 'F' && e.gender !== '').length;
   document.getElementById('emp-stats').innerHTML = `
     <div class="sc ac"><div class="n">${total}</div><div class="l">Active Employees</div></div>
     <div class="sc"><div class="n">${depts}</div><div class="l">Departments</div></div>
@@ -603,7 +586,6 @@ function renderEmp() {
 
   let data = employees.filter(e => {
     if (fd && String(e.deptId) !== fd) return false;
-    // FIX: filter by raw stored gender value (M/F/Other)
     if (fg && e.gender !== fg) return false;
     return `${e.empNo} ${e.lastName} ${e.firstName} ${jd(e.jobId)} ${dn(e.deptId)}`
       .toLowerCase().includes(q);
@@ -631,37 +613,32 @@ function renderEmp() {
       <td><span class="badge b-dept">${dc(e.deptId)}</span> ${dn(e.deptId)}</td>
       <td><span class="badge b-active">Active</span></td>
       <td>
-        <button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf(${e.id})">View</button>
+        <button class="btn btn-outline" style="padding:3px 7px;font-size:10px"
+          onclick="viewProf(${e.id})">View</button>
       </td>
     </tr>`).join('');
 }
 
 /* ════════════════════════════════════
-   JOB HISTORY — FIX: use empNo to look up employee name
+   JOB HISTORY
+   ──────────────────────────────────
+   FIX: uses enByEmpNo() which searches allEmployees,
+   so separated/blocked/inactive employees still show
+   their full name instead of a raw empNo number.
 ════════════════════════════════════ */
 function renderHist() {
   const q    = document.getElementById('hist-q').value.toLowerCase();
-  const fe   = document.getElementById('hist-fe').value;
   const sort = document.getElementById('hist-sort').value;
-  const sel  = document.getElementById('hist-fe'), cv = sel.value;
-
-  sel.innerHTML = '<option value="">All Employees</option>';
-  employees.forEach(e => {
-    const o = document.createElement('option');
-    o.value = e.empNo; o.textContent = `${e.empNo} – ${e.lastName}, ${e.firstName}`;
-    if (e.empNo === cv) o.selected = true;
-    sel.appendChild(o);
-  });
 
   let data = jobHistory.filter(h => {
-    if (fe && h.empNo !== fe) return false;
-    return `${en(h.empNo)} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)}`
+    const name = enByEmpNo(h.empNo).toLowerCase();
+    return `${name} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)} ${h.empNo}`
       .toLowerCase().includes(q);
   });
 
   data.sort((a, b) => {
-    const na = en(a.empNo);
-    const nb = en(b.empNo);
+    const na  = enByEmpNo(a.empNo);
+    const nb  = enByEmpNo(b.empNo);
     const cmp = na.localeCompare(nb);
     return sort === 'za' ? -cmp : cmp;
   });
@@ -674,7 +651,7 @@ function renderHist() {
   tb.innerHTML = data.map(h => `
     <tr>
       <td>JH-${String(h.id).padStart(3, '0')}</td>
-      <td>${en(h.empNo)}</td>
+      <td>${enByEmpNo(h.empNo)}</td>
       <td>${jc(h.jobId)}</td>
       <td>${jd(h.jobId)}</td>
       <td>${dc(h.deptId)}</td>
@@ -685,7 +662,7 @@ function renderHist() {
 }
 
 /* ════════════════════════════════════
-   DEPARTMENTS — FIX: description column removed
+   DEPARTMENTS
 ════════════════════════════════════ */
 function renderDepts() {
   const q    = document.getElementById('dept-q').value.toLowerCase();
@@ -695,7 +672,6 @@ function renderDepts() {
   let data = departments.filter(d =>
     `${d.code} ${d.name} ${d.desc}`.toLowerCase().includes(q)
   );
-
   data.sort((a, b) => {
     const cmp = a.name.localeCompare(b.name);
     return sort === 'za' ? -cmp : cmp;
@@ -715,7 +691,7 @@ function renderDepts() {
 }
 
 /* ════════════════════════════════════
-   JOB POSITIONS — FIX: department column + filter removed
+   JOB POSITIONS
 ════════════════════════════════════ */
 function renderJobs() {
   const q  = document.getElementById('jobs-q').value.toLowerCase();
@@ -739,7 +715,9 @@ function renderJobs() {
 }
 
 /* ════════════════════════════════════
-   PROFILE  (read-only)
+   PROFILE (read-only)
+   Uses allEmployees so a history row's profile
+   can still be found even for separated employees.
 ════════════════════════════════════ */
 function viewProf(id) {
   const e = gE(id); if (!e) return;
@@ -773,47 +751,43 @@ function viewProf(id) {
           <span class="badge b-active" style="font-size:11px">Active</span>
         </div>
       </div>
-
       <div class="pp-body">
         <div class="pst">Personal Information</div>
         <div class="pg">
-          <div class="pf"><label>Emp No</label>      <div class="v">${e.empNo}</div></div>
-          <div class="pf"><label>Last Name</label>   <div class="v">${e.lastName}</div></div>
-          <div class="pf"><label>First Name</label>  <div class="v">${e.firstName}</div></div>
-          <div class="pf"><label>Gender</label>      <div class="v">${displayGender(e.gender)}</div></div>
-          <div class="pf"><label>Hire Date</label>   <div class="v">${fmt(e.hireDate)}</div></div>
-          <div class="pf"><label>Sep Date</label>    <div class="v">${e.sepDate ? fmt(e.sepDate) : '—'}</div></div>
-          <div class="pf"><label>Email</label>       <div class="v">${e.email || '—'}</div></div>
-          <div class="pf"><label>Phone</label>       <div class="v">${e.phone || '—'}</div></div>
+          <div class="pf"><label>Emp No</label>     <div class="v">${e.empNo}</div></div>
+          <div class="pf"><label>Last Name</label>  <div class="v">${e.lastName}</div></div>
+          <div class="pf"><label>First Name</label> <div class="v">${e.firstName}</div></div>
+          <div class="pf"><label>Gender</label>     <div class="v">${displayGender(e.gender)}</div></div>
+          <div class="pf"><label>Hire Date</label>  <div class="v">${fmt(e.hireDate)}</div></div>
+          <div class="pf"><label>Sep Date</label>   <div class="v">${e.sepDate ? fmt(e.sepDate) : '—'}</div></div>
+          <div class="pf"><label>Email</label>      <div class="v">${e.email || '—'}</div></div>
+          <div class="pf"><label>Phone</label>      <div class="v">${e.phone || '—'}</div></div>
         </div>
-
         <div class="pst">Current Assignment</div>
         <div class="pg" style="margin-bottom:18px">
-          <div class="pf"><label>Dept Code</label>       <div class="v">${dc(e.deptId)}</div></div>
-          <div class="pf"><label>Department</label>      <div class="v">${dn(e.deptId)}</div></div>
-          <div class="pf"><label>Job Code</label>        <div class="v">${jc(e.jobId)}</div></div>
-          <div class="pf"><label>Job Description</label> <div class="v">${jd(e.jobId)}</div></div>
+          <div class="pf"><label>Dept Code</label>        <div class="v">${dc(e.deptId)}</div></div>
+          <div class="pf"><label>Department</label>       <div class="v">${dn(e.deptId)}</div></div>
+          <div class="pf"><label>Job Code</label>         <div class="v">${jc(e.jobId)}</div></div>
+          <div class="pf"><label>Job Description</label>  <div class="v">${jd(e.jobId)}</div></div>
         </div>
-
         <div class="pst" style="margin-bottom:10px">Job History</div>
         <div class="tw">
           <table class="ht">
             <thead>
               <tr>
-                <th>Job Code</th>
-                <th>Job Description</th>
-                <th>Dept Code</th>
-                <th>Department</th>
-                <th>Eff Date</th>
-                <th>Salary</th>
+                <th>Job Code</th><th>Job Description</th>
+                <th>Dept Code</th><th>Department</th>
+                <th>Eff Date</th><th>Salary</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
-
         <div style="margin-top:14px">
-          <button class="btn btn-outline" onclick="nav(document.querySelector('[data-page=employees]'),'employees')">← Back to Employees</button>
+          <button class="btn btn-outline"
+            onclick="nav(document.querySelector('[data-page=employees]'),'employees')">
+            ← Back to Employees
+          </button>
         </div>
       </div>
     </div>`;
@@ -829,6 +803,7 @@ function viewProf(id) {
 ════════════════════════════════════ */
 function doLogout() {
   askConfirm('Log Out', 'Are you sure you want to log out?', async () => {
+    if (statusCheckInterval) clearInterval(statusCheckInterval);
     await sb.auth.signOut();
     window.location.href = 'index.html#login';
   }, 'Log Out');
