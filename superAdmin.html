@@ -1177,14 +1177,6 @@ async function toggleBlockUser(id){
               : 'User "'+u.email+'" has been unblocked. They can log in again.',
             willBlock?'error':'success'
           );
-          // ── If blocking and user is currently logged in, sign them out immediately ──
-          if(willBlock){
-            const {data:{session}}=await sb.auth.getSession();
-            if(session && session.user && session.user.id===u.supabaseId){
-              await sb.auth.signOut();
-              window.location.href='blocked.html';
-            }
-          }
         }
       } else {
         showToast('No Supabase ID — blocked locally only.','error',4000);
