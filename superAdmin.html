@@ -1209,7 +1209,7 @@ async function deleteUser(id){
   askConfirm('Delete User','Delete user "'+u.email+'"? This will deactivate their account.',async function(){
     if(u.supabaseId){
       const {error}=await sb.from('profiles')
-        .update({ status: 'inactive' })  // soft delete — sets inactive
+        .update({ status: 'deactivated' })  // soft delete — sets inactive
         .eq('id', u.supabaseId);
       if(error) showToast('Supabase error: '+error.message,'error',4000);
       else showToast('User deactivated successfully.','success');
