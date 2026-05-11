@@ -465,7 +465,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <input id="fe-empno" placeholder="12345" maxlength="5" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
           <span style="font-size:10px;color:var(--muted);margin-top:3px;display:block">Please only select numbers. (5 digits)</span>
         </div>
-        <div class="fr"><label>Username</label><input id="fe-user" placeholder="employee1"/></div>
+        <div class="fr"><label>Email</label><input type="email" id="fe-user" placeholder="email@company.com"/></div>
       </div>
       <div class="f2">
         <div class="fr"><label>Last Name</label><input id="fe-ln" placeholder="Last name"/></div>
@@ -555,7 +555,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div class="mh"><h3 id="mo-user-title">Add User</h3><button class="mc-btn" onclick="cm('mo-user')">x</button></div>
     <div class="mb">
       <div class="f2">
-        <div class="fr"><label>Email</label><input id="fu-user" placeholder="email@company.com"/></div>
+        <div class="fr"><label>Email</label><input type="email" id="fu-user" placeholder="email@company.com"/></div>
         <div class="fr"><label>Password</label><input type="password" id="fu-pass" placeholder="password"/></div>
       </div>
       <div class="f2">
@@ -672,7 +672,7 @@ async function loadAllData(){
       .filter(u=>u.status==='active'||u.status==='approved')
       .map((u,idx)=>({
         id:idx+1,
-        username:u.username||u.email||'',
+        email:u.email||u.username||'',
         firstName:u.first_name||'',
         lastName:u.last_name||'',
         fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
@@ -959,7 +959,7 @@ function renderUsers(){
   let data=sysUsers.filter(u=>{
     if(u.deleted)return false;
     if(fr&&u.role!==fr)return false;
-    return (u.username+' '+u.fullName+' '+u.role).toLowerCase().includes(q);
+    return (u.email+' '+u.fullName+' '+u.role).toLowerCase().includes(q);
   });
   const tb=document.getElementById('users-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No users found.</td></tr>';return;}
@@ -992,13 +992,13 @@ function toggleBlockUser(id){
   if(u.username===CURRENT_USER){alert('You cannot block your own account.');return;}
   if(u.role==='superadmin'){alert('You cannot block another Super Admin account.');return;}
   const action=u.blocked?'Unblock':'Block';
-  askConfirm(action+' User',action+' account "'+u.username+'"?',function(){u.blocked=!u.blocked;logAudit(u.blocked?'BLOCK':'RESTORE','User',u.username,(u.blocked?'Blocked':'Unblocked')+' by superadmin');renderUsers();renderUserStats();updatePendingBadges();},'action',u.blocked?'btn-success':'btn-block');
+  askConfirm(action+' User',action+' account "'+u.email+'"?',function(){u.blocked=!u.blocked;logAudit(u.blocked?'BLOCK':'RESTORE','User',u.email,(u.blocked?'Blocked':'Unblocked')+' by superadmin');renderUsers();renderUserStats();updatePendingBadges();},'action',u.blocked?'btn-success':'btn-block');
 }
 function deleteUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  if(u.username===CURRENT_USER){alert('You cannot delete your own account.');return;}
+  if(u.email===CURRENT_USER){alert('You cannot delete your own account.');return;}
   if(u.role==='superadmin'){alert('You cannot delete another Super Admin account.');return;}
-  askConfirm('Delete User','Permanently delete user "'+u.username+'"?',function(){logAudit('DELETE','User',u.username,'Permanently deleted by superadmin');const idx=sysUsers.findIndex(x=>x.id===id);if(idx>-1)sysUsers.splice(idx,1);renderUsers();renderUserStats();updatePendingBadges();},'Delete','btn-danger');
+  askConfirm('Delete User','Permanently delete user "'+u.email+'"?',function(){logAudit('DELETE','User',u.email,'Permanently deleted by superadmin');const idx=sysUsers.findIndex(x=>x.id===id);if(idx>-1)sysUsers.splice(idx,1);renderUsers();renderUserStats();updatePendingBadges();},'Delete','btn-danger');
 }
 function openAddUser(){
   editId.user=null;document.getElementById('mo-user-title').textContent='Add User';
@@ -1009,7 +1009,7 @@ function openAddUser(){
 function openEditUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
   editId.user=id;document.getElementById('mo-user-title').textContent='Edit User';
-  document.getElementById('fu-user').value=u.username;
+  document.getElementById('fu-user').value=u.email;
   document.getElementById('fu-pass').value=u.password||'';
   document.getElementById('fu-fn').value=u.firstName;
   document.getElementById('fu-ln').value=u.lastName;
@@ -1017,10 +1017,10 @@ function openEditUser(id){
   om('mo-user');
 }
 function saveUser(){
-  const username=document.getElementById('fu-user').value.trim(),password=document.getElementById('fu-pass').value.trim(),firstName=document.getElementById('fu-fn').value.trim(),lastName=document.getElementById('fu-ln').value.trim(),role=document.getElementById('fu-role').value;
-  if(!username||!role){alert('Username and role are required.');return;}
-  if(editId.user){const u=sysUsers.find(x=>x.id===editId.user);Object.assign(u,{username,password,firstName,lastName,role,fullName:firstName+' '+lastName});logAudit('EDIT','User',username,'Updated by superadmin');}
-  else{sysUsers.push({id:nU++,username,password,firstName,lastName,fullName:firstName+' '+lastName,role,empId:null,deleted:false,blocked:false,registeredAt:now(),approvedBy:CURRENT_USER});logAudit('ADD','User',username,'Created by superadmin');}
+  const email=document.getElementById('fu-user').value.trim(),password=document.getElementById('fu-pass').value.trim(),firstName=document.getElementById('fu-fn').value.trim(),lastName=document.getElementById('fu-ln').value.trim(),role=document.getElementById('fu-role').value;
+  if(!email||!role){alert('Email and role are required.');return;}
+  if(editId.user){const u=sysUsers.find(x=>x.id===editId.user);Object.assign(u,{email,password,firstName,lastName,role,fullName:firstName+' '+lastName});logAudit('EDIT','User',email,'Updated by superadmin');}
+  else{sysUsers.push({id:nU++,email,password,firstName,lastName,fullName:firstName+' '+lastName,role,empId:null,deleted:false,blocked:false,registeredAt:now(),approvedBy:CURRENT_USER});logAudit('ADD','User',email,'Created by superadmin');}
   cm('mo-user');renderUsers();renderUserStats();
 }
 
