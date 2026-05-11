@@ -203,8 +203,14 @@
     const status = (profile.status || '').toLowerCase();
     const ALLOWED_STATUSES = ['active', 'approved'];
 
+    if (status === 'blocked' || status === 'inactive') {
+      // blocked/inactive users → blocked page
+      window.location.href = 'blocked.html';
+      return;
+    }
+
     if (!ALLOWED_STATUSES.includes(status)) {
-      // pending / rejected / blocked / inactive → waiting page
+      // pending / rejected → waiting page
       window.location.href = 'waiting.html';
       return;
     }
