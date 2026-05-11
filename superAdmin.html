@@ -687,9 +687,14 @@ async function initAuth(){
     const uid = session.user.id;
     const { data: prof } = await sb.from('profiles').select('username,email,full_name,role,status').eq('id', uid).single();
     if(prof){
-      if(prof.status === 'blocked' || prof.status === 'inactive'){
+      if(prof.status === 'blocked'){
         await sb.auth.signOut();
-        window.location.href = prof.status === 'blocked' ? 'blocked.html' : 'deactivated.html';
+        window.location.href = 'blocked.html';
+        return;
+      }
+      if(prof.status === 'deactivated'){
+        await sb.auth.signOut();
+        window.location.href = 'deactivated.html';
         return;
       }
       const display = prof.username || prof.full_name || prof.email || 'superadmin';
