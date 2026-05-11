@@ -203,7 +203,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <span class="nav-badge" id="nav-pending-count" style="display:none">0</span>
   </div>
   <div class="sb-footer">
-    <div class="name">admin1</div>
+    <div class="name" id="sb-username">Loading...</div>
     <div class="sub">Administrator</div>
     <div class="sb-logout" onclick="doLogout()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -216,7 +216,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div class="topbar">
     <span class="topbar-title" id="topbar-title">Employees</span>
     <div class="topbar-right">
-      <span>admin1</span>
+      <span id="topbar-username">Loading...</span>
       <span class="role-badge">ADMIN</span>
     </div>
   </div>
@@ -226,7 +226,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div id="page-employees" class="page active">
       <div class="perm-notice">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Admin role: You can <strong>view, edit, block, and delete</strong> employees.
+        Admin role: You can <strong>view, edit, and delete</strong> employees.
       </div>
       <div class="ph">
         <div class="ph-left"><h2>Employee Records</h2><p>Manage employee profiles.</p></div>
@@ -251,6 +251,10 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="active">Active</option>
           <option value="blocked">Blocked</option>
           <option value="inactive">Inactive</option>
+        </select>
+        <select id="emp-sort" onchange="renderEmp()">
+          <option value="az">Sort: A → Z</option>
+          <option value="za">Sort: Z → A</option>
         </select>
         <label class="del-toggle"><input type="checkbox" id="emp-show-all" onchange="renderEmp()"/> Show blocked/inactive</label>
       </div>
@@ -280,6 +284,10 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search..." oninput="renderHist()"/>
+        <select id="hist-sort" onchange="renderHist()">
+          <option value="az">Sort: A → Z</option>
+          <option value="za">Sort: Z → A</option>
+        </select>
         <label class="del-toggle"><input type="checkbox" id="hist-show-all" onchange="renderHist()"/> Show blocked</label>
       </div>
       <div class="tw">
@@ -304,6 +312,12 @@ tbody td{padding:8px 12px;vertical-align:middle}
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Audit Log
           </button>
         </div>
+      </div>
+      <div class="filter-row">
+        <select id="dept-sort" onchange="renderDepts()">
+          <option value="az">Sort: A → Z</option>
+          <option value="za">Sort: Z → A</option>
+        </select>
       </div>
       <div class="tw">
         <table>
@@ -581,9 +595,24 @@ const SUPABASE_URL  = 'https://fpqmxvgehtyqivkuiltw.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_EmaQ_v9ZzYmlS4efENr9ZQ_tsvlkDLI';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-sb.auth.signInAnonymously().then(()=>console.log('Signed in')).catch(e=>console.warn(e.message));
 
-const CURRENT_USER = 'admin1';
+let CURRENT_USER = 'admin';
+
+async function initAuth(){
+  await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
+  const { data: { session } } = await sb.auth.getSession();
+  if(session && session.user){
+    const uid = session.user.id;
+    const { data: prof } = await sb.from('profiles').select('username,email,full_name').eq('id', uid).single();
+    if(prof){
+      const display = prof.username || prof.full_name || prof.email || 'admin';
+      CURRENT_USER = display;
+      document.getElementById('sb-username').textContent = display;
+      document.getElementById('topbar-username').textContent = display;
+    }
+  }
+}
+
 let departments=[], jobs=[], employees=[], jobHistory=[], sysUsers=[], registrations=[], auditLog=[];
 let nextRegId=6, pendingRejectId=null, nextAuditId=11;
 let nE=1, nH=1, nD=1, nJ=1, nU=1;
@@ -629,18 +658,18 @@ async function loadAllData(){
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
     sysUsers=(userRes.data||[]).map((u,idx)=>({
-  id:idx+1,
-  username:u.username||'',
-  firstName:u.first_name||'',
-  lastName:u.last_name||'',
-  fullName:u.full_name||'',
-  role:(u.role||'user').toLowerCase(),
-  empId:null,
-  registeredAt:u.created_at||'',
-  approvedBy:'',
-  deleted:false,
-  blocked:u.status==='blocked',
-}));
+      id:idx+1,
+      username:u.username||'',
+      firstName:u.first_name||'',
+      lastName:u.last_name||'',
+      fullName:u.full_name||'',
+      role:(u.role||'user').toLowerCase(),
+      empId:null,
+      registeredAt:u.created_at||'',
+      approvedBy:'',
+      deleted:false,
+      blocked:u.status==='blocked',
+    }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
   }catch(err){alert('Fatal error loading data: '+err.message);}
@@ -730,6 +759,7 @@ function renderEmp(){
   const fd=document.getElementById('emp-fd').value;
   const fs=document.getElementById('emp-fs').value;
   const all=document.getElementById('emp-show-all').checked;
+  const sortDir=document.getElementById('emp-sort').value;
   let data=employees.filter(e=>{
     const hidden=e.deleted||e.blocked;
     if(!all&&fs!=='blocked'&&fs!=='inactive'&&hidden)return false;
@@ -738,7 +768,10 @@ function renderEmp(){
     if(fs==='inactive'&&!e.deleted)return false;
     if(fd&&String(e.deptId)!==fd)return false;
     return (e.empNo+' '+e.lastName+' '+e.firstName+' '+jd(e.jobId)+' '+dn(e.deptId)).toLowerCase().includes(q);
-  }).sort((a,b)=>a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName));
+  }).sort((a,b)=>{
+    const cmp=a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName);
+    return sortDir==='za'?-cmp:cmp;
+  });
   const tb=document.getElementById('emp-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="12" class="tbl-empty">No employees found.</td></tr>';upBtns('emp');return;}
   tb.innerHTML=data.map(e=>{
@@ -756,8 +789,6 @@ function renderEmp(){
       '<td class="ns" style="white-space:nowrap">'+
         '<button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf('+e.id+')">View</button> '+
         '<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditEmp('+e.id+')">Edit</button> '+
-        (!e.blocked&&!e.deleted?'<button class="btn btn-block" style="padding:3px 7px;font-size:10px" onclick="blockOneEmp('+e.id+')">Block</button>':'')+
-        (e.blocked?'<button class="btn btn-restore" style="padding:3px 7px;font-size:10px" onclick="unblockOneEmp('+e.id+')">Unblock</button>':'')+
         ' <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteOneEmp('+e.id+')">Delete</button>'+
       '</td></tr>';
   }).join('');
@@ -773,22 +804,6 @@ function upBtns(scope){
   }
 }
 
-function blockOneEmp(id){
-  const e=gE(id);if(!e)return;
-  askConfirm('Block Employee','Block '+e.lastName+', '+e.firstName+'?',function(){
-    e.blocked=true;e.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked by admin'};
-    logAudit('BLOCK','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Blocked by admin');
-    renderEmp();renderStats();
-  },'Block','btn-block');
-}
-function unblockOneEmp(id){
-  const e=gE(id);if(!e)return;
-  askConfirm('Unblock Employee','Restore '+e.lastName+', '+e.firstName+' to active?',function(){
-    e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Unblocked by admin'};
-    logAudit('RESTORE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Unblocked by admin');
-    renderEmp();renderStats();
-  },'Unblock','btn-success');
-}
 function deleteOneEmp(id){
   const e=gE(id);if(!e)return;
   askConfirm('Delete Employee','Delete '+e.lastName+', '+e.firstName+'? They will be moved to Deleted Items.',function(){
@@ -852,10 +867,15 @@ function saveEmp(){
 function renderHist(){
   const q=document.getElementById('hist-q').value.toLowerCase();
   const all=document.getElementById('hist-show-all').checked;
+  const sortDir=document.getElementById('hist-sort').value;
   let data=jobHistory.filter(h=>{
     if(!all&&h.deleted)return false;
     return (en(h.empId)+' '+jc(h.jobId)+' '+jd(h.jobId)+' '+dc(h.deptId)+' '+dn(h.deptId)).toLowerCase().includes(q);
-  }).sort((a,b)=>b.effDate.localeCompare(a.effDate));
+  }).sort((a,b)=>{
+    const nameA=en(a.empId), nameB=en(b.empId);
+    const cmp=nameA.localeCompare(nameB);
+    return sortDir==='za'?-cmp:cmp;
+  });
   const tb=document.getElementById('hist-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="11" class="tbl-empty">No records.</td></tr>';return;}
   tb.innerHTML=data.map(h=>'<tr class="'+(h.deleted?'del-row':'')+'">'+
@@ -885,8 +905,13 @@ function saveHist(){
 }
 
 function renderDepts(){
+  const sortDir=document.getElementById('dept-sort').value;
   const ec=function(id){return employees.filter(e=>e.deptId===id&&!e.deleted&&!e.blocked).length;};
-  const tb=document.getElementById('dept-tbody'),data=departments.filter(d=>!d.deleted);
+  const tb=document.getElementById('dept-tbody');
+  let data=departments.filter(d=>!d.deleted).sort((a,b)=>{
+    const cmp=a.name.localeCompare(b.name);
+    return sortDir==='za'?-cmp:cmp;
+  });
   if(!data.length){tb.innerHTML='<tr><td colspan="4" class="tbl-empty">No departments.</td></tr>';return;}
   tb.innerHTML=data.map(d=>'<tr><td><strong>'+d.code+'</strong></td><td>'+d.name+'</td><td>'+ec(d.id)+'</td>'+
     '<td><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept('+d.id+')">Edit</button> '+
@@ -979,7 +1004,6 @@ function renderUsers(){
   if(!data.length){tb.innerHTML='<tr><td colspan="8" class="tbl-empty">No users found.</td></tr>';return;}
   tb.innerHTML=data.map(function(u){
     const roleClass=u.role==='admin'?'b-admin':'b-user';
-   
     let actionBtns='';
     if(u.role==='admin'){
       actionBtns='<span style="font-size:10px;color:var(--muted);font-style:italic">Protected (Admin)</span>';
@@ -992,7 +1016,6 @@ function renderUsers(){
       '<td><strong>'+u.username+'</strong></td>'+
       '<td>'+(u.fullName||u.firstName+' '+u.lastName||'--')+'</td>'+
       '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
-     
       '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt||'--')+'</td>'+
       '<td style="font-size:10px;color:var(--muted)">'+(u.approvedBy||'--')+'</td>'+
       '<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
@@ -1017,7 +1040,6 @@ function renderPending(){
   if(!data.length){container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';return;}
   container.innerHTML=data.map(r=>{
     const initials=(r.firstName[0]+r.lastName[0]).toUpperCase();
-   
     return '<div class="reg-card">'+
       '<div class="reg-avatar">'+initials+'</div>'+
       '<div class="reg-info">'+
@@ -1055,14 +1077,13 @@ function renderAllReg(){
   if(!data.length){tb.innerHTML='<tr><td colspan="9" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
     const sb2=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':'<span class="badge b-pending">Pending</span>';
- 
     const actions=r.status==='pending'?
       '<button class="btn btn-approve" style="padding:3px 7px;font-size:10px" onclick="approveReg('+r.id+')">Approve</button> <button class="btn btn-reject" style="padding:3px 7px;font-size:10px" onclick="openRejectModal('+r.id+')">Reject</button>':
       r.status==='rejected'?'<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="reconsiderReg('+r.id+')">Reconsider</button>':'--';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td><strong>'+r.username+'</strong></td><td>'+r.firstName+' '+r.lastName+'</td>'+
       '<td><span class="badge '+(r.requestedRole==='admin'?'b-admin':'b-user')+'">'+r.requestedRole.toUpperCase()+'</span></td>'+
-      '<td>'+emp+'</td><td style="font-size:10px;color:var(--muted)">'+r.submittedAt+'</td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+r.submittedAt+'</td>'+
       '<td class="ns">'+sb2+'</td><td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td>'+
       '<td style="font-size:10px;color:var(--muted);max-width:140px">'+(r.note||'--')+'</td>'+
       '<td class="ns" style="white-space:nowrap">'+actions+'</td></tr>';
@@ -1129,8 +1150,6 @@ function viewProf(id){
       '<div style="margin-top:14px;display:flex;gap:7px;flex-wrap:wrap">'+
         '<button class="btn btn-primary" onclick="openEditEmp('+e.id+')">Edit Profile</button>'+
         '<button class="btn btn-audit" onclick="viewEmpAudit('+e.id+')">View Audit Log</button>'+
-        (!e.blocked&&!e.deleted?'<button class="btn btn-block" onclick="blockProfEmp('+e.id+')">Block Employee</button>':'')+
-        (e.blocked?'<button class="btn btn-restore" onclick="unblockProfEmp('+e.id+')">Unblock Employee</button>':'')+
         '<button class="btn btn-danger" onclick="deleteProfEmp('+e.id+')">Delete Employee</button>'+
       '</div>'+
     '</div></div>';
@@ -1148,13 +1167,11 @@ function openAddHistFor(empId){
   om('mo-hist');
 }
 function blockHistRow(hid,empId){askConfirm('Block History Entry','Block this history record?',function(){const h=jobHistory.find(x=>x.id===hid);h.deleted=true;h.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};logAudit('BLOCK','JobHistory','JH-'+String(h.id).padStart(3,'0'),'Blocked via profile');viewProf(empId);},'Block','btn-block');}
-function blockProfEmp(id){askConfirm('Block Employee','Block this employee?',function(){const e=gE(id);e.blocked=true;e.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};logAudit('BLOCK','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Blocked via profile');viewProf(id);renderStats();},'Block','btn-block');}
-function unblockProfEmp(id){askConfirm('Unblock Employee','Restore employee to active?',function(){const e=gE(id);e.blocked=false;e.meta={by:CURRENT_USER,at:now(),action:'RESTORE',note:'Unblocked via profile'};logAudit('RESTORE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Unblocked via profile');viewProf(id);renderStats();},'Unblock','btn-success');}
 function deleteProfEmp(id){const e=gE(id);askConfirm('Delete Employee','Delete this employee? They will be moved to Deleted Items.',function(){e.deleted=true;e.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted via profile'};logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Deleted via profile');nav(document.querySelector('[data-page=employees]'),'employees');},'Delete','btn-danger');}
 
 function doLogout(){askConfirm('Log Out','Are you sure you want to log out?',async function(){await sb.auth.signOut();window.location.href='index.html#login';},'Log Out','btn-danger');}
 
-loadAllData();
+initAuth().then(loadAllData);
 </script>
 </body>
 </html>
