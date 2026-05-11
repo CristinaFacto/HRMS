@@ -220,12 +220,16 @@
       }
       
       if (status === 'active' || status === 'approved') {
-        // continue login
+        clearInterval(pollInterval);
+        document.getElementById('approvedMsg').classList.remove('hidden');
+        document.getElementById('spinner').style.display = 'none';
+        redirectByRole(profile.role);   // ← actually redirect them
+        return;
       } else {
         window.location.href = 'waiting.html';
         return;
       }
-    
+    }  
 
     // ── Init ────────────────────────────────────────────────────
     async function init() {
