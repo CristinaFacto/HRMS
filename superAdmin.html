@@ -671,11 +671,12 @@ async function loadAllData(){
       const emp=employees.find(e=>e.empNo===h.empNo);
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
-    sysUsers=(userRes.data||[]).map((u,idx)=>({
+   sysUsers=(userRes.data||[]).map((u,idx)=>({
   id:idx+1,
   username:u.username||'',
   firstName:u.first_name||'',
   lastName:u.last_name||'',
+  fullName:u.full_name||'',
   role:(u.role||'user').toLowerCase(),
   empId:null,
   registeredAt:u.created_at||'',
