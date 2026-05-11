@@ -256,7 +256,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="az">Sort: A → Z</option>
           <option value="za">Sort: Z → A</option>
         </select>
-        <label class="del-toggle"><input type="checkbox" id="emp-show-all" onchange="renderEmp()"/> Show blocked/inactive</label>
       </div>
       <div class="tw">
         <table>
@@ -288,7 +287,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="az">Sort: A → Z</option>
           <option value="za">Sort: Z → A</option>
         </select>
-        <label class="del-toggle"><input type="checkbox" id="hist-show-all" onchange="renderHist()"/> Show blocked</label>
       </div>
       <div class="tw">
         <table>
@@ -657,19 +655,39 @@ async function loadAllData(){
       const emp=employees.find(e=>e.empNo===h.empNo);
       return{id:h.id,empId:emp?emp.id:0,jobId:h.jobId,deptId:h.deptId,effDate:h.effDate,salary:h.salary,deleted:h.deleted};
     });
-    sysUsers=(userRes.data||[]).map((u,idx)=>({
-      id:idx+1,
-      username:u.username||'',
-      firstName:u.first_name||'',
-      lastName:u.last_name||'',
-      fullName:u.full_name||'',
-      role:(u.role||'user').toLowerCase(),
-      empId:null,
-      registeredAt:u.created_at||'',
-      approvedBy:'',
-      deleted:false,
-      blocked:u.status==='blocked',
-    }));
+    sysUsers=(userRes.data||[])
+      .filter(u=>u.status==='active'||u.status==='approved')
+      .map((u,idx)=>({
+        id:idx+1,
+        username:u.username||u.email||'',
+        firstName:u.first_name||'',
+        lastName:u.last_name||'',
+        fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
+        role:(u.role||'user').toLowerCase(),
+        empId:null,
+        registeredAt:u.created_at||'',
+        approvedBy:u.approved_by||'',
+        deleted:false,
+        blocked:u.status==='blocked',
+      }));
+    registrations=(userRes.data||[])
+      .filter(u=>u.status==='pending'||u.status==='inactive'||u.status==='rejected')
+      .map((u,idx)=>({
+        id:idx+1,
+        username:u.username||u.email||'',
+        firstName:u.first_name||'',
+        lastName:u.last_name||'',
+        fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
+        email:u.email||'',
+        empNo:u.emp_id||'',
+        requestedRole:u.requested_role||'user',
+        status:u.status==='rejected'?'rejected':'pending',
+        submittedAt:u.created_at||'',
+        reviewedBy:u.approved_by||null,
+        reviewedAt:u.updated_at||null,
+        note:'',
+        empId:null,
+      }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
   }catch(err){alert('Fatal error loading data: '+err.message);}
@@ -758,11 +776,10 @@ function renderEmp(){
   const q=document.getElementById('emp-q').value.toLowerCase();
   const fd=document.getElementById('emp-fd').value;
   const fs=document.getElementById('emp-fs').value;
-  const all=document.getElementById('emp-show-all').checked;
   const sortDir=document.getElementById('emp-sort').value;
   let data=employees.filter(e=>{
     const hidden=e.deleted||e.blocked;
-    if(!all&&fs!=='blocked'&&fs!=='inactive'&&hidden)return false;
+    if(fs!=='blocked'&&fs!=='inactive'&&hidden)return false;
     if(fs==='active'&&(e.deleted||e.blocked))return false;
     if(fs==='blocked'&&!e.blocked)return false;
     if(fs==='inactive'&&!e.deleted)return false;
@@ -866,10 +883,8 @@ function saveEmp(){
 
 function renderHist(){
   const q=document.getElementById('hist-q').value.toLowerCase();
-  const all=document.getElementById('hist-show-all').checked;
   const sortDir=document.getElementById('hist-sort').value;
   let data=jobHistory.filter(h=>{
-    if(!all&&h.deleted)return false;
     return (en(h.empId)+' '+jc(h.jobId)+' '+jd(h.jobId)+' '+dc(h.deptId)+' '+dn(h.deptId)).toLowerCase().includes(q);
   }).sort((a,b)=>{
     const nameA=en(a.empId), nameB=en(b.empId);
