@@ -641,7 +641,7 @@ async function initAuth(){
         window.location.href = 'blocked.html';
         return;
       }
-      if(prof.status === 'inactive'){
+      if(prof.status === 'deactivated'){
         await sb.auth.signOut();
         window.location.href = 'deactivated.html';
         return;
