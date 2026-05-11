@@ -216,7 +216,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <p>View employment history records across all employees.</p>
         </div>
       </div>
-      <!-- CHANGED: Removed employee filter dropdown — search bar only -->
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search history…" oninput="renderHist()"/>
         <select id="hist-sort" onchange="renderHist()">
@@ -371,12 +370,6 @@ function setUsernameDisplay(user) {
 
 /* ════════════════════════════════════
    DATA STORE
-   ─────────────────────────────────────
-   KEY FIX:
-   · employees     = ACTIVE only  (no deleted/blocked/separated) — used for display
-   · allEmployees  = ALL employees from DB                       — used for name lookup in Job History
-   This ensures every job history row can resolve a name even if
-   the employee has since been separated, blocked, or soft-deleted.
 ════════════════════════════════════ */
 let departments  = [];
 let jobs         = [];
@@ -384,6 +377,11 @@ let employees    = [];   // active only — shown in Employees page
 let allEmployees = [];   // all — used solely for name resolution in Job History
 let jobHistory   = [];
 let pendingFn    = null;
+
+/* ── empNo normalisation: strip whitespace and leading zeros for loose comparison ── */
+function normaliseEmpNo(v) {
+  return String(v == null ? '' : v).trim();
+}
 
 /* Gender helpers */
 function normalizeGender(raw) {
@@ -432,15 +430,19 @@ async function loadAllData() {
       deptId: j.deptid   || j.deptId   || j.dept_id || 1
     }));
 
-    /* ── Job History ── (store raw empNo string for lookup) ── */
+    /* ── Job History ── */
     jobHistory = (histRes.data || []).map((h, idx) => {
       const jobCode  = h.jobcode  || h.jobCode  || h.job_code  || '';
       const deptCode = h.deptcode || h.deptCode || h.dept_code || '';
       const jobMatch  = jobs.find(j => j.code === jobCode);
       const deptMatch = departments.find(d => d.code === deptCode);
+
+      /* FIX: capture every possible empNo column name the DB might use */
+      const rawEmpNo = h.empno ?? h.empNo ?? h.emp_no ?? h.emp_id ?? h.employeeId ?? h.employee_id ?? '';
+
       return {
         id:      idx + 1,
-        empNo:   String(h.empno || h.empNo || h.emp_no || h.emp_id || '').trim(),
+        empNo:   normaliseEmpNo(rawEmpNo),
         jobId:   jobMatch  ? jobMatch.id  : 1,
         deptId:  deptMatch ? deptMatch.id : 1,
         effDate: h.effdate  || h.effDate  || h.eff_date || '',
@@ -448,16 +450,16 @@ async function loadAllData() {
       };
     });
 
-    /* ══════════════════════════════════════════════════════════
-       BUILD allEmployees — includes EVERY row from the DB
-       (including separated / blocked / deleted).
-       We only need empNo, lastName, firstName for name resolution.
-    ══════════════════════════════════════════════════════════ */
+    /* ── allEmployees: every row from DB (including separated/blocked/deleted) ── */
     allEmployees = (empRes.data || []).map((e, idx) => {
-      const empNo = String(e.empno || e.emp_no || '').trim();
-      const hist  = jobHistory
-        .filter(h => h.empNo === empNo)
+      /* FIX: capture every possible empNo column name */
+      const rawEmpNo = e.empno ?? e.emp_no ?? e.employeeId ?? e.employee_id ?? '';
+      const empNo = normaliseEmpNo(rawEmpNo);
+
+      const hist = jobHistory
+        .filter(h => empNoMatch(h.empNo, empNo))
         .sort((a, b) => new Date(b.effDate) - new Date(a.effDate))[0];
+
       return {
         id:        idx + 1,
         empNo,
@@ -472,12 +474,11 @@ async function loadAllData() {
         deptId:    hist ? hist.deptId : 1,
         jobId:     hist ? hist.jobId  : 1,
         salary:    hist ? hist.salary : 0,
-        /* flag whether this employee is considered active for display */
         isActive:  !(e.deleted || e.sepdate || e.sep_date || e.blocked)
       };
     });
 
-    /* ── employees = active subset of allEmployees (for Employees page) ── */
+    /* ── employees = active subset ── */
     employees = allEmployees.filter(e => e.isActive);
 
     renderEmp();
@@ -492,17 +493,35 @@ async function loadAllData() {
 ════════════════════════════════════ */
 const gD = id => departments.find(d => d.id === id);
 const gJ = id => jobs.find(j => j.id === id);
-const gE = id => employees.find(e => e.id === id);   // active employees only
+const gE = id => employees.find(e => e.id === id);
 
-/* ── KEY FIX: look up name from allEmployees (not just active employees) ── */
+/*
+ * empNoMatch — compare two empNo strings with three strategies:
+ *   1. Exact string match              "10001" === "10001"
+ *   2. Numeric equality               10001   ===  10001  (handles leading zeros and int vs string)
+ *   3. Trimmed case-insensitive match  (belt-and-suspenders for alpha IDs)
+ */
+function empNoMatch(a, b) {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  const sa = String(a).trim();
+  const sb2 = String(b).trim();
+  if (sa === sb2) return true;                          // exact
+  if (!isNaN(sa) && !isNaN(sb2) && Number(sa) === Number(sb2)) return true; // numeric
+  return sa.toLowerCase() === sb2.toLowerCase();        // case-insensitive
+}
+
+/*
+ * enByEmpNo — resolve a full name from allEmployees using the robust matcher.
+ * Falls back to the raw empNo so the cell is never blank.
+ */
 function enByEmpNo(empNo) {
-  const normalized = String(empNo).trim();
-  const e = allEmployees.find(x => x.empNo === normalized);
+  const key = normaliseEmpNo(empNo);
+  const e = allEmployees.find(x => empNoMatch(x.empNo, key));
   if (e && (e.lastName || e.firstName)) {
     return `${e.lastName}, ${e.firstName}`.replace(/^, |, $/, '').trim();
   }
-  // Fallback: return the empNo itself so the cell is never blank
-  return normalized || '—';
+  return key || '—';
 }
 
 const dn  = id => { const d = gD(id); return d ? d.name : '—'; };
@@ -621,10 +640,6 @@ function renderEmp() {
 
 /* ════════════════════════════════════
    JOB HISTORY
-   ──────────────────────────────────
-   FIX: uses enByEmpNo() which searches allEmployees,
-   so separated/blocked/inactive employees still show
-   their full name instead of a raw empNo number.
 ════════════════════════════════════ */
 function renderHist() {
   const q    = document.getElementById('hist-q').value.toLowerCase();
@@ -716,14 +731,12 @@ function renderJobs() {
 
 /* ════════════════════════════════════
    PROFILE (read-only)
-   Uses allEmployees so a history row's profile
-   can still be found even for separated employees.
 ════════════════════════════════════ */
 function viewProf(id) {
   const e = gE(id); if (!e) return;
 
   const hist = jobHistory
-    .filter(h => h.empNo === e.empNo)
+    .filter(h => empNoMatch(h.empNo, e.empNo))
     .sort((a, b) => b.effDate.localeCompare(a.effDate));
 
   const rows = hist.length
