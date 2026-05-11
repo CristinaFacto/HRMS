@@ -664,7 +664,7 @@ async function initAuth(){
       // Block check: if user is blocked, sign out and redirect
       if(prof.status === 'blocked'){
         await sb.auth.signOut();
-        window.location.href = 'index.html#blocked';
+        window.location.href = 'blocked.html';
         return;
       }
       const display = prof.username || prof.full_name || prof.email || 'superadmin';
@@ -691,7 +691,7 @@ function startStatusCheckListener(uid){
       clearInterval(statusCheckInterval);
       showToast('Your account has been blocked. You are being signed out.','error',3000);
       await sb.auth.signOut();
-      setTimeout(()=>window.location.href='index.html#login',1500);
+      setTimeout(()=>window.location.href='blocked.html',1500);
     }
   },5000);
 }
@@ -1120,7 +1120,7 @@ async function toggleBlockUser(id){
             const {data:{session}}=await sb.auth.getSession();
             if(session && session.user && session.user.id===u.supabaseId){
               await sb.auth.signOut();
-              window.location.href='index.html#login';
+              window.location.href='blocked.html';
             }
           }
         }
