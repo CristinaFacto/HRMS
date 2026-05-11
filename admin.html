@@ -616,6 +616,16 @@ let CURRENT_USER = 'admin';
 let CURRENT_USER_EMAIL = '';
 let statusCheckInterval = null;
 
+// Format timestamp to readable date (e.g., "May 12, 2024")
+function formatDate(timestamp){
+  if(!timestamp)return '--';
+  try{
+    const date = new Date(timestamp);
+    if(isNaN(date.getTime()))return timestamp;
+    return date.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+  }catch(e){return timestamp;}
+}
+
 async function initAuth(){
   await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   const { data: { session } } = await sb.auth.getSession();
@@ -1111,8 +1121,9 @@ function renderUsers(){
       '<td><strong>'+((u.email||u.username)||'--')+'</strong></td>'+
       '<td>'+(u.fullName||((u.firstName||'')+' '+(u.lastName||'')).trim()||'--')+'</td>'+
       '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
-      '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt||'--')+'</td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+formatDate(u.registeredAt)+'</td>'+
       '<td style="font-size:10px;color:var(--muted)">'+(u.approvedBy||'--')+'</td>'+
+
       '<td><span class="badge '+(u.blocked?'b-blk':'b-active')+'">'+(u.blocked?'Blocked':'Active')+'</span></td>'+
       '<td class="ns" style="white-space:nowrap">'+actionBtns+'</td></tr>';
   }).join('');
@@ -1212,7 +1223,7 @@ function renderAllReg(){
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td><strong>'+(r.email||r.username)+'</strong></td><td>'+(r.fullName||((r.firstName||'')+' '+(r.lastName||'')).trim()||'--')+'</td>'+ 
       '<td><span class="badge '+(r.requestedRole==='admin'?'b-admin':'b-user')+'">'+r.requestedRole.toUpperCase()+'</span></td>'+
-      '<td style="font-size:10px;color:var(--muted)">'+r.submittedAt+'</td>'+
+      '<td style="font-size:10px;color:var(--muted)">'+formatDate(r.submittedAt)+'</td>'+
       '<td class="ns">'+sb2+'</td><td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td></tr>';
   }).join('');
 }
