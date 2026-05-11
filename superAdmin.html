@@ -1206,14 +1206,17 @@ async function deleteUser(id){
   const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
   if(isSelf){showToast('You cannot delete your own account.','error');return;}
   if(u.role==='superadmin'){showToast('You cannot delete another Super Admin account.','error');return;}
-  askConfirm('Delete User','Permanently delete user "'+u.email+'"? This cannot be undone.',async function(){
+  askConfirm('Delete User','Delete user "'+u.email+'"? This will deactivate their account.',async function(){
     if(u.supabaseId){
-      const {error}=await sb.from('profiles').update({status:'inactive'}).eq('id',u.supabaseId);
-      if(error)showToast('Supabase error: '+error.message,'error',4000);
-      else showToast('User deleted successfully.','success');
+      const {error}=await sb.from('profiles')
+        .update({ status: 'inactive' })  // soft delete — sets inactive
+        .eq('id', u.supabaseId);
+      if(error) showToast('Supabase error: '+error.message,'error',4000);
+      else showToast('User deactivated successfully.','success');
     }
-    logAudit('DELETE','User',u.email,'Permanently deleted by '+CURRENT_USER);
-    const idx=sysUsers.findIndex(x=>x.id===id);if(idx>-1)sysUsers.splice(idx,1);
+    logAudit('DELETE','User',u.email,'Deactivated by '+CURRENT_USER);
+    const idx=sysUsers.findIndex(x=>x.id===id);
+    if(idx>-1) sysUsers.splice(idx,1);
     renderUsers();renderUserStats();updatePendingBadges();
   },'Delete','btn-danger');
 }
