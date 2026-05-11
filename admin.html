@@ -682,7 +682,7 @@ async function loadAllData(){
         email:u.email||'',
         empNo:u.emp_id||'',
         requestedRole:u.requested_role||u.role||'user',
-        status:u.status==='approved'||u.status==='active'?'approved':u.status==='rejected'?'rejected':u.status==='inactive'?'inactive':u.status==='pending'?'pending':(u.status||'pending'),
+        status:(u.status==='pending')?'pending':(u.status==='rejected')?'rejected':(u.status==='inactive')?'inactive':(u.status==='approved'||u.status==='active')?'approved':'pending',
         submittedAt:u.created_at||'',
         reviewedBy:u.approved_by||null,
         reviewedAt:u.updated_at||null,
@@ -1096,7 +1096,13 @@ async function confirmReject(){const r=registrations.find(x=>x.id===pendingRejec
 function renderAllReg(){
   const q=document.getElementById('allreg-q').value.toLowerCase();
   const fs=document.getElementById('allreg-fs').value;
-  let data=registrations.filter(r=>{if(fs&&r.status!==fs)return false;return ((r.email||r.username)+' '+r.fullName+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')+' '+r.status).toLowerCase().includes(q);}).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
+  let data=registrations.filter(r=>{
+    if(fs==='approved'&&r.status!=='approved')return false;
+    if(fs==='pending'&&r.status!=='pending')return false;
+    if(fs==='rejected'&&r.status!=='rejected')return false;
+    if(fs==='inactive'&&r.status!=='inactive')return false;
+    return ((r.email||r.username)+' '+r.fullName+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')+' '+r.status).toLowerCase().includes(q);
+  }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
   const tb=document.getElementById('allreg-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="9" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
