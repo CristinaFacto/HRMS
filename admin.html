@@ -438,7 +438,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="tw"><table>
           <thead><tr>
             <th>Username</th><th>Full Name</th><th>Requested Role</th>
-            <th>Submitted</th><th>Status</th><th>Reviewed By</th><th>Note</th><th>Actions</th>
+            <th>Submitted</th><th>Status</th><th>Reviewed By</th><th>Note</th>
           </tr></thead>
           <tbody id="allreg-tbody"></tbody>
         </table></div>
@@ -1206,19 +1206,15 @@ function renderAllReg(){
     return ((r.email||r.username)+' '+r.fullName+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')+' '+r.status).toLowerCase().includes(q);
   }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
   const tb=document.getElementById('allreg-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="9" class="tbl-empty">No registrations found.</td></tr>';return;}
+  if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
     const sb2=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':r.status==='inactive'?'<span class="badge b-blk">Inactive</span>':'<span class="badge b-pending">Pending</span>';
-    const actions=r.status==='pending'?
-      '<button class="btn btn-approve" style="padding:3px 7px;font-size:10px" onclick="approveReg('+r.id+')">Approve</button> <button class="btn btn-reject" style="padding:3px 7px;font-size:10px" onclick="openRejectModal('+r.id+')">Reject</button>':
-      r.status==='rejected'?'<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="reconsiderReg('+r.id+')">Reconsider</button>':'--';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td><strong>'+(r.email||r.username)+'</strong></td><td>'+(r.fullName||((r.firstName||'')+' '+(r.lastName||'')).trim()||'--')+'</td>'+ 
       '<td><span class="badge '+(r.requestedRole==='admin'?'b-admin':'b-user')+'">'+r.requestedRole.toUpperCase()+'</span></td>'+
       '<td style="font-size:10px;color:var(--muted)">'+r.submittedAt+'</td>'+
       '<td class="ns">'+sb2+'</td><td style="font-size:10px;color:var(--muted)">'+(r.reviewedBy||'--')+'</td>'+
-      '<td style="font-size:10px;color:var(--muted);max-width:140px">'+(r.note||'--')+'</td>'+
-      '<td class="ns" style="white-space:nowrap">'+actions+'</td></tr>';
+      '<td style="font-size:10px;color:var(--muted);max-width:140px">'+(r.note||'--')+'</td></tr>';
   }).join('');
 }
 function reconsiderReg(id){const r=registrations.find(x=>x.id===id);if(!r)return;askConfirm('Reconsider','Move "'+r.username+'" back to Pending?',function(){r.status='pending';r.reviewedBy=null;r.reviewedAt=null;r.note='';renderAllReg();renderPending();renderUserStats();updatePendingBadges();},'Reconsider','btn-primary');}
