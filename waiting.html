@@ -221,14 +221,6 @@
         if (approvedMsg) approvedMsg.classList.remove('hidden');
         setTimeout(() => redirectByRole(role), 1500);
       }
-      // If approved, stop polling and redirect
-      if (status === 'active' || status === 'approved') {
-        clearInterval(pollInterval);
-        document.getElementById('spinner').style.borderTopColor = '#22C55E';
-        const approvedMsg = document.getElementById('approvedMsg');
-        if (approvedMsg) approvedMsg.classList.remove('hidden');
-        setTimeout(() => redirectByRole(role), 1500);
-      }
     }
 
     // ── Init ────────────────────────────────────────────────────
