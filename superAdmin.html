@@ -1089,7 +1089,7 @@ function renderUsers(){
     }
     return '<tr class="'+(u.blocked?'blk-row':'')+'">'+
       '<td><strong>'+u.username+'</strong></td>'+
-      '<td>'+u.firstName+' '+u.lastName+'</td>'+
+      '<td>'+(u.fullName||u.firstName+' '+u.lastName||'--')+'</td>'+
       '<td><span class="badge '+roleClass+'">'+u.role.toUpperCase()+'</span></td>'+
       '<td>'+emp+'</td>'+
       '<td style="font-size:10px;color:var(--muted)">'+(u.registeredAt||'--')+'</td>'+
