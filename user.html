@@ -13,8 +13,6 @@
   --sw:220px;--r:2px;--hover:#EAF0F9;
 }
 body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
-
-/* ── SIDEBAR ── */
 #sidebar{width:var(--sw);background:var(--primary);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
 .sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
 .sb-logo .lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--secondary);display:block;margin-bottom:2px}
@@ -29,34 +27,24 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);display
 .sb-footer .sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
 .sb-logout{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 0;cursor:pointer;color:var(--secondary);font-size:12px;font-weight:bold;letter-spacing:.3px;border-top:1px solid rgba(255,255,255,.08)}
 .sb-logout:hover{color:#fff}
-
-/* ── TOPBAR ── */
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .topbar-title{font-size:14px;font-weight:bold;color:var(--primary)}
 .topbar-right{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
 .role-badge{background:#e8f0fe;color:#1a73e8;font-size:10px;padding:2px 7px;border-radius:var(--r);font-weight:bold;letter-spacing:.5px}
 .content-area{flex:1;overflow-y:auto;padding:22px 24px}
-
-/* ── LAYOUT ── */
 .page{display:none}.page.active{display:block}
 .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .ph-left h2{font-size:17px;color:var(--primary)}
 .ph-left p{font-size:11px;color:var(--muted);margin-top:2px}
-
-/* ── BUTTON ── */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px;font-family:Arial,sans-serif;font-weight:bold;border:none;border-radius:var(--r);cursor:pointer;transition:opacity .15s;text-transform:uppercase;letter-spacing:.5px}
 .btn:hover{opacity:.85}
 .btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
 .btn-primary{background:var(--primary);color:#fff}
-
-/* ── FILTERS ── */
 .filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .filter-row input,.filter-row select{font-family:Arial,sans-serif;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--text);outline:none}
 .filter-row input:focus,.filter-row select:focus{border-color:var(--primary)}
 .filter-row input{min-width:190px}
-
-/* ── TABLE ── */
 .tw{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead tr{background:var(--primary);color:#fff}
@@ -66,24 +54,16 @@ tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:var(--hover)}
 tbody td{padding:8px 12px;vertical-align:middle}
 .tbl-empty{text-align:center;padding:28px;color:var(--muted);font-size:12px}
-
-/* ── BADGES ── */
 .badge{display:inline-block;padding:2px 7px;border-radius:var(--r);font-size:10px;font-weight:bold}
 .b-active{background:#e6f4ea;color:var(--success)}
 .b-sep{background:#fce8e6;color:var(--danger)}
 .b-dept{background:#e8f0fe;color:#1a73e8}
-
-/* ── STATS ── */
 .stats{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .sc{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 18px;min-width:120px}
 .sc.ac{border-left:3px solid var(--secondary)}
 .sc .n{font-size:20px;font-weight:bold;color:var(--primary)}
 .sc .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-
-/* ── READ-ONLY NOTICE ── */
 .ro-notice{background:#f0f4ff;border:1px solid #c5d4f5;border-radius:var(--r);padding:9px 14px;font-size:11px;color:#1a3a6e;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-
-/* ── PROFILE ── */
 .pp{background:#fff;border:1px solid var(--border);border-radius:var(--r);max-width:700px}
 .pp-head{background:var(--primary);padding:20px 22px;display:flex;align-items:center;gap:16px;border-radius:var(--r) var(--r) 0 0}
 .ava{width:52px;height:52px;background:var(--secondary);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:var(--primary);flex-shrink:0}
@@ -99,8 +79,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
 .ht th{text-align:left;padding:5px 9px;background:var(--bg);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border)}
 .ht td{padding:7px 9px;border-bottom:1px solid var(--border)}
 .ht tr:last-child td{border-bottom:none}
-
-/* ── MODAL ── */
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
 .mo.open{display:flex}
 .modal{background:#fff;border-radius:var(--r);width:360px;max-width:95vw;border:1px solid var(--border)}
@@ -109,21 +87,18 @@ tbody td{padding:8px 12px;vertical-align:middle}
 .mc-btn{background:none;border:none;font-size:17px;cursor:pointer;color:var(--muted);line-height:1}
 .mb{padding:18px}
 .mf{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px}
-
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:#c1c8d0;border-radius:3px}
 </style>
 </head>
 <body>
 
-<!-- ════════ SIDEBAR ════════ -->
 <nav id="sidebar">
   <div class="sb-logo">
     <span class="lbl">HR System</span>
     <span class="ttl">HR Management</span>
     <span class="role-chip">USER</span>
   </div>
-
   <div class="nav-item active" data-page="employees" onclick="nav(this,'employees')">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     Employees
@@ -140,7 +115,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 21 12"/></svg>
     Job Positions
   </div>
-
   <div class="sb-footer">
     <div class="name" id="sb-username">—</div>
     <div class="sub">Employee</div>
@@ -151,7 +125,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </nav>
 
-<!-- ════════ MAIN ════════ -->
 <div id="main">
   <div class="topbar">
     <span class="topbar-title" id="topbar-title">Employees</span>
@@ -160,20 +133,16 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <span class="role-badge">USER</span>
     </div>
   </div>
-
   <div class="content-area">
 
-    <!-- ══ EMPLOYEES ══ -->
+    <!-- EMPLOYEES -->
     <div id="page-employees" class="page active">
       <div class="ro-notice">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         You have <strong>read-only</strong> access. Click <strong>View</strong> on any row to see full employee details.
       </div>
       <div class="ph">
-        <div class="ph-left">
-          <h2>Employee Records</h2>
-          <p>Browse active employee profiles.</p>
-        </div>
+        <div class="ph-left"><h2>Employee Records</h2><p>Browse active employee profiles.</p></div>
       </div>
       <div class="stats" id="emp-stats"></div>
       <div class="filter-row">
@@ -183,7 +152,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="">All Genders</option>
           <option value="M">Male</option>
           <option value="F">Female</option>
-          <option value="Other">Other</option>
         </select>
         <select id="emp-sort" onchange="renderEmp()">
           <option value="az">Sort: A → Z</option>
@@ -193,29 +161,19 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <div class="tw">
         <table>
           <thead><tr>
-            <th>Emp No</th>
-            <th>Last Name</th>
-            <th>First Name</th>
-            <th>Gender</th>
-            <th>Hire Date</th>
-            <th>Sep Date</th>
-            <th>Current Job</th>
-            <th>Department</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th>Emp No</th><th>Last Name</th><th>First Name</th><th>Gender</th>
+            <th>Hire Date</th><th>Sep Date</th><th>Current Job</th><th>Department</th>
+            <th>Status</th><th>Action</th>
           </tr></thead>
           <tbody id="emp-tbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- ══ JOB HISTORY ══ -->
+    <!-- JOB HISTORY -->
     <div id="page-job-history" class="page">
       <div class="ph">
-        <div class="ph-left">
-          <h2>Job History</h2>
-          <p>View employment history records across all employees.</p>
-        </div>
+        <div class="ph-left"><h2>Job History</h2><p>View employment history records across all employees.</p></div>
       </div>
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search history…" oninput="renderHist()"/>
@@ -228,27 +186,18 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <div class="tw">
         <table>
           <thead><tr>
-            <th>ID</th>
-            <th>Employee</th>
-            <th>Job Code</th>
-            <th>Job Description</th>
-            <th>Dept Code</th>
-            <th>Department</th>
-            <th>Eff Date</th>
-            <th>Salary</th>
+            <th>ID</th><th>Employee</th><th>Job Code</th><th>Job Description</th>
+            <th>Dept Code</th><th>Department</th><th>Eff Date</th><th>Salary</th>
           </tr></thead>
           <tbody id="hist-tbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- ══ DEPARTMENTS ══ -->
+    <!-- DEPARTMENTS -->
     <div id="page-departments" class="page">
       <div class="ph">
-        <div class="ph-left">
-          <h2>Departments</h2>
-          <p>View all organizational departments.</p>
-        </div>
+        <div class="ph-left"><h2>Departments</h2><p>View all organizational departments.</p></div>
       </div>
       <div class="filter-row">
         <input type="text" id="dept-q" placeholder="Search departments…" oninput="renderDepts()"/>
@@ -259,40 +208,29 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="tw">
         <table>
-          <thead><tr>
-            <th>Dept Code</th>
-            <th>Dept Name</th>
-            <th>No. of Employees</th>
-          </tr></thead>
+          <thead><tr><th>Dept Code</th><th>Dept Name</th><th>No. of Employees</th></tr></thead>
           <tbody id="dept-tbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- ══ JOB POSITIONS ══ -->
+    <!-- JOB POSITIONS -->
     <div id="page-jobs" class="page">
       <div class="ph">
-        <div class="ph-left">
-          <h2>Job Positions</h2>
-          <p>View all defined job roles in the organization.</p>
-        </div>
+        <div class="ph-left"><h2>Job Positions</h2><p>View all defined job roles in the organization.</p></div>
       </div>
       <div class="filter-row">
         <input type="text" id="jobs-q" placeholder="Search job positions…" oninput="renderJobs()"/>
       </div>
       <div class="tw">
         <table>
-          <thead><tr>
-            <th>Job Code</th>
-            <th>Job Description</th>
-            <th>No. of Employees</th>
-          </tr></thead>
+          <thead><tr><th>Job Code</th><th>Job Description</th><th>No. of Employees</th></tr></thead>
           <tbody id="jobs-tbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- ══ PROFILE ══ -->
+    <!-- PROFILE -->
     <div id="page-profile" class="page">
       <div class="ph">
         <div class="ph-left"><h2>Employee Profile</h2><p>Read-only employee details.</p></div>
@@ -304,16 +242,11 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- ════════ LOGOUT CONFIRM MODAL ════════ -->
+<!-- LOGOUT CONFIRM -->
 <div class="mo" id="mo-confirm">
   <div class="modal">
-    <div class="mh">
-      <h3 id="conf-title">Confirm</h3>
-      <button class="mc-btn" onclick="cm('mo-confirm')">×</button>
-    </div>
-    <div class="mb">
-      <p id="conf-msg" style="font-size:13px;line-height:1.6;color:var(--text)"></p>
-    </div>
+    <div class="mh"><h3 id="conf-title">Confirm</h3><button class="mc-btn" onclick="cm('mo-confirm')">×</button></div>
+    <div class="mb"><p id="conf-msg" style="font-size:13px;line-height:1.6;color:var(--text)"></p></div>
     <div class="mf">
       <button class="btn btn-outline" onclick="cm('mo-confirm')">Cancel</button>
       <button class="btn btn-primary" id="conf-ok" onclick="doConfirm()">Confirm</button>
@@ -330,23 +263,34 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let statusCheckInterval = null;
+let departments  = [];
+let jobs         = [];
+let employees    = [];
+let allEmployees = [];
+let jobHistory   = [];
+let pendingFn    = null;
 
-/* ── Auth ── */
+/* ════════════════════════════════════
+   AUTH
+════════════════════════════════════ */
 async function initAuth() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
       const uid = session.user.id;
       const { data: prof } = await sb.from('profiles').select('status').eq('id', uid).single();
-      if (prof && prof.status === 'blocked') { await sb.auth.signOut(); window.location.href = 'blocked.html'; return; }
-      if (prof && prof.status === 'deactivated') { await sb.auth.signOut(); window.location.href = 'deactivated.html'; return; }
+      if (prof?.status === 'blocked')     { await sb.auth.signOut(); window.location.href = 'blocked.html'; return; }
+      if (prof?.status === 'deactivated') { await sb.auth.signOut(); window.location.href = 'deactivated.html'; return; }
       setUsernameDisplay(session.user);
       startStatusCheckListener(uid);
       return;
     }
+    // No session — sign in anonymously so RLS public-read policies work
     const { data, error } = await sb.auth.signInAnonymously();
     if (!error && data?.user) setUsernameDisplay(data.user);
-  } catch (err) { console.warn('Auth init error:', err.message); }
+  } catch (err) {
+    console.warn('Auth init error:', err.message);
+  }
 }
 
 function startStatusCheckListener(uid) {
@@ -354,10 +298,12 @@ function startStatusCheckListener(uid) {
   statusCheckInterval = setInterval(async () => {
     try {
       const { data: prof } = await sb.from('profiles').select('status').eq('id', uid).single();
-      if (prof && prof.status === 'blocked')     { await sb.auth.signOut(); window.location.href = 'blocked.html'; return; }
-      if (prof && prof.status === 'deactivated') { await sb.auth.signOut(); window.location.href = 'deactivated.html'; return; }
-      if (prof && (prof.status === 'pending' || prof.status === 'rejected')) { window.location.href = 'waiting.html'; return; }
-    } catch (err) { console.warn('Status check error:', err.message); }
+      if (prof?.status === 'blocked')     { await sb.auth.signOut(); window.location.href = 'blocked.html'; return; }
+      if (prof?.status === 'deactivated') { await sb.auth.signOut(); window.location.href = 'deactivated.html'; return; }
+      if (prof?.status === 'pending' || prof?.status === 'rejected') { window.location.href = 'waiting.html'; return; }
+    } catch (err) {
+      console.warn('Status check error:', err.message);
+    }
   }, 3000);
 }
 
@@ -366,62 +312,61 @@ function setUsernameDisplay(user) {
     || user.user_metadata?.username
     || user.user_metadata?.name
     || (user.id ? user.id.substring(0, 8) : 'user');
-  document.getElementById('sb-username').textContent    = uname;
+  document.getElementById('sb-username').textContent     = uname;
   document.getElementById('topbar-username').textContent = uname;
 }
 
 /* ════════════════════════════════════
-   DATA STORE
+   KEY FIX: getEmpNo
+   ────────────────────────────────────
+   Supabase ALWAYS returns PostgreSQL column names in lowercase.
+   Your table defines the column as "empNo" but Supabase sends it
+   as "empno" (all lowercase). This single function reads the EXACT
+   column name Supabase returns, then zero-pads it to 5 chars so
+   it matches employee.empno reliably.
+
+   For employee table:  column is "empno"  → row.empno
+   For jobhistory table: column is "empno" → row.empno
+   Both arrive lowercase from Supabase.
 ════════════════════════════════════ */
-let departments  = [];
-let jobs         = [];
-let employees    = [];   // active only — shown in Employees page
-let allEmployees = [];   // ALL employees including separated — used for name lookups
-let jobHistory   = [];
-let pendingFn    = null;
+function getEmpNo(row) {
+  // Supabase returns lowercase column names — "empno" is what arrives.
+  // We also check camelCase variants as a safety net.
+  const raw = row.empno        // ← this is what Supabase actually sends (lowercase)
+           ?? row.empNo        // camelCase fallback
+           ?? row.emp_no       // snake_case fallback
+           ?? null;
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   FIX 1: normaliseEmpNo — trims AND zero-pads pure numeric strings to 5 digits.
-   This ensures "1" from a Supabase integer column matches "00001" from a varchar.
-───────────────────────────────────────────────────────────────────────────── */
-function normaliseEmpNo(v) {
-  const s = String(v == null ? '' : v).trim();
-  if (s !== '' && /^\d+$/.test(s)) {
-    return s.padStart(5, '0');
-  }
-  return s;
+  if (raw === null || raw === undefined) return '';
+
+  const s = String(raw).trim();
+  if (s === '') return '';
+
+  // Zero-pad purely numeric values to 5 digits: "1" → "00001", "00001" stays "00001"
+  if (/^\d+$/.test(s)) return s.padStart(5, '0');
+
+  return s; // non-numeric IDs returned as-is
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   FIX 2: extractEmpNo — tries every known Supabase column name variant,
-   then falls back to scanning ALL keys for the first numeric-looking value.
-   This guarantees we always get the empNo regardless of how Supabase names it.
-───────────────────────────────────────────────────────────────────────────── */
-function extractEmpNo(row) {
-  // Try all known column name variants first
-  const direct = row.empno ?? row.empNo ?? row.emp_no ?? row.emp_id
-               ?? row.employeeId ?? row.employee_id ?? row.EMPNO ?? row.EmpNo;
-  if (direct != null && String(direct).trim() !== '') {
-    return normaliseEmpNo(direct);
-  }
-  // Fallback: scan all keys for the first one that looks like an employee number
-  for (const key of Object.keys(row)) {
-    const val = String(row[key] ?? '').trim();
-    if (val !== '' && /^\d{1,5}$/.test(val)) {
-      return normaliseEmpNo(val);
-    }
-  }
-  return '';
+/* ════════════════════════════════════
+   KEY FIX: empNoMatch
+   ────────────────────────────────────
+   Compares two empNo values using three strategies:
+   1. Exact string: "00001" === "00001"
+   2. Numeric: Number("00001") === Number("1") → 1 === 1
+   3. Case-insensitive trimmed (belt-and-suspenders)
+════════════════════════════════════ */
+function empNoMatch(a, b) {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  const sa = String(a).trim();
+  const sb2 = String(b).trim();
+  if (sa === sb2) return true;
+  if (/^\d+$/.test(sa) && /^\d+$/.test(sb2) && Number(sa) === Number(sb2)) return true;
+  return sa.toLowerCase() === sb2.toLowerCase();
 }
 
-/* Gender helpers */
-function normalizeGender(raw) {
-  if (!raw) return '';
-  const v = String(raw).trim().toUpperCase();
-  if (v === 'M') return 'M';
-  if (v === 'F') return 'F';
-  return raw;
-}
+/* Gender display */
 function displayGender(raw) {
   if (!raw) return '—';
   const v = String(raw).trim().toUpperCase();
@@ -430,6 +375,9 @@ function displayGender(raw) {
   return raw;
 }
 
+/* ════════════════════════════════════
+   LOAD DATA
+════════════════════════════════════ */
 async function loadAllData() {
   await initAuth();
   try {
@@ -445,81 +393,130 @@ async function loadAllData() {
     if (jobRes.error)  { alert('Error loading jobs: '        + jobRes.error.message);  return; }
     if (histRes.error) { alert('Error loading job history: ' + histRes.error.message); return; }
 
-    /* ── Departments ── */
+    // Log first raw rows so you can verify column names in browser console
+    if (empRes.data?.[0])  console.log('RAW employee row:',    empRes.data[0]);
+    if (histRes.data?.[0]) console.log('RAW jobhistory row:',  histRes.data[0]);
+    if (deptRes.data?.[0]) console.log('RAW department row:',  deptRes.data[0]);
+    if (jobRes.data?.[0])  console.log('RAW job row:',         jobRes.data[0]);
+
+    /* ── Departments ──────────────────────────────────────────────────────
+       Supabase returns: deptcode, deptname (all lowercase)
+    ─────────────────────────────────────────────────────────────────────── */
     departments = (deptRes.data || []).map((d, idx) => ({
       id:   idx + 1,
-      code: d.deptcode  || d.deptCode  || d.code      || d.dept_code || '',
-      name: d.deptname  || d.deptName  || d.name      || d.dept_name || '',
-      desc: d.description || d.desc || ''
+      // Supabase lowercases: "deptCode" → "deptcode"
+      code: String(d.deptcode || d.deptCode || d.code || d.dept_code || '').trim(),
+      name: String(d.deptname || d.deptName || d.name || d.dept_name || '').trim(),
     }));
 
-    /* ── Jobs ── */
+    /* ── Jobs ─────────────────────────────────────────────────────────────
+       Supabase returns: jobcode, jobdesc (all lowercase)
+    ─────────────────────────────────────────────────────────────────────── */
     jobs = (jobRes.data || []).map((j, idx) => ({
-      id:     idx + 1,
-      code:   j.jobcode  || j.jobCode  || j.code    || j.job_code  || '',
-      desc:   j.jobdesc  || j.jobDesc  || j.description || j.desc  || j.job_desc || '',
-      deptId: j.deptid   || j.deptId   || j.dept_id || 1
+      id:   idx + 1,
+      // Supabase lowercases: "jobCode" → "jobcode", "jobDesc" → "jobdesc"
+      code: String(j.jobcode || j.jobCode || j.code || j.job_code || '').trim(),
+      desc: String(j.jobdesc || j.jobDesc || j.description || j.desc || '').trim(),
     }));
 
-    /* ── Job History — use extractEmpNo for bulletproof column resolution ── */
+    /* ── Job History ──────────────────────────────────────────────────────
+       Supabase returns: empno, jobcode, effdate, salary, deptcode
+       (all lowercase — PostgreSQL standard)
+
+       THE CORE FIX:
+       We use getEmpNo(h) which reads h.empno (exact Supabase column name).
+       We do NOT fall back to scanning all keys with a regex because that
+       incorrectly picks up idx numbers or other numeric fields.
+    ─────────────────────────────────────────────────────────────────────── */
     jobHistory = (histRes.data || []).map((h, idx) => {
-      const jobCode  = h.jobcode  || h.jobCode  || h.job_code  || '';
-      const deptCode = h.deptcode || h.deptCode || h.dept_code || '';
+      // Read exact column names Supabase sends (all lowercase)
+      const empNo    = getEmpNo(h);  // reads h.empno → zero-padded string
+      const jobCode  = String(h.jobcode  || h.jobCode  || h.job_code  || '').trim();
+      const deptCode = String(h.deptcode || h.deptCode || h.dept_code || '').trim();
+
+      // Match to our local jobs/departments arrays by code
       const jobMatch  = jobs.find(j => j.code === jobCode);
       const deptMatch = departments.find(d => d.code === deptCode);
-      const empNo = extractEmpNo(h);   // ← FIX: robust extraction
 
       return {
         id:      idx + 1,
-        empNo,
-        jobId:   jobMatch  ? jobMatch.id  : 1,
-        deptId:  deptMatch ? deptMatch.id : 1,
-        effDate: h.effdate  || h.effDate  || h.eff_date || '',
-        salary:  h.salary   || 0
+        empNo,                              // e.g. "00001"
+        jobCode,                            // kept for debugging
+        deptCode,                           // kept for debugging
+        jobId:   jobMatch  ? jobMatch.id  : null,
+        deptId:  deptMatch ? deptMatch.id : null,
+        effDate: String(h.effdate || h.effDate || h.eff_date || '').trim(),
+        salary:  Number(h.salary) || 0,
       };
     });
 
-    /* ─────────────────────────────────────────────────────────────────────
-       FIX 3: allEmployees — ALL rows from DB including separated employees.
-       isActive no longer excludes employees who have a sepDate.
-       Separated employees still appear in the table; their sepDate is shown.
-    ───────────────────────────────────────────────────────────────────── */
-    allEmployees = (empRes.data || []).map((e, idx) => {
-      const empNo = extractEmpNo(e);   // ← FIX: robust extraction
+    /* ── Employees ────────────────────────────────────────────────────────
+       Supabase returns: empno, lastname, firstname, gender,
+                         birthdate, hiredate, sepdate (all lowercase)
 
+       THE CORE FIX:
+       getEmpNo(e) reads e.empno (exact Supabase column).
+       sepDate reads e.sepdate (exact Supabase column, not e.sepDate).
+       We then match jobHistory by empNo to get current job/dept/salary.
+    ─────────────────────────────────────────────────────────────────────── */
+    allEmployees = (empRes.data || []).map((e, idx) => {
+      const empNo = getEmpNo(e);  // reads e.empno → zero-padded
+
+      // Find the most recent job history entry for this employee
       const hist = jobHistory
         .filter(h => empNoMatch(h.empNo, empNo))
-        .sort((a, b) => new Date(b.effDate) - new Date(a.effDate))[0];
+        .sort((a, b) => {
+          // Sort descending by effDate so [0] = most recent
+          if (!a.effDate && !b.effDate) return 0;
+          if (!a.effDate) return 1;
+          if (!b.effDate) return -1;
+          return b.effDate.localeCompare(a.effDate);
+        })[0] || null;
 
+      // FIX: Supabase sends sepdate (lowercase), NOT sepDate
       const sepDate = e.sepdate || e.sepDate || e.sep_date || null;
+      const sepStr  = sepDate ? String(sepDate).trim() : '';
 
       return {
         id:        idx + 1,
         empNo,
-        lastName:  e.lastname  || e.last_name  || '',
-        firstName: e.firstname || e.first_name || '',
-        gender:    normalizeGender(e.gender),
-        hireDate:  e.hiredate  || e.hire_date  || '',
-        sepDate,
-        username:  e.username  || '',
-        email:     e.email     || '',
-        phone:     e.phone     || '',
-        deptId:    hist ? hist.deptId : 1,
-        jobId:     hist ? hist.jobId  : 1,
+        // Supabase sends: lastname, firstname (lowercase)
+        lastName:  String(e.lastname  || e.last_name  || '').trim(),
+        firstName: String(e.firstname || e.first_name || '').trim(),
+        gender:    String(e.gender    || '').trim().toUpperCase(),
+        hireDate:  String(e.hiredate  || e.hire_date  || '').trim(),
+        // FIX: sepDate — read e.sepdate (lowercase) from Supabase
+        sepDate:   sepStr,
+        email:     String(e.email  || '').trim(),
+        phone:     String(e.phone  || '').trim(),
+        // Current assignment from most-recent history entry
+        jobId:     hist ? hist.jobId  : null,
+        deptId:    hist ? hist.deptId : null,
         salary:    hist ? hist.salary : 0,
-        /* FIX: isActive only excludes truly deleted/blocked — NOT employees with a sepDate */
-        isActive:  !(e.deleted || e.blocked)
+        // Only truly deleted/blocked records are excluded — NOT separated employees
+        isActive:  !(e.deleted || e.blocked),
       };
     });
 
-    /* ── employees = active subset (includes separated — they show with a sepDate) ── */
+    // employees shown in the Employees table = all non-deleted/blocked
+    // (includes separated — they just show their sepDate and Separated badge)
     employees = allEmployees.filter(e => e.isActive);
+
+    // Verify in console that empNos look right
+    console.log('Sample employees:', employees.slice(0, 3).map(e => ({
+      empNo: e.empNo, name: e.lastName + ', ' + e.firstName, sepDate: e.sepDate
+    })));
+    console.log('Sample jobHistory:', jobHistory.slice(0, 3).map(h => ({
+      empNo: h.empNo, jobCode: h.jobCode, deptCode: h.deptCode
+    })));
 
     renderEmp();
     renderStats();
     populateHistEmpFilter();
+
   } catch (err) {
     alert('Fatal error loading data: ' + err.message);
+    console.error(err);
   }
 }
 
@@ -530,42 +527,25 @@ const gD = id => departments.find(d => d.id === id);
 const gJ = id => jobs.find(j => j.id === id);
 const gE = id => employees.find(e => e.id === id);
 
-/*
- * empNoMatch — three-strategy comparison so "00001" always matches "1":
- *   1. Exact string match
- *   2. Numeric equality (handles leading-zero / int vs string mismatches)
- *   3. Trimmed case-insensitive (belt-and-suspenders for alpha IDs)
- */
-function empNoMatch(a, b) {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  const sa = String(a).trim();
-  const sb2 = String(b).trim();
-  if (sa === sb2) return true;
-  if (!isNaN(sa) && !isNaN(sb2) && Number(sa) === Number(sb2)) return true;
-  return sa.toLowerCase() === sb2.toLowerCase();
-}
-
-/*
- * enByEmpNo — resolves a full name from allEmployees using robust matching.
- * Falls back to the raw empNo so the cell is never blank.
- */
+/* Resolve display name from empNo string, searching allEmployees */
 function enByEmpNo(empNo) {
-  const key = normaliseEmpNo(empNo);
-  const e = allEmployees.find(x => empNoMatch(x.empNo, key));
+  if (!empNo) return '—';
+  const e = allEmployees.find(x => empNoMatch(x.empNo, empNo));
   if (e && (e.lastName || e.firstName)) {
-    return (e.lastName + ', ' + e.firstName).replace(/^, |, $/g, '').trim();
+    const name = [e.lastName, e.firstName].filter(Boolean).join(', ');
+    return name;
   }
-  return key || '—';
+  // If no match found, return the raw empNo so the cell isn't blank
+  return empNo;
 }
 
-const dn  = id => { const d = gD(id); return d ? d.name : '—'; };
-const dc  = id => { const d = gD(id); return d ? d.code : '—'; };
-const jd  = id => { const j = gJ(id); return j ? j.desc : '—'; };
-const jc  = id => { const j = gJ(id); return j ? j.code : '—'; };
-const fmt    = d => d ? d : '—';
-const fmtSal = s => s ? '₱' + Number(s).toLocaleString() : '—';
-const ini    = e => ((e.firstName[0] || '') + (e.lastName[0] || '')).toUpperCase();
+const dn     = id => { const d = gD(id); return d ? d.name : '—'; };
+const dc     = id => { const d = gD(id); return d ? d.code : '—'; };
+const jd     = id => { const j = gJ(id); return j ? j.desc : '—'; };
+const jc     = id => { const j = gJ(id); return j ? j.code : '—'; };
+const fmt    = v  => (v && String(v).trim()) ? String(v).trim() : '—';
+const fmtSal = s  => s ? '₱' + Number(s).toLocaleString() : '—';
+const ini    = e  => ((e.firstName[0] || '') + (e.lastName[0] || '')).toUpperCase();
 
 /* ════════════════════════════════════
    NAVIGATION
@@ -575,11 +555,11 @@ function nav(el, page) {
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  const t = {
+  const titles = {
     employees: 'Employees', 'job-history': 'Job History',
     departments: 'Departments', jobs: 'Job Positions', profile: 'Employee Profile'
   };
-  document.getElementById('topbar-title').textContent = t[page] || page;
+  document.getElementById('topbar-title').textContent = titles[page] || page;
   if (page === 'employees')   { renderEmp(); renderStats(); }
   if (page === 'job-history') { populateHistEmpFilter(); renderHist(); }
   if (page === 'departments') renderDepts();
@@ -604,25 +584,22 @@ function askConfirm(title, msg, fn, btn = 'Confirm') {
    STATS
 ════════════════════════════════════ */
 function renderStats() {
-  /* Count active employees (not deleted/blocked) */
-  const active = employees.filter(e => !e.sepDate).length;
-  const separated = employees.filter(e => e.sepDate).length;
-  const total  = employees.length;
-  const depts  = new Set(employees.map(e => e.deptId)).size;
-  const male   = employees.filter(e => e.gender === 'M').length;
-  const female = employees.filter(e => e.gender === 'F').length;
-  const other  = employees.filter(e => e.gender !== 'M' && e.gender !== 'F' && e.gender !== '').length;
+  const active    = employees.filter(e => !e.sepDate || e.sepDate === '').length;
+  const separated = employees.filter(e => e.sepDate  && e.sepDate !== '').length;
+  const depts     = new Set(employees.filter(e => e.deptId).map(e => e.deptId)).size;
+  const male      = employees.filter(e => e.gender === 'M').length;
+  const female    = employees.filter(e => e.gender === 'F').length;
+
   document.getElementById('emp-stats').innerHTML = `
-    <div class="sc ac"><div class="n">${active}</div><div class="l">Active Employees</div></div>
+    <div class="sc ac"><div class="n">${active}</div><div class="l">Active</div></div>
     ${separated > 0 ? `<div class="sc"><div class="n">${separated}</div><div class="l">Separated</div></div>` : ''}
     <div class="sc"><div class="n">${depts}</div><div class="l">Departments</div></div>
     <div class="sc"><div class="n">${male}</div><div class="l">Male</div></div>
-    <div class="sc"><div class="n">${female}</div><div class="l">Female</div></div>
-    ${other > 0 ? `<div class="sc"><div class="n">${other}</div><div class="l">Other</div></div>` : ''}`;
+    <div class="sc"><div class="n">${female}</div><div class="l">Female</div></div>`;
 }
 
 /* ════════════════════════════════════
-   EMPLOYEES
+   EMPLOYEES TABLE
 ════════════════════════════════════ */
 function popDeptFilter(selId) {
   const s = document.getElementById(selId), v = s.value;
@@ -661,13 +638,13 @@ function renderEmp() {
   }
 
   tb.innerHTML = data.map(e => {
-    /* FIX: show sepDate properly; badge shows Separated if they have one */
-    const hasSep = e.sepDate && e.sepDate !== '';
+    // FIX: sepDate comes from e.sepdate (Supabase lowercase) already stored as e.sepDate in our object
+    const hasSep = e.sepDate && e.sepDate.trim() !== '';
     const badge  = hasSep
       ? `<span class="badge b-sep">Separated</span>`
       : `<span class="badge b-active">Active</span>`;
-    return `
-    <tr>
+
+    return `<tr>
       <td>${e.empNo}</td>
       <td><strong>${e.lastName}</strong></td>
       <td>${e.firstName}</td>
@@ -686,17 +663,14 @@ function renderEmp() {
 }
 
 /* ════════════════════════════════════
-   JOB HISTORY
+   JOB HISTORY TABLE
 ════════════════════════════════════ */
-
-/* Populate the "All Employees" filter dropdown in Job History */
 function populateHistEmpFilter() {
   const sel = document.getElementById('hist-fe');
   if (!sel) return;
   const current = sel.value;
   sel.innerHTML = '<option value="">All Employees</option>';
-
-  /* Build a sorted unique list from allEmployees so separated employees also appear */
+  // Use allEmployees so separated employees also appear in the filter
   const sorted = [...allEmployees].sort((a, b) =>
     a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
   );
@@ -710,15 +684,20 @@ function populateHistEmpFilter() {
 }
 
 function renderHist() {
-  const q      = document.getElementById('hist-q').value.toLowerCase();
-  const fe     = document.getElementById('hist-fe') ? document.getElementById('hist-fe').value : '';
-  const sort   = document.getElementById('hist-sort').value;
+  const q    = document.getElementById('hist-q').value.toLowerCase();
+  const fe   = document.getElementById('hist-fe')?.value || '';
+  const sort = document.getElementById('hist-sort').value;
 
   let data = jobHistory.filter(h => {
-    /* If an employee filter is selected, match by empNo */
+    // Filter by selected employee
     if (fe && !empNoMatch(h.empNo, fe)) return false;
+    // Search across name, codes, department
     const name = enByEmpNo(h.empNo).toLowerCase();
-    return `${name} ${jc(h.jobId)} ${jd(h.jobId)} ${dc(h.deptId)} ${dn(h.deptId)} ${h.empNo}`
+    const jCode = h.jobCode  || jc(h.jobId)  || '';
+    const jDesc = jd(h.jobId)  || '';
+    const dCode = h.deptCode || dc(h.deptId) || '';
+    const dName = dn(h.deptId) || '';
+    return `${name} ${jCode} ${jDesc} ${dCode} ${dName} ${h.empNo}`
       .toLowerCase().includes(q);
   });
 
@@ -734,29 +713,40 @@ function renderHist() {
     tb.innerHTML = `<tr><td colspan="8" class="tbl-empty">No history records found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(h => `
-    <tr>
-      <td>JH-${String(h.id).padStart(3, '0')}</td>
-      <td>${enByEmpNo(h.empNo)}</td>
-      <td>${jc(h.jobId)}</td>
-      <td>${jd(h.jobId)}</td>
-      <td>${dc(h.deptId)}</td>
-      <td>${dn(h.deptId)}</td>
+
+  tb.innerHTML = data.map((h, i) => {
+    // enByEmpNo uses empNoMatch which handles "00001" vs "1" via numeric comparison
+    const name    = enByEmpNo(h.empNo);
+    // Use stored jobCode/deptCode directly for display, fall back to id-based lookup
+    const jobCode = h.jobCode  || jc(h.jobId)  || '—';
+    const jobDesc = jd(h.jobId)  || '—';
+    const dptCode = h.deptCode || dc(h.deptId) || '—';
+    const dptName = dn(h.deptId) || '—';
+
+    return `<tr>
+      <td>JH-${String(i + 1).padStart(3, '0')}</td>
+      <td>${name}</td>
+      <td>${jobCode}</td>
+      <td>${jobDesc}</td>
+      <td>${dptCode}</td>
+      <td>${dptName}</td>
       <td>${fmt(h.effDate)}</td>
       <td>${fmtSal(h.salary)}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 /* ════════════════════════════════════
-   DEPARTMENTS
+   DEPARTMENTS TABLE
 ════════════════════════════════════ */
 function renderDepts() {
   const q    = document.getElementById('dept-q').value.toLowerCase();
   const sort = document.getElementById('dept-sort').value;
-  const ec   = id => employees.filter(e => e.deptId === id).length;
+  // Count active (non-separated) employees per department
+  const ec = id => employees.filter(e => e.deptId === id).length;
 
   let data = departments.filter(d =>
-    `${d.code} ${d.name} ${d.desc}`.toLowerCase().includes(q)
+    `${d.code} ${d.name}`.toLowerCase().includes(q)
   );
   data.sort((a, b) => {
     const cmp = a.name.localeCompare(b.name);
@@ -768,16 +758,15 @@ function renderDepts() {
     tb.innerHTML = `<tr><td colspan="3" class="tbl-empty">No departments found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(d => `
-    <tr>
-      <td><strong>${d.code}</strong></td>
-      <td>${d.name}</td>
-      <td>${ec(d.id)}</td>
-    </tr>`).join('');
+  tb.innerHTML = data.map(d => `<tr>
+    <td><strong>${d.code}</strong></td>
+    <td>${d.name}</td>
+    <td>${ec(d.id)}</td>
+  </tr>`).join('');
 }
 
 /* ════════════════════════════════════
-   JOB POSITIONS
+   JOB POSITIONS TABLE
 ════════════════════════════════════ */
 function renderJobs() {
   const q  = document.getElementById('jobs-q').value.toLowerCase();
@@ -792,12 +781,11 @@ function renderJobs() {
     tb.innerHTML = `<tr><td colspan="3" class="tbl-empty">No job positions found.</td></tr>`;
     return;
   }
-  tb.innerHTML = data.map(j => `
-    <tr>
-      <td><strong>${j.code}</strong></td>
-      <td>${j.desc}</td>
-      <td>${ec(j.id)}</td>
-    </tr>`).join('');
+  tb.innerHTML = data.map(j => `<tr>
+    <td><strong>${j.code}</strong></td>
+    <td>${j.desc}</td>
+    <td>${ec(j.id)}</td>
+  </tr>`).join('');
 }
 
 /* ════════════════════════════════════
@@ -808,22 +796,32 @@ function viewProf(id) {
 
   const hist = jobHistory
     .filter(h => empNoMatch(h.empNo, e.empNo))
-    .sort((a, b) => b.effDate.localeCompare(a.effDate));
+    .sort((a, b) => {
+      if (!a.effDate && !b.effDate) return 0;
+      if (!a.effDate) return 1;
+      if (!b.effDate) return -1;
+      return b.effDate.localeCompare(a.effDate);
+    });
 
   const rows = hist.length
-    ? hist.map(h => `
-        <tr>
-          <td>${jc(h.jobId)}</td>
-          <td>${jd(h.jobId)}</td>
-          <td>${dc(h.deptId)}</td>
-          <td>${dn(h.deptId)}</td>
+    ? hist.map(h => {
+        const jobCode = h.jobCode  || jc(h.jobId)  || '—';
+        const jobDesc = jd(h.jobId)  || '—';
+        const dptCode = h.deptCode || dc(h.deptId) || '—';
+        const dptName = dn(h.deptId) || '—';
+        return `<tr>
+          <td>${jobCode}</td>
+          <td>${jobDesc}</td>
+          <td>${dptCode}</td>
+          <td>${dptName}</td>
           <td>${fmt(h.effDate)}</td>
           <td>${fmtSal(h.salary)}</td>
-        </tr>`).join('')
+        </tr>`;
+      }).join('')
     : `<tr><td colspan="6" class="tbl-empty">No history records.</td></tr>`;
 
-  const hasSep  = e.sepDate && e.sepDate !== '';
-  const badge   = hasSep
+  const hasSep = e.sepDate && e.sepDate.trim() !== '';
+  const badge  = hasSep
     ? `<span class="badge b-sep" style="font-size:11px">Separated</span>`
     : `<span class="badge b-active" style="font-size:11px">Active</span>`;
 
@@ -852,21 +850,19 @@ function viewProf(id) {
         </div>
         <div class="pst">Current Assignment</div>
         <div class="pg" style="margin-bottom:18px">
-          <div class="pf"><label>Dept Code</label>        <div class="v">${dc(e.deptId)}</div></div>
-          <div class="pf"><label>Department</label>       <div class="v">${dn(e.deptId)}</div></div>
-          <div class="pf"><label>Job Code</label>         <div class="v">${jc(e.jobId)}</div></div>
-          <div class="pf"><label>Job Description</label>  <div class="v">${jd(e.jobId)}</div></div>
+          <div class="pf"><label>Dept Code</label>       <div class="v">${dc(e.deptId)}</div></div>
+          <div class="pf"><label>Department</label>      <div class="v">${dn(e.deptId)}</div></div>
+          <div class="pf"><label>Job Code</label>        <div class="v">${jc(e.jobId)}</div></div>
+          <div class="pf"><label>Job Description</label> <div class="v">${jd(e.jobId)}</div></div>
         </div>
         <div class="pst" style="margin-bottom:10px">Job History</div>
         <div class="tw">
           <table class="ht">
-            <thead>
-              <tr>
-                <th>Job Code</th><th>Job Description</th>
-                <th>Dept Code</th><th>Department</th>
-                <th>Eff Date</th><th>Salary</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th>Job Code</th><th>Job Description</th>
+              <th>Dept Code</th><th>Department</th>
+              <th>Eff Date</th><th>Salary</th>
+            </tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
