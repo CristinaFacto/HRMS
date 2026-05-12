@@ -232,7 +232,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
         Super Admin role: You can <strong>view, edit, delete, and permanently delete</strong> employees.
       </div>
       <div class="ph">
-        <div class="ph-left"><h2>Employee Records</h2><p>Manage employee profiles.</p></div>
+        <!-- ▼ CHANGE 1: subtitle updated to reflect eff date sorting -->
+        <div class="ph-left"><h2>Employee Records</h2><p>Manage employee profiles. Sorted by latest effective date.</p></div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="openAddEmp()">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Employee
@@ -255,10 +256,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="blocked">Blocked</option>
           <option value="inactive">Inactive</option>
         </select>
-        <select id="emp-sort" onchange="renderEmp()">
-          <option value="az">Sort: A → Z</option>
-          <option value="za">Sort: Z → A</option>
-        </select>
+        <!-- ▼ CHANGE 6: emp-sort dropdown REMOVED — employees now auto-sort by eff date -->
       </div>
       <div class="tw">
         <table>
@@ -266,7 +264,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
             <th class="cc"><input type="checkbox" id="chk-emp-all" onchange="toggleAll('emp',this)"/></th>
             <th>Emp No</th><th>Last Name</th><th>First Name</th><th>Gender</th>
             <th>Hire Date</th><th>Sep Date</th><th>Current Job</th><th>Dept</th>
-            <th>Salary</th><th>Status</th><th>Actions</th>
+            <!-- ▼ CHANGE 1: added Eff Date column to show the date employees are sorted by -->
+            <th>Salary</th><th>Eff Date</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="emp-tbody"></tbody>
         </table>
@@ -278,7 +277,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <div class="ph">
         <div class="ph-left"><h2>Job History</h2><p>All employment history records.</p></div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="openAddHist()">Add Entry</button>
+          <!-- ▼ CHANGE 5: "Add Entry" button REMOVED from job history section -->
           <button class="btn btn-audit" onclick="viewSectionAudit('JobHistory','Job History Audit Log')">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Audit Log
           </button>
@@ -286,15 +285,16 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search..." oninput="renderHist()"/>
+        <!-- ▼ CHANGE 6: sort by Eff Date instead of employee name -->
         <select id="hist-sort" onchange="renderHist()">
-          <option value="az">Sort: A → Z</option>
-          <option value="za">Sort: Z → A</option>
+          <option value="eff-asc">Sort: Eff Date A → Z (Oldest First)</option>
+          <option value="eff-desc">Sort: Eff Date Z → A (Newest First)</option>
         </select>
       </div>
       <div class="tw">
         <table>
           <thead><tr>
-            <th class="cc"><input type="checkbox" id="chk-hist-all" onchange="toggleAll('hist',this)"/></th>
+            <!-- ▼ CHANGE 4: checkboxes column REMOVED from job history -->
             <th>ID</th><th>Employee</th><th>Job Code</th><th>Job Desc</th>
             <th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th>
           </tr></thead>
@@ -518,7 +518,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
 
 <div class="mo" id="mo-hist">
   <div class="modal">
-    <div class="mh"><h3 id="mo-hist-title">Add Job History</h3><button class="mc-btn" onclick="cm('mo-hist')">x</button></div>
+    <div class="mh"><h3 id="mo-hist-title">Edit Job History</h3><button class="mc-btn" onclick="cm('mo-hist')">x</button></div>
     <div class="mb">
       <div class="fr"><label>Employee</label><select id="fh-emp"></select></div>
       <div class="f2">
@@ -630,7 +630,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- Blocked Notification Modal -->
 <div class="mo" id="mo-blocked">
   <div class="modal" style="width:400px">
     <div class="mh"><h3 style="color:#c0392b">⚠️ Account Blocked</h3></div>
@@ -648,7 +647,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -664,73 +662,60 @@ let CURRENT_USER_EMAIL = '';
 function formatDate(timestamp){
   if(!timestamp)return '--';
   try{
-    const date = new Date(timestamp);
+    const date=new Date(timestamp);
     if(isNaN(date.getTime()))return timestamp;
-    const dateStr = date.toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'});
-    const timeStr = date.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
-    return dateStr + ' ' + timeStr;
+    const dateStr=date.toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'});
+    const timeStr=date.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+    return dateStr+' '+timeStr;
   }catch(e){return timestamp;}
 }
 
-function showToast(msg, type='info', duration=3000){
+function showToast(msg,type='info',duration=3000){
   const t=document.getElementById('toast');
   t.textContent=msg;
   t.className='toast '+(type==='success'?'success':type==='error'?'error':'');
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), duration);
+  setTimeout(()=>t.classList.remove('show'),duration);
 }
 
 let statusCheckInterval=null;
 async function initAuth(){
-  const { data: { session } } = await sb.auth.getSession();
-  if(session && session.user){
-    const uid = session.user.id;
-    const { data: prof } = await sb.from('profiles').select('username,email,full_name,role,status').eq('id', uid).single();
+  const {data:{session}}=await sb.auth.getSession();
+  if(session&&session.user){
+    const uid=session.user.id;
+    const {data:prof}=await sb.from('profiles').select('username,email,full_name,role,status').eq('id',uid).single();
     if(prof){
-      if(prof.status === 'blocked'){
-        await sb.auth.signOut();
-        window.location.href = 'blocked.html';
-        return;
-      }
-      if(prof.status === 'deactivated'){
-        await sb.auth.signOut();
-        window.location.href = 'deactivated.html';
-        return;
-      }
-      const display = prof.username || prof.full_name || prof.email || 'superadmin';
-      CURRENT_USER = display;
-      CURRENT_USER_EMAIL = prof.email || '';
-      document.getElementById('sb-username').textContent = display;
-      document.getElementById('topbar-username').textContent = display;
+      if(prof.status==='blocked'){await sb.auth.signOut();window.location.href='blocked.html';return;}
+      if(prof.status==='deactivated'){await sb.auth.signOut();window.location.href='deactivated.html';return;}
+      const display=prof.username||prof.full_name||prof.email||'superadmin';
+      CURRENT_USER=display;CURRENT_USER_EMAIL=prof.email||'';
+      document.getElementById('sb-username').textContent=display;
+      document.getElementById('topbar-username').textContent=display;
       startStatusCheckListener(uid);
     }
-  } else {
+  }else{
     await sb.auth.signInAnonymously().catch(e=>console.warn(e.message));
   }
 }
 
 function startStatusCheckListener(uid){
   if(statusCheckInterval)clearInterval(statusCheckInterval);
-  statusCheckInterval=setInterval(async ()=>{
+  statusCheckInterval=setInterval(async()=>{
     try{
       const {data:prof,error}=await sb.from('profiles').select('status').eq('id',uid).single();
-      if(error){ console.warn('Status check error:',error.message); return; }
-      if(prof && prof.status==='blocked'){
+      if(error){console.warn('Status check error:',error.message);return;}
+      if(prof&&prof.status==='blocked'){
         clearInterval(statusCheckInterval);
         const modal=document.getElementById('mo-blocked');
-        if(modal){
-          modal.classList.add('open');
-          setTimeout(()=>redirectToBlocked(), 6000);
-        } else {
-          setTimeout(()=>redirectToBlocked(), 2000);
-        }
+        if(modal){modal.classList.add('open');setTimeout(()=>redirectToBlocked(),6000);}
+        else{setTimeout(()=>redirectToBlocked(),2000);}
       }
-    }catch(err){ console.error('Status check exception:',err); }
+    }catch(err){console.error('Status check exception:',err);}
   },3000);
 }
 
 async function redirectToBlocked(){
-  try{ await sb.auth.signOut().catch(e=>console.warn('Signout error:',e)); }catch(err){}
+  try{await sb.auth.signOut().catch(e=>console.warn('Signout error:',e));}catch(err){}
   window.location.href='blocked.html';
 }
 
@@ -740,6 +725,10 @@ let nE=1, nH=1, nD=1, nJ=1, nU=1;
 let editId={emp:null,hist:null,dept:null,job:null,user:null};
 let pendingFn=null, currentDelTab='Employee';
 
+/* ════════════════════════════════════
+   LOAD DATA
+   ▼ CHANGE 1 & 3: latestEffDate stored per employee for sorting + persistence
+════════════════════════════════════ */
 async function loadAllData(){
   try{
     const [empRes,deptRes,jobRes,histRes,userRes]=await Promise.all([
@@ -750,32 +739,60 @@ async function loadAllData(){
       sb.from('profiles').select('*'),
     ]);
     departments=(deptRes.data||[]).map((d,idx)=>({
-      id:idx+1,code:d.deptcode||d.deptCode||d.code||d.dept_code||'',
+      id:idx+1,
+      code:d.deptcode||d.deptCode||d.code||d.dept_code||'',
       name:d.deptname||d.deptName||d.name||d.dept_name||'',
-      desc:d.description||d.desc||'',deleted:d.deleted||false
+      desc:d.description||d.desc||'',
+      deleted:d.deleted||false
     }));
     jobs=(jobRes.data||[]).map((j,idx)=>({
-      id:idx+1,code:j.jobcode||j.jobCode||j.code||j.job_code||'',
+      id:idx+1,
+      code:j.jobcode||j.jobCode||j.code||j.job_code||'',
       desc:j.jobdesc||j.jobDesc||j.description||j.desc||j.job_desc||'',
-      deptId:j.deptid||j.deptId||j.dept_id||1,deleted:j.deleted||false
+      deptId:j.deptid||j.deptId||j.dept_id||1,
+      deleted:j.deleted||false
     }));
     const rawHistory=(histRes.data||[]).map((h,idx)=>{
       const jc2=h.jobcode||h.jobCode||h.job_code||'';
       const dc2=h.deptcode||h.deptCode||h.dept_code||'';
       const jobMatch=jobs.find(j=>j.code===jc2);
       const deptMatch=departments.find(d=>d.code===dc2);
-      return{id:idx+1,empNo:String(h.empno||h.empNo||h.emp_id||''),
-        jobId:jobMatch?jobMatch.id:1,deptId:deptMatch?deptMatch.id:1,
-        effDate:h.effdate||h.effDate||h.eff_date||'',salary:h.salary||0,deleted:h.deleted||false};
+      return{
+        id:idx+1,
+        empNo:String(h.empno||h.empNo||h.emp_id||''),
+        jobId:jobMatch?jobMatch.id:1,
+        deptId:deptMatch?deptMatch.id:1,
+        effDate:h.effdate||h.effDate||h.eff_date||'',
+        salary:h.salary||0,
+        deleted:h.deleted||false
+      };
     });
     employees=(empRes.data||[]).map((e,idx)=>{
       const empNo=String(e.empno||e.emp_no||'');
-      const hist=rawHistory.filter(h=>h.empNo===empNo).sort((a,b)=>new Date(b.effDate)-new Date(a.effDate))[0];
-      return{id:idx+1,empNo,lastName:e.lastname||e.last_name||'',firstName:e.firstname||e.first_name||'',
-        gender:e.gender||'',birthdate:e.birthdate||e.birth_date||'',hireDate:e.hiredate||e.hire_date||'',
-        sepDate:e.sepdate||e.sep_date||null,username:e.username||'',email:e.email||'',phone:e.phone||'',
-        deptId:hist?hist.deptId:1,jobId:hist?hist.jobId:1,salary:hist?hist.salary:0,
-        deleted:e.deleted||false,blocked:e.blocked||false};
+      // ▼ CHANGE 1: pick most-recent job history entry by effDate for current assignment
+      const hist=rawHistory
+        .filter(h=>h.empNo===empNo)
+        .sort((a,b)=>(b.effDate||'').localeCompare(a.effDate||''))[0];
+      return{
+        id:idx+1,empNo,
+        lastName:e.lastname||e.last_name||'',
+        firstName:e.firstname||e.first_name||'',
+        gender:e.gender||'',
+        birthdate:e.birthdate||e.birth_date||'',
+        hireDate:e.hiredate||e.hire_date||'',
+        sepDate:e.sepdate||e.sep_date||null,
+        username:e.username||'',
+        email:e.email||'',
+        phone:e.phone||'',
+        deptId:hist?hist.deptId:1,
+        jobId:hist?hist.jobId:1,
+        salary:hist?hist.salary:0,
+        // ▼ CHANGE 1: store latestEffDate for dashboard sorting
+        latestEffDate:hist?hist.effDate:'',
+        deleted:e.deleted||false,
+        blocked:e.blocked||false,
+        _dbEmpNo:empNo   // keep original empno for Supabase updates
+      };
     });
     jobHistory=rawHistory.map(h=>{
       const emp=employees.find(e=>e.empNo===h.empNo);
@@ -784,34 +801,24 @@ async function loadAllData(){
     sysUsers=(userRes.data||[])
       .filter(u=>u.status==='active'||u.status==='approved'||u.status==='blocked')
       .map((u,idx)=>({
-        id:idx+1,
-        email:u.email||u.username||'',
-        firstName:u.first_name||'',
-        lastName:u.last_name||'',
+        id:idx+1,email:u.email||u.username||'',
+        firstName:u.first_name||'',lastName:u.last_name||'',
         fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
-        role:(u.role||'user').toLowerCase(),
-        empId:null,
-        registeredAt:u.created_at||'',
-        approvedBy:u.approved_by||'',
-        deleted:false,
-        blocked:u.status==='blocked',
-        supabaseId:u.id,
+        role:(u.role||'user').toLowerCase(),empId:null,
+        registeredAt:u.created_at||'',approvedBy:u.approved_by||'',
+        deleted:false,blocked:u.status==='blocked',supabaseId:u.id,
       }));
     registrations=(userRes.data||[])
       .map((u,idx)=>({
-        id:idx+1,
-        username:u.username||u.email||'',
-        firstName:u.first_name||'',
-        lastName:u.last_name||'',
+        id:idx+1,username:u.username||u.email||'',
+        firstName:u.first_name||'',lastName:u.last_name||'',
         fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
-        email:u.email||'',
-        empNo:u.emp_id||'',
+        email:u.email||'',empNo:u.emp_id||'',
         requestedRole:u.requested_role||u.role||'user',
-        status:(u.status==='pending'||u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='approved'||u.status==='active'||u.status==='blocked')?'approved':'pending',
-        submittedAt:u.created_at||'',
-        reviewedBy:u.approved_by||null,
-        note:'',
-        supabaseId:u.id,
+        status:(u.status==='pending'||u.status==='inactive')?'pending'
+              :(u.status==='rejected')?'rejected'
+              :(u.status==='approved'||u.status==='active'||u.status==='blocked')?'approved':'pending',
+        submittedAt:u.created_at||'',reviewedBy:u.approved_by||null,note:'',supabaseId:u.id,
       }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
@@ -833,6 +840,7 @@ const ini=e=>(e.firstName[0]+e.lastName[0]).toUpperCase();
 const fmt=d=>d?d:'--';
 const fmtSal=s=>s?'₱'+Number(s).toLocaleString():'--';
 const now=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+const todayISO=()=>new Date().toISOString().split('T')[0];
 function logAudit(action,entity,record,note){auditLog.unshift({id:nextAuditId++,timestamp:now(),user:CURRENT_USER,action,entity,record,note:note||''});}
 function pendingCount(){return registrations.filter(r=>r.status==='pending').length;}
 function updatePendingBadges(){
@@ -906,12 +914,15 @@ function popDeptFilter(){
   departments.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;if(String(d.id)===v)o.selected=true;s.appendChild(o);});
 }
 
+/* ════════════════════════════════════
+   ▼ CHANGE 1: renderEmp — sorted by latestEffDate descending (newest first)
+   No sort dropdown needed; ordering is always by eff date
+════════════════════════════════════ */
 function renderEmp(){
   popDeptFilter();
   const q=document.getElementById('emp-q').value.toLowerCase();
   const fd=document.getElementById('emp-fd').value;
   const fs=document.getElementById('emp-fs').value;
-  const sortDir=document.getElementById('emp-sort').value;
   let data=employees.filter(e=>{
     const hidden=e.deleted||e.blocked;
     if(fs!=='blocked'&&fs!=='inactive'&&hidden)return false;
@@ -921,11 +932,15 @@ function renderEmp(){
     if(fd&&String(e.deptId)!==fd)return false;
     return (e.empNo+' '+e.lastName+' '+e.firstName+' '+jd(e.jobId)+' '+dn(e.deptId)).toLowerCase().includes(q);
   }).sort((a,b)=>{
-    const cmp=a.lastName.localeCompare(b.lastName)||a.firstName.localeCompare(b.firstName);
-    return sortDir==='za'?-cmp:cmp;
+    // ▼ CHANGE 1: sort by latestEffDate descending; tie-break by last name
+    const da=a.latestEffDate||'';
+    const db=b.latestEffDate||'';
+    if(db>da)return 1;
+    if(db<da)return -1;
+    return a.lastName.localeCompare(b.lastName);
   });
   const tb=document.getElementById('emp-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="12" class="tbl-empty">No employees found.</td></tr>';upBtns('emp');return;}
+  if(!data.length){tb.innerHTML='<tr><td colspan="13" class="tbl-empty">No employees found.</td></tr>';upBtns('emp');return;}
   tb.innerHTML=data.map(e=>{
     const rowCls=e.deleted?'del-row':e.blocked?'blk-row':'';
     const badge=e.deleted?'<span class="badge b-del">Inactive</span>':e.blocked?'<span class="badge b-blk">Blocked</span>':'<span class="badge b-active">Active</span>';
@@ -937,6 +952,8 @@ function renderEmp(){
       '<td>'+jd(e.jobId)+'</td>'+
       '<td><span class="badge b-dept">'+dc(e.deptId)+'</span></td>'+
       '<td>'+fmtSal(e.salary)+'</td>'+
+      // ▼ CHANGE 1: display the eff date column
+      '<td>'+(e.latestEffDate||'--')+'</td>'+
       '<td class="ns">'+badge+'</td>'+
       '<td class="ns" style="white-space:nowrap">'+
         '<button class="btn btn-outline" style="padding:3px 7px;font-size:10px" onclick="viewProf('+e.id+')">View</button> '+
@@ -947,6 +964,7 @@ function renderEmp(){
   }).join('');
   upBtns('emp');
 }
+
 function getChk(cls){return Array.from(document.querySelectorAll('.'+cls+':checked')).map(c=>+c.value);}
 function toggleAll(scope,cb){document.querySelectorAll('.chk-'+scope).forEach(c=>c.checked=cb.checked);upBtns(scope);}
 function upBtns(scope){
@@ -971,39 +989,254 @@ function popFormSelects(){
   se.innerHTML='<option value="">-- Select --</option>';
   employees.filter(e=>!e.deleted&&!e.blocked).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.empNo+' - '+e.lastName+', '+e.firstName;se.appendChild(o);});
 }
-function openAddEmp(){editId.emp=null;document.getElementById('mo-emp-title').textContent='Add Employee';['fe-empno','fe-user','fe-ln','fe-fn','fe-email','fe-phone','fe-sal'].forEach(f=>document.getElementById(f).value='');document.getElementById('fe-hire').value=new Date().toISOString().split('T')[0];document.getElementById('fe-sep').value='';document.getElementById('fe-gender').value='';popFormSelects();om('mo-emp');}
-function openEditEmp(id){const e=gE(id);if(!e)return;editId.emp=id;document.getElementById('mo-emp-title').textContent='Edit Employee';document.getElementById('fe-empno').value=e.empNo;document.getElementById('fe-user').value=e.username;document.getElementById('fe-ln').value=e.lastName;document.getElementById('fe-fn').value=e.firstName;document.getElementById('fe-gender').value=e.gender||'';document.getElementById('fe-hire').value=e.hireDate;document.getElementById('fe-sep').value=e.sepDate||'';document.getElementById('fe-sal').value=e.salary||'';document.getElementById('fe-email').value=e.email||'';document.getElementById('fe-phone').value=e.phone||'';popFormSelects();setTimeout(function(){document.getElementById('fe-dept').value=e.deptId;document.getElementById('fe-job').value=e.jobId;},10);om('mo-emp');}
-function saveEmp(){
+function openAddEmp(){
+  editId.emp=null;document.getElementById('mo-emp-title').textContent='Add Employee';
+  ['fe-empno','fe-user','fe-ln','fe-fn','fe-email','fe-phone','fe-sal'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('fe-hire').value=todayISO();
+  document.getElementById('fe-sep').value='';document.getElementById('fe-gender').value='';
+  popFormSelects();om('mo-emp');
+}
+function openEditEmp(id){
+  const e=gE(id);if(!e)return;editId.emp=id;
+  document.getElementById('mo-emp-title').textContent='Edit Employee';
+  document.getElementById('fe-empno').value=e.empNo;document.getElementById('fe-user').value=e.username;
+  document.getElementById('fe-ln').value=e.lastName;document.getElementById('fe-fn').value=e.firstName;
+  document.getElementById('fe-gender').value=e.gender||'';document.getElementById('fe-hire').value=e.hireDate;
+  document.getElementById('fe-sep').value=e.sepDate||'';document.getElementById('fe-sal').value=e.salary||'';
+  document.getElementById('fe-email').value=e.email||'';document.getElementById('fe-phone').value=e.phone||'';
+  popFormSelects();
+  setTimeout(function(){document.getElementById('fe-dept').value=e.deptId;document.getElementById('fe-job').value=e.jobId;},10);
+  om('mo-emp');
+}
+
+/* ════════════════════════════════════
+   ▼ CHANGE 2 & 3: saveEmp
+   - Saves previous job/dept/salary snapshot to jobhistory (Supabase + local)
+   - Saves new data to jobhistory
+   - Persists all employee field changes to Supabase employee table
+════════════════════════════════════ */
+async function saveEmp(){
   const empNo=document.getElementById('fe-empno').value.trim();
   if(!/^\d{5}$/.test(empNo)){alert('Emp No must be exactly 5 numerical digits.');return;}
-  const username=document.getElementById('fe-user').value.trim(),lastName=document.getElementById('fe-ln').value.trim(),firstName=document.getElementById('fe-fn').value.trim(),gender=document.getElementById('fe-gender').value,hireDate=document.getElementById('fe-hire').value,sepDate=document.getElementById('fe-sep').value,salary=+document.getElementById('fe-sal').value||0,deptId=+document.getElementById('fe-dept').value,jobId=+document.getElementById('fe-job').value,email=document.getElementById('fe-email').value.trim(),phone=document.getElementById('fe-phone').value.trim();
+  const username=document.getElementById('fe-user').value.trim();
+  const lastName=document.getElementById('fe-ln').value.trim();
+  const firstName=document.getElementById('fe-fn').value.trim();
+  const gender=document.getElementById('fe-gender').value;
+  const hireDate=document.getElementById('fe-hire').value;
+  const sepDate=document.getElementById('fe-sep').value;
+  const salary=+document.getElementById('fe-sal').value||0;
+  const deptId=+document.getElementById('fe-dept').value;
+  const jobId=+document.getElementById('fe-job').value;
+  const email=document.getElementById('fe-email').value.trim();
+  const phone=document.getElementById('fe-phone').value.trim();
   if(!lastName||!firstName||!deptId||!jobId){alert('Fill required fields.');return;}
+
   const meta={by:CURRENT_USER,at:now(),action:editId.emp?'EDIT':'ADD',note:editId.emp?'Profile updated':'New employee added'};
-  if(editId.emp){Object.assign(gE(editId.emp),{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta});logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated');}
-  else{employees.push({id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta});logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added');}
+
+  if(editId.emp){
+    const e=gE(editId.emp);
+
+    // ▼ CHANGE 2: capture PREVIOUS values before overwriting
+    const prevDeptId=e.deptId, prevJobId=e.jobId, prevSalary=e.salary;
+    const prevEffDate=e.latestEffDate||hireDate;
+    const prevDeptChanged=prevDeptId!==deptId;
+    const prevJobChanged=prevJobId!==jobId;
+    const prevSalChanged=prevSalary!==salary;
+
+    if(prevDeptChanged||prevJobChanged||prevSalChanged){
+      // ── Save PREVIOUS snapshot to local jobHistory ──
+      const snapEntry={
+        id:nH++,empId:e.id,jobId:prevJobId,deptId:prevDeptId,
+        effDate:prevEffDate,salary:prevSalary,deleted:false,
+        meta:{by:CURRENT_USER,at:now(),action:'SNAPSHOT',note:'Auto-saved before edit'}
+      };
+      jobHistory.push(snapEntry);
+
+      // ── Save NEW values as new jobHistory entry (today's date) ──
+      const newEntry={
+        id:nH++,empId:e.id,jobId:jobId,deptId:deptId,
+        effDate:todayISO(),salary:salary,deleted:false,
+        meta:{by:CURRENT_USER,at:now(),action:'ADD',note:'Updated via employee edit'}
+      };
+      jobHistory.push(newEntry);
+
+      // ── Persist PREVIOUS snapshot to Supabase jobhistory ──
+      const prevJobObj=gJ(prevJobId), prevDeptObj=gD(prevDeptId);
+      if(prevJobObj&&prevDeptObj){
+        await sb.from('jobhistory').insert({
+          empno:e.empNo,
+          jobcode:prevJobObj.code,
+          deptcode:prevDeptObj.code,
+          effdate:prevEffDate,
+          salary:prevSalary
+        }).catch(err=>console.warn('History insert error (prev snapshot):',err.message));
+      }
+
+      // ── Persist NEW entry to Supabase jobhistory ──
+      const newJobObj=gJ(jobId), newDeptObj=gD(deptId);
+      if(newJobObj&&newDeptObj){
+        await sb.from('jobhistory').insert({
+          empno:e.empNo,
+          jobcode:newJobObj.code,
+          deptcode:newDeptObj.code,
+          effdate:todayISO(),
+          salary:salary
+        }).catch(err=>console.warn('History insert error (new entry):',err.message));
+      }
+
+      // ▼ CHANGE 2: audit log entries for the snapshot
+      logAudit('EDIT','JobHistory',e.empNo+' ('+e.lastName+', '+e.firstName+')',
+        'Previous snapshot saved — Job: '+jd(prevJobId)+', Dept: '+dn(prevDeptId)+', Salary: '+prevSalary);
+      logAudit('ADD','JobHistory',e.empNo+' ('+e.lastName+', '+e.firstName+')',
+        'New history entry added — Job: '+jd(jobId)+', Dept: '+dn(deptId)+', Salary: '+salary);
+
+      // Update latestEffDate to today
+      e.latestEffDate=todayISO();
+    }
+
+    // ── Update LOCAL employee state ──
+    Object.assign(e,{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta});
+
+    // ▼ CHANGE 3: persist all field changes to Supabase employee table so they survive refresh
+    const updatePayload={
+      lastname:lastName,
+      firstname:firstName,
+      gender:gender,
+      hiredate:hireDate,
+      sepdate:sepDate||null,
+      username:username,
+      email:email,
+      phone:phone
+    };
+    const {error:updateErr}=await sb.from('employee').update(updatePayload).eq('empno',empNo);
+    if(updateErr){
+      console.warn('Employee update error:',updateErr.message);
+      showToast('Warning: Employee data may not have saved. '+updateErr.message,'error',5000);
+    }else{
+      showToast('Employee updated and saved successfully.','success');
+    }
+
+    logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated by '+CURRENT_USER);
+
+  }else{
+    // ── NEW employee ──
+    const newEmp={
+      id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,
+      salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta,
+      latestEffDate:hireDate,_dbEmpNo:empNo
+    };
+    employees.push(newEmp);
+
+    // Initial job history entry
+    jobHistory.push({id:nH++,empId:newEmp.id,jobId,deptId,effDate:hireDate||todayISO(),salary,deleted:false,meta});
+
+    // Persist new employee to Supabase
+    const {error:insErr}=await sb.from('employee').insert({
+      empno:empNo,lastname:lastName,firstname:firstName,gender:gender,
+      hiredate:hireDate,sepdate:sepDate||null,username:username,email:email,phone:phone
+    });
+    if(insErr){
+      console.warn('Employee insert error:',insErr.message);
+      showToast('Warning: New employee may not have saved. '+insErr.message,'error',5000);
+    }else{
+      // Persist initial job history
+      const deptObj=gD(deptId), jobObj=gJ(jobId);
+      if(deptObj&&jobObj){
+        await sb.from('jobhistory').insert({
+          empno:empNo,jobcode:jobObj.code,deptcode:deptObj.code,
+          effdate:hireDate||todayISO(),salary:salary
+        }).catch(err=>console.warn('History insert error:',err.message));
+      }
+      showToast('New employee added successfully.','success');
+    }
+
+    logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added by '+CURRENT_USER);
+  }
   cm('mo-emp');renderEmp();renderStats();
 }
 
+/* ════════════════════════════════════
+   ▼ CHANGE 4, 5, 6: renderHist
+   - No checkboxes
+   - No Add Entry button (removed from HTML above)
+   - Sorted by effDate (A→Z default = oldest first)
+════════════════════════════════════ */
 function renderHist(){
   const q=document.getElementById('hist-q').value.toLowerCase();
   const sortDir=document.getElementById('hist-sort').value;
-  let data=jobHistory.filter(h=>{if(h.deleted)return false;return (en(h.empId)+' '+jc(h.jobId)+' '+jd(h.jobId)+' '+dc(h.deptId)+' '+dn(h.deptId)).toLowerCase().includes(q);}).sort((a,b)=>{
-    const nameA=en(a.empId), nameB=en(b.empId);
-    const cmp=nameA.localeCompare(nameB);
-    return sortDir==='za'?-cmp:cmp;
+
+  let data=jobHistory.filter(h=>{
+    if(h.deleted)return false;
+    return (en(h.empId)+' '+jc(h.jobId)+' '+jd(h.jobId)+' '+dc(h.deptId)+' '+dn(h.deptId)).toLowerCase().includes(q);
+  }).sort((a,b)=>{
+    // ▼ CHANGE 6: sort by effDate; blank dates pushed to bottom
+    const da=a.effDate||'';
+    const db=b.effDate||'';
+    if(!da&&!db)return 0;
+    if(!da)return 1;
+    if(!db)return -1;
+    const cmp=da.localeCompare(db);
+    return sortDir==='eff-desc'?-cmp:cmp; // eff-asc = oldest first (A→Z)
   });
+
   const tb=document.getElementById('hist-tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="11" class="tbl-empty">No records.</td></tr>';return;}
-  tb.innerHTML=data.map(h=>'<tr class="'+(h.deleted?'del-row':'')+'"><td><input type="checkbox" class="chk-hist" value="'+h.id+'"/></td><td>JH-'+String(h.id).padStart(3,'0')+'</td><td>'+en(h.empId)+'</td><td>'+jc(h.jobId)+'</td><td>'+jd(h.jobId)+'</td><td>'+dc(h.deptId)+'</td><td>'+dn(h.deptId)+'</td><td>'+fmt(h.effDate)+'</td><td>'+fmtSal(h.salary)+'</td><td><span class="badge '+(h.deleted?'b-del':'b-active')+'">'+(h.deleted?'Blocked':'Active')+'</span></td><td class="ns"><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditHist('+h.id+')">Edit</button></td></tr>').join('');
+  if(!data.length){tb.innerHTML='<tr><td colspan="10" class="tbl-empty">No records.</td></tr>';return;}
+
+  // ▼ CHANGE 4: NO checkbox column in row output
+  tb.innerHTML=data.map(h=>
+    '<tr class="'+(h.deleted?'del-row':'')+'">'+
+    '<td>JH-'+String(h.id).padStart(3,'0')+'</td>'+
+    '<td>'+en(h.empId)+'</td>'+
+    '<td>'+jc(h.jobId)+'</td>'+
+    '<td>'+jd(h.jobId)+'</td>'+
+    '<td>'+dc(h.deptId)+'</td>'+
+    '<td>'+dn(h.deptId)+'</td>'+
+    '<td>'+fmt(h.effDate)+'</td>'+
+    '<td>'+fmtSal(h.salary)+'</td>'+
+    '<td><span class="badge '+(h.deleted?'b-del':'b-active')+'">'+(h.deleted?'Blocked':'Active')+'</span></td>'+
+    '<td class="ns"><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditHist('+h.id+')">Edit</button></td>'+
+    '</tr>'
+  ).join('');
 }
-function openAddHist(){editId.hist=null;document.getElementById('mo-hist-title').textContent='Add Job History';popFormSelects();document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];document.getElementById('fh-sal').value='';om('mo-hist');}
-function openEditHist(id){const h=jobHistory.find(x=>x.id===id);if(!h)return;editId.hist=id;document.getElementById('mo-hist-title').textContent='Edit Job History';popFormSelects();setTimeout(function(){document.getElementById('fh-emp').value=h.empId;document.getElementById('fh-job').value=h.jobId;document.getElementById('fh-dept').value=h.deptId;},10);document.getElementById('fh-eff').value=h.effDate;document.getElementById('fh-sal').value=h.salary||'';om('mo-hist');}
+
+function openEditHist(id){
+  const h=jobHistory.find(x=>x.id===id);if(!h)return;
+  editId.hist=id;document.getElementById('mo-hist-title').textContent='Edit Job History';
+  popFormSelects();
+  setTimeout(function(){
+    document.getElementById('fh-emp').value=h.empId;
+    document.getElementById('fh-job').value=h.jobId;
+    document.getElementById('fh-dept').value=h.deptId;
+  },10);
+  document.getElementById('fh-eff').value=h.effDate;
+  document.getElementById('fh-sal').value=h.salary||'';
+  om('mo-hist');
+}
 function saveHist(){
-  const empId=+document.getElementById('fh-emp').value,jobId=+document.getElementById('fh-job').value,deptId=+document.getElementById('fh-dept').value,effDate=document.getElementById('fh-eff').value,salary=+document.getElementById('fh-sal').value||0;
+  const empId=+document.getElementById('fh-emp').value,
+        jobId=+document.getElementById('fh-job').value,
+        deptId=+document.getElementById('fh-dept').value,
+        effDate=document.getElementById('fh-eff').value,
+        salary=+document.getElementById('fh-sal').value||0;
   if(!empId||!jobId||!deptId||!effDate){alert('Fill required fields.');return;}
-  const meta={by:CURRENT_USER,at:now(),action:editId.hist?'EDIT':'ADD',note:editId.hist?'History updated':'New entry'};
-  if(editId.hist){Object.assign(jobHistory.find(x=>x.id===editId.hist),{empId,jobId,deptId,effDate,salary,meta});logAudit('EDIT','JobHistory','JH-'+String(editId.hist).padStart(3,'0'),'History updated');}
-  else{jobHistory.push({id:nH++,empId,jobId,deptId,effDate,salary,deleted:false,meta});logAudit('ADD','JobHistory','JH-'+String(nH-1).padStart(3,'0')+' ('+en(empId)+')','New entry added');}
+  const meta={by:CURRENT_USER,at:now(),action:'EDIT',note:'History updated'};
+  const h=jobHistory.find(x=>x.id===editId.hist);
+  if(h){
+    Object.assign(h,{empId,jobId,deptId,effDate,salary,meta});
+    logAudit('EDIT','JobHistory','JH-'+String(editId.hist).padStart(3,'0'),'History updated');
+    // Refresh latestEffDate on the employee
+    const emp=gE(empId);
+    if(emp){
+      const allHist=jobHistory.filter(x=>x.empId===empId&&!x.deleted)
+        .sort((a,b)=>(b.effDate||'').localeCompare(a.effDate||''));
+      if(allHist.length){
+        emp.latestEffDate=allHist[0].effDate;
+        emp.deptId=allHist[0].deptId;
+        emp.jobId=allHist[0].jobId;
+        emp.salary=allHist[0].salary;
+      }
+    }
+  }
   cm('mo-hist');renderHist();
 }
 
@@ -1011,12 +1244,11 @@ function renderDepts(){
   const sortDir=document.getElementById('dept-sort').value;
   const ec=function(id){return employees.filter(e=>e.deptId===id&&!e.deleted&&!e.blocked).length;};
   const tb=document.getElementById('dept-tbody');
-  let data=departments.filter(d=>!d.deleted).sort((a,b)=>{
-    const cmp=a.name.localeCompare(b.name);
-    return sortDir==='za'?-cmp:cmp;
-  });
+  let data=departments.filter(d=>!d.deleted).sort((a,b)=>{const cmp=a.name.localeCompare(b.name);return sortDir==='za'?-cmp:cmp;});
   if(!data.length){tb.innerHTML='<tr><td colspan="4" class="tbl-empty">No departments.</td></tr>';return;}
-  tb.innerHTML=data.map(d=>'<tr><td><strong>'+d.code+'</strong></td><td>'+d.name+'</td><td>'+ec(d.id)+'</td><td><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept('+d.id+')">Edit</button> <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteDept('+d.id+')">Delete</button></td></tr>').join('');
+  tb.innerHTML=data.map(d=>'<tr><td><strong>'+d.code+'</strong></td><td>'+d.name+'</td><td>'+ec(d.id)+'</td>'+
+    '<td><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditDept('+d.id+')">Edit</button> '+
+    '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteDept('+d.id+')">Delete</button></td></tr>').join('');
 }
 function openAddDept(){editId.dept=null;document.getElementById('mo-dept-title').textContent='Add Department';['fd-code','fd-name'].forEach(f=>document.getElementById(f).value='');om('mo-dept');}
 function openEditDept(id){const d=gD(id);if(!d)return;editId.dept=id;document.getElementById('mo-dept-title').textContent='Edit Department';document.getElementById('fd-code').value=d.code;document.getElementById('fd-name').value=d.name;om('mo-dept');}
@@ -1027,7 +1259,10 @@ function renderJobs(){
   const ec=function(id){return employees.filter(e=>e.jobId===id&&!e.deleted&&!e.blocked).length;};
   const tb=document.getElementById('job-tbody'),data=jobs.filter(j=>!j.deleted);
   if(!data.length){tb.innerHTML='<tr><td colspan="5" class="tbl-empty">No jobs.</td></tr>';return;}
-  tb.innerHTML=data.map(j=>'<tr><td><strong>'+j.code+'</strong></td><td>'+j.desc+'</td><td>'+ec(j.id)+'</td><td><span class="badge b-active">Active</span></td><td><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditJob('+j.id+')">Edit</button> <button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteJob('+j.id+')">Delete</button></td></tr>').join('');
+  tb.innerHTML=data.map(j=>'<tr><td><strong>'+j.code+'</strong></td><td>'+j.desc+'</td><td>'+ec(j.id)+'</td>'+
+    '<td><span class="badge b-active">Active</span></td>'+
+    '<td><button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditJob('+j.id+')">Edit</button> '+
+    '<button class="btn btn-danger" style="padding:3px 7px;font-size:10px" onclick="deleteJob('+j.id+')">Delete</button></td></tr>').join('');
 }
 function openAddJob(){editId.job=null;document.getElementById('mo-job-title').textContent='Add Job Position';['fj-code','fj-desc'].forEach(f=>document.getElementById(f).value='');om('mo-job');}
 function openEditJob(id){const j=gJ(id);if(!j)return;editId.job=id;document.getElementById('mo-job-title').textContent='Edit Job Position';document.getElementById('fj-code').value=j.code;document.getElementById('fj-desc').value=j.desc;om('mo-job');}
@@ -1091,8 +1326,8 @@ function renderUsers(){
   if(!data.length){tb.innerHTML='<tr><td colspan="7" class="tbl-empty">No users found.</td></tr>';return;}
   tb.innerHTML=data.map(function(u){
     const roleClass=u.role==='superadmin'?'b-sa':u.role==='admin'?'b-admin':'b-user';
-    let actionBtns='';
     const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
+    let actionBtns='';
     if(isSelf){
       actionBtns='<button class="btn btn-white" style="padding:3px 7px;font-size:10px" onclick="openEditUser('+u.id+')">Edit</button><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">You</span>';
     }else if(u.role==='superadmin'){
@@ -1123,88 +1358,42 @@ async function toggleBlockUser(id){
   const willBlock=!u.blocked;
   const newStatus=willBlock?'blocked':'active';
   const action=willBlock?'Block':'Unblock';
-
-  askConfirm(
-    action+' User',
-    action+' account "'+u.email+'"? '+(willBlock?'They will immediately lose access to the system and cannot log in.':'They will be able to log in again.'),
-    async function(){
-      if(u.supabaseId){
-        const {error}=await sb.from('profiles')
-          .update({
-            status: newStatus,
-            blocked_by: willBlock ? CURRENT_USER : null,
-            blocked_at: willBlock ? new Date().toISOString() : null,
-          })
-          .eq('id', u.supabaseId);
-
-        if(error){
-          showToast('Supabase error: '+error.message+'. Blocked locally only.','error',5000);
-        } else {
-          showToast(
-            willBlock
-              ? 'User "'+u.email+'" has been blocked. They cannot log in.'
-              : 'User "'+u.email+'" has been unblocked. They can log in again.',
-            willBlock?'error':'success'
-          );
-        }
-      } else {
-        showToast('No Supabase ID — blocked locally only.','error',4000);
-      }
-
-      u.blocked=willBlock;
-      logAudit(willBlock?'BLOCK':'RESTORE','User',u.email,
-        (willBlock?'Blocked':'Unblocked')+' by '+CURRENT_USER+'. Supabase status set to '+newStatus+'.');
-
-      renderUsers();
-      renderUserStats();
-      updatePendingBadges();
-    },
-    action,
-    willBlock?'btn-block':'btn-success'
-  );
+  askConfirm(action+' User',action+' account "'+u.email+'"?',async function(){
+    if(u.supabaseId){
+      const {error}=await sb.from('profiles').update({
+        status:newStatus,
+        blocked_by:willBlock?CURRENT_USER:null,
+        blocked_at:willBlock?new Date().toISOString():null,
+      }).eq('id',u.supabaseId);
+      if(error){showToast('Supabase error: '+error.message,'error',5000);}
+      else{showToast(willBlock?'User blocked.':'User unblocked.',willBlock?'error':'success');}
+    }else{showToast('No Supabase ID — blocked locally only.','error',4000);}
+    u.blocked=willBlock;
+    logAudit(willBlock?'BLOCK':'RESTORE','User',u.email,(willBlock?'Blocked':'Unblocked')+' by '+CURRENT_USER);
+    renderUsers();renderUserStats();updatePendingBadges();
+  },action,willBlock?'btn-block':'btn-success');
 }
 
-// ── DELETE USER — sets status to 'deactivated' in Supabase ───────────────────
 async function deleteUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
   const isSelf=(u.email===CURRENT_USER_EMAIL||u.email===CURRENT_USER);
   if(isSelf){showToast('You cannot delete your own account.','error');return;}
   if(u.role==='superadmin'){showToast('You cannot delete another Super Admin account.','error');return;}
-
-  askConfirm(
-    'Delete User',
-    'Delete user "'+u.email+'"? Their account will be deactivated and they will no longer be able to log in.',
-    async function(){
-      if(u.supabaseId){
-        // Explicitly set status = 'deactivated' — NOT 'inactive'
-        const {error}=await sb.from('profiles')
-          .update({ status: 'deactivated' })
-          .eq('id', u.supabaseId);
-        if(error) showToast('Supabase error: '+error.message,'error',4000);
-        else showToast('User deactivated successfully.','success');
-        showToast('User "'+u.email+'" has been deactivated successfully.','success');
-      } else {
-        showToast('No Supabase ID found — removed locally only.','error',4000);
-      }
-
-      logAudit('DELETE','User',u.email,'Deactivated (status: deactivated) by '+CURRENT_USER);
-
-      // Remove from local sysUsers list so they disappear from Active Accounts
-      const idx=sysUsers.findIndex(x=>x.id===id);
-      if(idx>-1) sysUsers.splice(idx,1);
-
-      renderUsers();
-      renderUserStats();
-      updatePendingBadges();
-    },
-    'Delete',
-    'btn-danger'
-  );
+  askConfirm('Delete User','Delete user "'+u.email+'"? Their account will be deactivated.',async function(){
+    if(u.supabaseId){
+      const {error}=await sb.from('profiles').update({status:'deactivated'}).eq('id',u.supabaseId);
+      if(error)showToast('Supabase error: '+error.message,'error',4000);
+      else showToast('User deactivated successfully.','success');
+    }else{showToast('No Supabase ID found — removed locally only.','error',4000);}
+    logAudit('DELETE','User',u.email,'Deactivated by '+CURRENT_USER);
+    const idx=sysUsers.findIndex(x=>x.id===id);
+    if(idx>-1)sysUsers.splice(idx,1);
+    renderUsers();renderUserStats();updatePendingBadges();
+  },'Delete','btn-danger');
 }
 
 function openAddUser(){
-  editId.user=null;
-  document.getElementById('mo-user-title').textContent='Add User';
+  editId.user=null;document.getElementById('mo-user-title').textContent='Add User';
   ['fu-user','fu-pass','fu-fn','fu-ln'].forEach(f=>document.getElementById(f).value='');
   document.getElementById('fu-role').value='';
   document.getElementById('fu-pass-row').style.display='';
@@ -1212,14 +1401,10 @@ function openAddUser(){
 }
 function openEditUser(id){
   const u=sysUsers.find(x=>x.id===id);if(!u)return;
-  editId.user=id;
-  document.getElementById('mo-user-title').textContent='Edit User';
-  document.getElementById('fu-user').value=u.email;
-  document.getElementById('fu-pass').value='';
-  document.getElementById('fu-fn').value=u.firstName;
-  document.getElementById('fu-ln').value=u.lastName;
-  document.getElementById('fu-role').value=u.role;
-  document.getElementById('fu-pass-row').style.display='none';
+  editId.user=id;document.getElementById('mo-user-title').textContent='Edit User';
+  document.getElementById('fu-user').value=u.email;document.getElementById('fu-pass').value='';
+  document.getElementById('fu-fn').value=u.firstName;document.getElementById('fu-ln').value=u.lastName;
+  document.getElementById('fu-role').value=u.role;document.getElementById('fu-pass-row').style.display='none';
   om('mo-user');
 }
 function saveUser(){
@@ -1246,10 +1431,7 @@ function renderPending(){
     (r.fullName||'')+(r.username||'')+(r.firstName||'')+(r.lastName||'')+(r.email||'')
   ).toLowerCase().includes(q));
   const container=document.getElementById('pending-cards');
-  if(!data.length){
-    container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';
-    return;
-  }
+  if(!data.length){container.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">No pending registration requests.</div>';return;}
   container.innerHTML=data.map(r=>{
     const displayName=r.fullName||((r.firstName+' '+r.lastName).trim())||r.email||'--';
     const parts=displayName.split(' ');
@@ -1279,38 +1461,20 @@ function renderPending(){
     '</div>';
   }).join('');
 }
-function approveWithRole(id){
-  const r=registrations.find(x=>x.id===id);if(!r)return;
-  const select=document.getElementById('role-select-'+id);
-  if(select)r.requestedRole=select.value;
-  approveReg(id);
-}
+function approveWithRole(id){const r=registrations.find(x=>x.id===id);if(!r)return;const select=document.getElementById('role-select-'+id);if(select)r.requestedRole=select.value;approveReg(id);}
 async function approveReg(id){
   const r=registrations.find(x=>x.id===id);if(!r)return;
-  askConfirm(
-    'Approve Registration',
-    'Approve "'+r.fullName+'" as '+r.requestedRole.toUpperCase()+'?',
-    async function(){
-      const {error}=await sb.from('profiles').update({
-        status:'active',role:r.requestedRole,approved_by:CURRENT_USER,approved_at:new Date().toISOString(),
-      }).eq('id',r.supabaseId);
-      if(error){showToast('Error approving user: '+error.message,'error',4000);return;}
-      r.status='approved';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();
-      sysUsers.push({id:nU++,username:r.username,firstName:r.firstName,lastName:r.lastName,fullName:r.fullName,email:r.email,role:r.requestedRole,empId:null,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false,supabaseId:r.supabaseId});
-      logAudit('RESTORE','User',r.fullName||r.username,'Approved as '+r.requestedRole+' by '+CURRENT_USER);
-      showToast('User approved successfully.','success');
-      renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
-    },
-    'Approve','btn-success'
-  );
+  askConfirm('Approve Registration','Approve "'+r.fullName+'" as '+r.requestedRole.toUpperCase()+'?',async function(){
+    const {error}=await sb.from('profiles').update({status:'active',role:r.requestedRole,approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('id',r.supabaseId);
+    if(error){showToast('Error approving user: '+error.message,'error',4000);return;}
+    r.status='approved';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();
+    sysUsers.push({id:nU++,username:r.username,firstName:r.firstName,lastName:r.lastName,fullName:r.fullName,email:r.email,role:r.requestedRole,empId:null,registeredAt:r.submittedAt,approvedBy:CURRENT_USER,deleted:false,blocked:false,supabaseId:r.supabaseId});
+    logAudit('RESTORE','User',r.fullName||r.username,'Approved as '+r.requestedRole+' by '+CURRENT_USER);
+    showToast('User approved successfully.','success');
+    renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
+  },'Approve','btn-success');
 }
-function openRejectModal(id){
-  const r=registrations.find(x=>x.id===id);if(!r)return;
-  pendingRejectId=id;
-  document.getElementById('reject-note').value='';
-  document.getElementById('reject-for').textContent='Rejecting: '+(r.fullName||r.email);
-  om('mo-reject');
-}
+function openRejectModal(id){const r=registrations.find(x=>x.id===id);if(!r)return;pendingRejectId=id;document.getElementById('reject-note').value='';document.getElementById('reject-for').textContent='Rejecting: '+(r.fullName||r.email);om('mo-reject');}
 async function confirmReject(){
   const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;
   const note=document.getElementById('reject-note').value.trim()||'No reason provided.';
@@ -1321,7 +1485,6 @@ async function confirmReject(){
   showToast('Registration rejected.','error');
   cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();
 }
-
 function renderAllReg(){
   const q=(document.getElementById('allreg-q').value||'').toLowerCase();
   const fs=document.getElementById('allreg-fs').value;
@@ -1334,11 +1497,7 @@ function renderAllReg(){
   const tb=document.getElementById('allreg-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="6" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
-    const statusBadge=r.status==='approved'
-      ?'<span class="badge b-approved">Approved</span>'
-      :r.status==='rejected'
-      ?'<span class="badge b-rejected">Rejected</span>'
-      :'<span class="badge b-pending">Pending</span>';
+    const statusBadge=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':'<span class="badge b-pending">Pending</span>';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td>'+(r.fullName||((r.firstName+' '+r.lastName).trim())||'--')+'</td>'+
       '<td style="font-size:11px;color:var(--muted)">'+(r.email||'--')+'</td>'+
@@ -1354,17 +1513,31 @@ function viewEmpAudit(id){
   const e=gE(id);if(!e)return;
   const logs=auditLog.filter(a=>a.record.includes(e.empNo)||a.record.includes(e.lastName+', '+e.firstName));
   document.getElementById('mo-ad-title').textContent='Change History: '+e.lastName+', '+e.firstName;
-  document.getElementById('mo-ad-body').innerHTML=logs.length?'<div class="tw">'+logs.map(a=>'<div class="audit-entry"><span class="audit-dot '+(actionDot[a.action]||'dot-add')+'"></span><span class="audit-time">'+a.timestamp+'</span><span class="audit-who">'+a.user+'</span><span class="audit-action"><span style="font-weight:bold;color:'+(actionColor[a.action]||'#333')+'">['+a.action+']</span> '+(a.note||'--')+'</span></div>').join('')+'</div>':'<p style="color:var(--muted);font-size:12px;padding:8px">No change history found.</p>';
+  document.getElementById('mo-ad-body').innerHTML=logs.length?
+    '<div class="tw">'+logs.map(a=>'<div class="audit-entry"><span class="audit-dot '+(actionDot[a.action]||'dot-add')+'"></span><span class="audit-time">'+a.timestamp+'</span><span class="audit-who">'+a.user+'</span><span class="audit-action"><span style="font-weight:bold;color:'+(actionColor[a.action]||'#333')+'">['+a.action+']</span> '+(a.note||'--')+'</span></div>').join('')+'</div>':
+    '<p style="color:var(--muted);font-size:12px;padding:8px">No change history found.</p>';
   om('mo-audit-detail');
 }
+
 function viewProf(id){
   const e=gE(id);if(!e)return;
   logAudit('VIEW','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Profile viewed');
-  const hist=jobHistory.filter(h=>h.empId===id).sort((a,b)=>b.effDate.localeCompare(a.effDate));
-  const rows=hist.length?hist.map(h=>'<tr><td>'+jc(h.jobId)+'</td><td>'+jd(h.jobId)+'</td><td>'+dc(h.deptId)+'</td><td>'+dn(h.deptId)+'</td><td>'+fmt(h.effDate)+'</td><td>'+fmtSal(h.salary)+'</td><td><span class="badge '+(h.deleted?'b-del':'b-active')+'">'+(h.deleted?'Blocked':'Active')+'</span></td><td><button class="btn btn-white" style="padding:2px 6px;font-size:10px" onclick="openEditHist('+h.id+')">Edit</button> <button class="btn btn-block" style="padding:2px 6px;font-size:10px" onclick="blockHistRow('+h.id+','+id+')">Block</button></td></tr>').join(''):'<tr><td colspan="8" class="tbl-empty">No history.</td></tr>';
+  // ▼ Profile job history also sorted by effDate newest first
+  const hist=jobHistory.filter(h=>h.empId===id).sort((a,b)=>(b.effDate||'').localeCompare(a.effDate||''));
+  const rows=hist.length?hist.map(h=>
+    '<tr><td>'+jc(h.jobId)+'</td><td>'+jd(h.jobId)+'</td>'+
+    '<td>'+dc(h.deptId)+'</td><td>'+dn(h.deptId)+'</td>'+
+    '<td>'+fmt(h.effDate)+'</td><td>'+fmtSal(h.salary)+'</td>'+
+    '<td><span class="badge '+(h.deleted?'b-del':'b-active')+'">'+(h.deleted?'Blocked':'Active')+'</span></td>'+
+    '<td><button class="btn btn-white" style="padding:2px 6px;font-size:10px" onclick="openEditHist('+h.id+')">Edit</button> '+
+    '<button class="btn btn-block" style="padding:2px 6px;font-size:10px" onclick="blockHistRow('+h.id+','+id+')">Block</button></td></tr>').join(''):
+    '<tr><td colspan="8" class="tbl-empty">No history.</td></tr>';
   const badge=e.deleted?'<span class="badge b-del" style="font-size:11px">Inactive</span>':e.blocked?'<span class="badge b-blk" style="font-size:11px">Blocked</span>':'<span class="badge b-active" style="font-size:11px">Active</span>';
   document.getElementById('profile-content').innerHTML=
-    '<div class="pp"><div class="pp-head"><div class="ava">'+ini(e)+'</div><div class="pp-info"><div class="pname">'+e.lastName+', '+e.firstName+'</div><div class="prole">'+jd(e.jobId)+' - '+dn(e.deptId)+'</div><div class="pid">'+e.empNo+'</div></div><div style="margin-left:auto">'+badge+'</div></div>'+
+    '<div class="pp"><div class="pp-head"><div class="ava">'+ini(e)+'</div>'+
+    '<div class="pp-info"><div class="pname">'+e.lastName+', '+e.firstName+'</div>'+
+    '<div class="prole">'+jd(e.jobId)+' - '+dn(e.deptId)+'</div><div class="pid">'+e.empNo+'</div></div>'+
+    '<div style="margin-left:auto">'+badge+'</div></div>'+
     '<div class="pp-body"><div class="pst">Personal Information</div><div class="pg">'+
     '<div class="pf"><label>Emp No</label><div class="v">'+e.empNo+'</div></div>'+
     '<div class="pf"><label>Username</label><div class="v">'+(e.username||'--')+'</div></div>'+
@@ -1384,8 +1557,12 @@ function viewProf(id){
     '<div class="pf"><label>Job Code</label><div class="v">'+jc(e.jobId)+'</div></div>'+
     '<div class="pf"><label>Job Description</label><div class="v">'+jd(e.jobId)+'</div></div>'+
     '</div>'+
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="pst" style="margin-bottom:0">Job History</div><button class="btn btn-primary" style="font-size:10px;padding:4px 9px" onclick="openAddHistFor('+id+')">+ Add Entry</button></div>'+
-    '<div class="tw"><table class="ht"><thead><tr><th>Job Code</th><th>Job Desc</th><th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+    '<div class="pst" style="margin-bottom:0">Job History</div>'+
+    '<button class="btn btn-primary" style="font-size:10px;padding:4px 9px" onclick="openAddHistFor('+id+')">+ Add Entry</button></div>'+
+    '<div class="tw"><table class="ht"><thead><tr>'+
+    '<th>Job Code</th><th>Job Desc</th><th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div style="margin-top:14px;display:flex;gap:7px;flex-wrap:wrap">'+
     '<button class="btn btn-primary" onclick="openEditEmp('+e.id+')">Edit Profile</button>'+
     '<button class="btn btn-audit" onclick="viewEmpAudit('+e.id+')">View Audit Log</button>'+
@@ -1397,7 +1574,14 @@ function viewProf(id){
   document.getElementById('page-profile').classList.add('active');
   document.getElementById('topbar-title').textContent='Employee Profile';
 }
-function openAddHistFor(empId){editId.hist=null;document.getElementById('mo-hist-title').textContent='Add Job History';popFormSelects();setTimeout(function(){document.getElementById('fh-emp').value=empId;},10);document.getElementById('fh-eff').value=new Date().toISOString().split('T')[0];document.getElementById('fh-sal').value='';om('mo-hist');}
+function openAddHistFor(empId){
+  editId.hist=null;document.getElementById('mo-hist-title').textContent='Add Job History';
+  popFormSelects();
+  setTimeout(function(){document.getElementById('fh-emp').value=empId;},10);
+  document.getElementById('fh-eff').value=todayISO();
+  document.getElementById('fh-sal').value='';
+  om('mo-hist');
+}
 function blockHistRow(hid,empId){askConfirm('Block History Entry','Block this history record?',function(){const h=jobHistory.find(x=>x.id===hid);h.deleted=true;h.meta={by:CURRENT_USER,at:now(),action:'BLOCK',note:'Blocked via profile'};logAudit('BLOCK','JobHistory','JH-'+String(h.id).padStart(3,'0'),'Blocked via profile');viewProf(empId);},'Block','btn-block');}
 function softDeleteProfEmp(id){const e=gE(id);askConfirm('Delete Employee','Delete this employee? They will be moved to Deleted Items.',function(){e.deleted=true;e.meta={by:CURRENT_USER,at:now(),action:'DELETE',note:'Deleted via profile'};logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Deleted via profile');viewProf(id);renderStats();},'Delete','btn-danger');}
 function permDeleteProfEmp(id){const e=gE(id);askConfirm('Permanently Delete','This cannot be undone. Delete this employee?',function(){logAudit('DELETE','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Permanently deleted via profile');const idx=employees.findIndex(x=>x.id===id);if(idx>-1)employees.splice(idx,1);nav(document.querySelector('[data-page=employees]'),'employees');},'Delete','btn-danger');}
