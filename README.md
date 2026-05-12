@@ -8,13 +8,13 @@
 
 ---
 
-## 🔗 Live URL
+## Live URL
 
 **https://hrms-chi-seven.vercel.app**
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
