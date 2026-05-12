@@ -1093,6 +1093,12 @@ async function saveEmp(){
       Object.assign(e,{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta});
       e.latestEffDate = new Date().toISOString().split('T')[0];
 
+      // If the employee number changed, update jobhistory rows to keep history linked
+      if(empNo !== originalEmpNo){
+        await sb.from('jobhistory').update({empno:empNo}).eq('empno', originalEmpNo)
+          .catch(err=>console.warn('JobHistory empno update error:',err.message));
+      }
+
       // ── Persist to Supabase employee table ──
       const updatePayload={
         empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
@@ -1131,7 +1137,8 @@ async function saveEmp(){
 
       logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added');
     }
-    renderEmp();renderStats();renderHist();
+    await loadAllData();
+    renderHist();
     showToast('Employee saved successfully','success');
     return;
   } catch(err) {
