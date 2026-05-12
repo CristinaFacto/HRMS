@@ -1152,7 +1152,7 @@ async function saveEmp(){
 
     logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added by '+CURRENT_USER);
   }
-  cm('mo-emp');renderEmp();renderStats();
+  cm('mo-emp');renderEmp();renderStats();renderHist();nav(document.querySelector('[data-page=job-history]'),'job-history');
 }
 
 /* ════════════════════════════════════
