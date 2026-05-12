@@ -1035,6 +1035,7 @@ async function saveEmp(){
 
   if(editId.emp){
     const e=gE(editId.emp);
+    const originalEmpNo = e._dbEmpNo || e.empNo;
 
     // ▼ CHANGE 2: capture PREVIOUS values before overwriting
     const prevDeptId=e.deptId, prevJobId=e.jobId, prevSalary=e.salary;
@@ -1076,7 +1077,7 @@ async function saveEmp(){
       const newJobObj=gJ(jobId), newDeptObj=gD(deptId);
       if(newJobObj&&newDeptObj){
         await sb.from('jobhistory').insert({
-          empno:e.empNo,
+          empno:empNo,
           jobcode:newJobObj.code,
           deptcode:newDeptObj.code,
           effdate:todayISO(),
@@ -1108,7 +1109,7 @@ async function saveEmp(){
       email:email,
       phone:phone
     };
-    const {error:updateErr}=await sb.from('employee').update(updatePayload).eq('empno',empNo);
+    const {error:updateErr}=await sb.from('employee').update(updatePayload).eq('empno',originalEmpNo);
     if(updateErr){
       console.warn('Employee update error:',updateErr.message);
       showToast('Warning: Employee data may not have saved. '+updateErr.message,'error',5000);
