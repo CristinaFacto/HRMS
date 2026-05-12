@@ -815,7 +815,6 @@ async function loadAllData(){
       }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
-    if(document.getElementById('page-job-history')?.classList.contains('active')) renderHist();
     updatePendingBadges();
   }catch(err){
     showToast('Error loading data: '+err.message,'error',5000);
@@ -1034,139 +1033,119 @@ async function saveEmp(){
   const jobId=+document.getElementById('fe-job').value;
   const email=document.getElementById('fe-email').value.trim();
   const phone=document.getElementById('fe-phone').value.trim();
-  // Read the effective date the user specified (defaults to today)
-  const effDate=document.getElementById('fe-effdate').value||todayISO();
 
   if(!lastName||!firstName||!deptId||!jobId){alert('Fill required fields (Last Name, First Name, Department, Job Position).');return;}
 
   cm('mo-emp');
-  const metaAt=now();
+  const meta={by:CURRENT_USER,at:now(),action:editId.emp?'EDIT':'ADD',note:editId.emp?'Profile updated':'New employee added'};
 
-  try{
+  try {
     if(editId.emp){
-      // ── EDIT MODE ──
-      const e=gE(editId.emp);
-      const originalEmpNo=e.empNo;
+    const e=gE(editId.emp);
+    const originalEmpNo = e.empNo;
 
-      const prevDeptId=e.deptId;
-      const prevJobId=e.jobId;
-      const prevSalary=e.salary;
-      const changed=prevDeptId!==deptId||prevJobId!==jobId||prevSalary!==salary;
+    // ── Capture PREVIOUS values before overwriting ──
+    const prevDeptId=e.deptId, prevJobId=e.jobId, prevSalary=e.salary;
+    const latestHistory = jobHistory.filter(h=>h.empId===e.id&&!h.deleted).sort((a,b)=>b.effDate.localeCompare(a.effDate))[0];
+    const prevEffDate = latestHistory ? latestHistory.effDate : hireDate;
+    const prevDeptChanged = prevDeptId !== deptId;
+    const prevJobChanged  = prevJobId  !== jobId;
+    const prevSalChanged  = prevSalary !== salary;
 
-      if(changed){
-        // Insert a new job history row for the new assignment
-        const deptObj=gD(deptId), jobObj=gJ(jobId);
-
-        // Local record
-        const newHistLocal={
-          id:nH++, empId:e.id, jobId, deptId,
-          effDate, salary, deleted:false,
-          meta:{by:CURRENT_USER,at:metaAt,action:'ADD',note:'Auto-saved via employee edit'}
-        };
-        jobHistory.push(newHistLocal);
-
-        // Persist new history row to Supabase
-        if(deptObj&&jobObj){
-          const {error:histErr}=await sb.from('jobhistory').insert({
-            empno:empNo,
-            jobcode:jobObj.code,
-            deptcode:deptObj.code,
-            effdate:effDate,
-            salary:salary
-          });
-          if(histErr) console.warn('jobhistory insert error:',histErr.message);
-          else console.log('New jobhistory row saved for empNo',empNo,'effDate',effDate);
-        }
-
-        // Audit
-        logAudit('EDIT','JobHistory',
-          e.empNo+' ('+e.lastName+', '+e.firstName+')',
-          'New history: Job='+jd(jobId)+', Dept='+dn(deptId)+', Salary='+salary+', EffDate='+effDate
-        );
-
-        // Update employee's displayed current state
-        e.latestEffDate=effDate;
-      }
-
-      // If empNo changed, update jobhistory rows in Supabase
-      if(empNo!==originalEmpNo){
-        await sb.from('jobhistory').update({empno:empNo}).eq('empno',originalEmpNo)
-          .catch(err=>console.warn('JobHistory empno update error:',err.message));
-      }
-
-      // Update employee table in Supabase
-      const {error:updateErr}=await sb.from('employee').update({
-        empno:empNo,
-        lastname:lastName,
-        firstname:firstName,
-        gender:gender,
-        hiredate:hireDate,
-        sepdate:sepDate||null,
-        username:username,
-        email:email,
-        phone:phone
-      }).eq('empno',originalEmpNo);
-      if(updateErr) console.warn('Employee update error:',updateErr.message);
-
-      // Update local employee state
-      Object.assign(e,{
-        empNo,username,lastName,firstName,gender,hireDate,
-        sepDate,salary,deptId,jobId,email,phone,
-        latestEffDate:changed?effDate:e.latestEffDate,
-        meta:{by:CURRENT_USER,at:metaAt,action:'EDIT',note:'Profile updated'}
-      });
-
-      logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated');
-
-    }else{
-      // ── ADD MODE ──
-      const newEmp={
-        id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,
-        salary,deptId,jobId,email,phone,deleted:false,blocked:false,
-        latestEffDate:effDate||hireDate,
-        meta:{by:CURRENT_USER,at:metaAt,action:'ADD',note:'New employee added'}
+    // If dept, job, or salary changed → add old values to job history
+    if(prevDeptChanged || prevJobChanged || prevSalChanged){
+      const histEntry = {
+        id:nH++, empId:e.id, jobId:prevJobId, deptId:prevDeptId,
+        effDate:prevEffDate, salary:prevSalary, deleted:false,
+        meta:{by:CURRENT_USER,at:now(),action:'SNAPSHOT',note:'Auto-saved before edit'}
       };
-      employees.push(newEmp);
+      jobHistory.push(histEntry);
 
-      // Local history entry
-      jobHistory.push({
-        id:nH++,empId:newEmp.id,jobId,deptId,
-        effDate:effDate||hireDate,salary,deleted:false,
-        meta:{by:CURRENT_USER,at:metaAt,action:'ADD',note:'Initial assignment'}
-      });
+      // Also save new history entry with today's date
+      const todayDate = new Date().toISOString().split('T')[0];
+      const newHistEntry = {
+        id:nH++, empId:e.id, jobId:jobId, deptId:deptId,
+        effDate:todayDate, salary:salary, deleted:false,
+        meta:{by:CURRENT_USER,at:now(),action:'ADD',note:'Updated via employee edit'}
+      };
+      jobHistory.push(newHistEntry);
+      e.latestEffDate = todayDate;
 
-      const deptObj=gD(deptId),jobObj=gJ(jobId);
-
-      // Persist employee to Supabase
-      const {error:insErr}=await sb.from('employee').insert({
-        empno:empNo,lastname:lastName,firstname:firstName,gender:gender,
-        hiredate:hireDate,sepdate:sepDate||null,username:username,email:email,phone:phone
-      });
-      if(insErr) console.warn('Employee insert error:',insErr.message);
-
-      // Persist initial job history row
-      if(deptObj&&jobObj){
-        const {error:histErr}=await sb.from('jobhistory').insert({
-          empno:empNo,
-          jobcode:jobObj.code,
-          deptcode:deptObj.code,
-          effdate:effDate||hireDate,
-          salary:salary
+      // Save both history entries to Supabase
+      const prevDeptObj=gD(prevDeptId), prevJobObj=gJ(prevJobId);
+      const newDeptObj=gD(deptId), newJobObj=gJ(jobId);
+      if(prevDeptObj && prevJobObj){
+        const {error:histErrPrev} = await sb.from('jobhistory').insert({
+          empno:originalEmpNo, jobcode:prevJobObj?prevJobObj.code:'',
+          deptcode:prevDeptObj?prevDeptObj.code:'',
+          effdate:prevEffDate, salary:prevSalary
         });
-        if(histErr) console.warn('Initial jobhistory insert error:',histErr.message);
+        if(histErrPrev) console.warn('History insert error (prev):',histErrPrev.message);
+      }
+      if(newDeptObj && newJobObj){
+        const {error:histErrNew} = await sb.from('jobhistory').insert({
+          empno:empNo, jobcode:newJobObj?newJobObj.code:'',
+          deptcode:newDeptObj?newDeptObj.code:'',
+          effdate:todayDate, salary:salary
+        });
+        if(histErrNew) console.warn('History insert error (new):',histErrNew.message);
       }
 
-      logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added');
+      // Log to audit
+      logAudit('EDIT','JobHistory',e.empNo+' ('+e.lastName+', '+e.firstName+')',
+        'Previous snapshot saved: Job='+jd(prevJobId)+', Dept='+dn(prevDeptId)+', Salary='+prevSalary);
     }
 
-    // Reload from Supabase so job history table is always fresh
-    await loadAllData();
-    renderHist();
-    showToast('Employee saved successfully.','success');
+    // ── Update local state ──
+    Object.assign(e,{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta});
+    e.latestEffDate = new Date().toISOString().split('T')[0];
 
-  }catch(err){
-    console.error('saveEmp error:',err);
+    // ── Persist to Supabase employee table ──
+    const updatePayload={
+      empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
+      hiredate:hireDate, sepdate:sepDate||null,
+      username:username, email:email, phone:phone
+    };
+    const {error:updateErr} = await sb.from('employee')
+      .update(updatePayload)
+      .eq('empno', originalEmpNo);
+    if(updateErr) console.warn('Employee update error:', updateErr.message);
+
+    logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated');
+  } else {
+    // ── New employee ──
+    const newEmp={id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta,latestEffDate:hireDate};
+    employees.push(newEmp);
+
+    // Save initial job history entry
+    const todayDate=new Date().toISOString().split('T')[0];
+    jobHistory.push({id:nH++,empId:newEmp.id,jobId,deptId,effDate:hireDate||todayDate,salary,deleted:false,meta});
+
+    // Persist to Supabase
+    const deptObj=gD(deptId), jobObj=gJ(jobId);
+    const {error:insErr} = await sb.from('employee').insert({
+      empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
+      hiredate:hireDate, sepdate:sepDate||null, username:username, email:email, phone:phone
+    });
+    if(insErr) console.warn('Employee insert error:', insErr.message);
+
+    if(deptObj && jobObj){
+      const {error:histErr} = await sb.from('jobhistory').insert({
+        empno:empNo, jobcode:jobObj.code, deptcode:deptObj.code,
+        effdate:hireDate||todayDate, salary:salary
+      });
+      if(histErr) console.warn('History insert error:',histErr.message);
+    }
+
+    logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added');
+  }
+  renderEmp();renderStats();renderHist();
+  showToast('Employee saved successfully','success');
+  return;
+  } catch(err) {
+    console.error('saveEmp error:', err);
     showToast('Failed to save employee: '+(err.message||err),'error');
+    return;
   }
 }
 
