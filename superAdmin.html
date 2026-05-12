@@ -1031,129 +1031,114 @@ async function saveEmp(){
   const phone=document.getElementById('fe-phone').value.trim();
   if(!lastName||!firstName||!deptId||!jobId){alert('Fill required fields.');return;}
 
+  cm('mo-emp');
   const meta={by:CURRENT_USER,at:now(),action:editId.emp?'EDIT':'ADD',note:editId.emp?'Profile updated':'New employee added'};
 
-  if(editId.emp){
-    const e=gE(editId.emp);
-    const originalEmpNo = e._dbEmpNo || e.empNo;
+  try {
+    if(editId.emp){
+      const e=gE(editId.emp);
+      const originalEmpNo = e.empNo;
 
-    // ▼ CHANGE 2: capture PREVIOUS values before overwriting
-    const prevDeptId=e.deptId, prevJobId=e.jobId, prevSalary=e.salary;
-    const prevEffDate=e.latestEffDate||hireDate;
-    const prevDeptChanged=prevDeptId!==deptId;
-    const prevJobChanged=prevJobId!==jobId;
-    const prevSalChanged=prevSalary!==salary;
+      // ── Capture PREVIOUS values before overwriting ──
+      const prevDeptId=e.deptId, prevJobId=e.jobId, prevSalary=e.salary;
+      const latestHistory = jobHistory.filter(h=>h.empId===e.id&&!h.deleted).sort((a,b)=>b.effDate.localeCompare(a.effDate))[0];
+      const prevEffDate = latestHistory ? latestHistory.effDate : hireDate;
+      const prevDeptChanged = prevDeptId !== deptId;
+      const prevJobChanged  = prevJobId  !== jobId;
+      const prevSalChanged  = prevSalary !== salary;
 
-    if(prevDeptChanged||prevJobChanged||prevSalChanged){
-      // ── Save PREVIOUS snapshot to local jobHistory ──
-      const snapEntry={
-        id:nH++,empId:e.id,jobId:prevJobId,deptId:prevDeptId,
-        effDate:prevEffDate,salary:prevSalary,deleted:false,
-        meta:{by:CURRENT_USER,at:now(),action:'SNAPSHOT',note:'Auto-saved before edit'}
-      };
-      jobHistory.push(snapEntry);
+      // If dept, job, or salary changed → add old values to job history
+      if(prevDeptChanged || prevJobChanged || prevSalChanged){
+        const histEntry = {
+          id:nH++, empId:e.id, jobId:prevJobId, deptId:prevDeptId,
+          effDate:prevEffDate, salary:prevSalary, deleted:false,
+          meta:{by:CURRENT_USER,at:now(),action:'SNAPSHOT',note:'Auto-saved before edit'}
+        };
+        jobHistory.push(histEntry);
 
-      // ── Save NEW values as new jobHistory entry (today's date) ──
-      const newEntry={
-        id:nH++,empId:e.id,jobId:jobId,deptId:deptId,
-        effDate:todayISO(),salary:salary,deleted:false,
-        meta:{by:CURRENT_USER,at:now(),action:'ADD',note:'Updated via employee edit'}
-      };
-      jobHistory.push(newEntry);
+        // Also save new history entry with today's date
+        const todayDate = new Date().toISOString().split('T')[0];
+        const newHistEntry = {
+          id:nH++, empId:e.id, jobId:jobId, deptId:deptId,
+          effDate:todayDate, salary:salary, deleted:false,
+          meta:{by:CURRENT_USER,at:now(),action:'ADD',note:'Updated via employee edit'}
+        };
+        jobHistory.push(newHistEntry);
+        e.latestEffDate = todayDate;
 
-      // ── Persist PREVIOUS snapshot to Supabase jobhistory ──
-      const prevJobObj=gJ(prevJobId), prevDeptObj=gD(prevDeptId);
-      if(prevJobObj&&prevDeptObj){
-        await sb.from('jobhistory').insert({
-          empno:e.empNo,
-          jobcode:prevJobObj.code,
-          deptcode:prevDeptObj.code,
-          effdate:prevEffDate,
-          salary:prevSalary
-        }).catch(err=>console.warn('History insert error (prev snapshot):',err.message));
+        // Save both history entries to Supabase
+        const prevDeptObj=gD(prevDeptId), prevJobObj=gJ(prevJobId);
+        const newDeptObj=gD(deptId), newJobObj=gJ(jobId);
+        if(prevDeptObj && prevJobObj){
+          await sb.from('jobhistory').insert({
+            empno:originalEmpNo, jobcode:prevJobObj?prevJobObj.code:'',
+            deptcode:prevDeptObj?prevDeptObj.code:'',
+            effdate:prevEffDate, salary:prevSalary
+          }).catch(err=>console.warn('History insert error (prev):',err.message));
+        }
+        if(newDeptObj && newJobObj){
+          await sb.from('jobhistory').insert({
+            empno:empNo, jobcode:newJobObj?newJobObj.code:'',
+            deptcode:newDeptObj?newDeptObj.code:'',
+            effdate:todayDate, salary:salary
+          }).catch(err=>console.warn('History insert error (new):',err.message));
+        }
+
+        // Log to audit
+        logAudit('EDIT','JobHistory',e.empNo+' ('+e.lastName+', '+e.firstName+')',
+          'Previous snapshot saved: Job='+jd(prevJobId)+', Dept='+dn(prevDeptId)+', Salary='+prevSalary);
       }
 
-      // ── Persist NEW entry to Supabase jobhistory ──
-      const newJobObj=gJ(jobId), newDeptObj=gD(deptId);
-      if(newJobObj&&newDeptObj){
-        await sb.from('jobhistory').insert({
-          empno:empNo,
-          jobcode:newJobObj.code,
-          deptcode:newDeptObj.code,
-          effdate:todayISO(),
-          salary:salary
-        }).catch(err=>console.warn('History insert error (new entry):',err.message));
-      }
+      // ── Update local state ──
+      Object.assign(e,{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta});
+      e.latestEffDate = new Date().toISOString().split('T')[0];
 
-      // ▼ CHANGE 2: audit log entries for the snapshot
-      logAudit('EDIT','JobHistory',e.empNo+' ('+e.lastName+', '+e.firstName+')',
-        'Previous snapshot saved — Job: '+jd(prevJobId)+', Dept: '+dn(prevDeptId)+', Salary: '+prevSalary);
-      logAudit('ADD','JobHistory',e.empNo+' ('+e.lastName+', '+e.firstName+')',
-        'New history entry added — Job: '+jd(jobId)+', Dept: '+dn(deptId)+', Salary: '+salary);
+      // ── Persist to Supabase employee table ──
+      const updatePayload={
+        empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
+        hiredate:hireDate, sepdate:sepDate||null,
+        username:username, email:email, phone:phone
+      };
+      const {error:updateErr} = await sb.from('employee')
+        .update(updatePayload)
+        .eq('empno', originalEmpNo);
+      if(updateErr) console.warn('Employee update error:', updateErr.message);
 
-      // Update latestEffDate to today
-      e.latestEffDate=todayISO();
-    }
+      logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated');
+    } else {
+      // ── New employee ──
+      const newEmp={id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta,latestEffDate:hireDate};
+      employees.push(newEmp);
 
-    // ── Update LOCAL employee state ──
-    Object.assign(e,{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta});
+      // Save initial job history entry
+      const todayDate=new Date().toISOString().split('T')[0];
+      jobHistory.push({id:nH++,empId:newEmp.id,jobId,deptId,effDate:hireDate||todayDate,salary,deleted:false,meta});
 
-    // ▼ CHANGE 3: persist all field changes to Supabase employee table so they survive refresh
-    const updatePayload={
-      lastname:lastName,
-      firstname:firstName,
-      gender:gender,
-      hiredate:hireDate,
-      sepdate:sepDate||null,
-      username:username,
-      email:email,
-      phone:phone
-    };
-    const {error:updateErr}=await sb.from('employee').update(updatePayload).eq('empno',originalEmpNo);
-    if(updateErr){
-      console.warn('Employee update error:',updateErr.message);
-      showToast('Warning: Employee data may not have saved. '+updateErr.message,'error',5000);
-    }else{
-      showToast('Employee updated and saved successfully.','success');
-    }
-
-    logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated by '+CURRENT_USER);
-
-  }else{
-    // ── NEW employee ──
-    const newEmp={
-      id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,
-      salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta,
-      latestEffDate:hireDate,_dbEmpNo:empNo
-    };
-    employees.push(newEmp);
-
-    // Initial job history entry
-    jobHistory.push({id:nH++,empId:newEmp.id,jobId,deptId,effDate:hireDate||todayISO(),salary,deleted:false,meta});
-
-    // Persist new employee to Supabase
-    const {error:insErr}=await sb.from('employee').insert({
-      empno:empNo,lastname:lastName,firstname:firstName,gender:gender,
-      hiredate:hireDate,sepdate:sepDate||null,username:username,email:email,phone:phone
-    });
-    if(insErr){
-      console.warn('Employee insert error:',insErr.message);
-      showToast('Warning: New employee may not have saved. '+insErr.message,'error',5000);
-    }else{
-      // Persist initial job history
+      // Persist to Supabase
       const deptObj=gD(deptId), jobObj=gJ(jobId);
-      if(deptObj&&jobObj){
+      const {error:insErr} = await sb.from('employee').insert({
+        empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
+        hiredate:hireDate, sepdate:sepDate||null, username:username, email:email, phone:phone
+      });
+      if(insErr) console.warn('Employee insert error:', insErr.message);
+
+      if(deptObj && jobObj){
         await sb.from('jobhistory').insert({
-          empno:empNo,jobcode:jobObj.code,deptcode:deptObj.code,
-          effdate:hireDate||todayISO(),salary:salary
+          empno:empNo, jobcode:jobObj.code, deptcode:deptObj.code,
+          effdate:hireDate||todayDate, salary:salary
         }).catch(err=>console.warn('History insert error:',err.message));
       }
-      showToast('New employee added successfully.','success');
-    }
 
-    logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added by '+CURRENT_USER);
+      logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added');
+    }
+    renderEmp();renderStats();renderHist();
+    showToast('Employee saved successfully','success');
+    return;
+  } catch(err) {
+    console.error('saveEmp error:', err);
+    showToast('Failed to save employee: '+(err.message||err),'error');
+    return;
   }
-  cm('mo-emp');renderEmp();renderStats();renderHist();nav(document.querySelector('[data-page=job-history]'),'job-history');
 }
 
 /* ════════════════════════════════════
