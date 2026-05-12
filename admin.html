@@ -941,10 +941,12 @@ async function saveEmp(){
 
   if(editId.emp){
     const e=gE(editId.emp);
+    const originalEmpNo = e.empNo;
 
     // ── Capture PREVIOUS values before overwriting ──
     const prevDeptId=e.deptId, prevJobId=e.jobId, prevSalary=e.salary;
-    const prevEffDate=e.latestEffDate||hireDate;
+    const latestHistory = jobHistory.filter(h=>h.empId===e.id&&!h.deleted).sort((a,b)=>b.effDate.localeCompare(a.effDate))[0];
+    const prevEffDate = latestHistory ? latestHistory.effDate : hireDate;
     const prevDeptChanged = prevDeptId !== deptId;
     const prevJobChanged  = prevJobId  !== jobId;
     const prevSalChanged  = prevSalary !== salary;
@@ -966,20 +968,21 @@ async function saveEmp(){
         meta:{by:CURRENT_USER,at:now(),action:'ADD',note:'Updated via employee edit'}
       };
       jobHistory.push(newHistEntry);
+      e.latestEffDate = todayDate;
 
       // Save both history entries to Supabase
       const prevDeptObj=gD(prevDeptId), prevJobObj=gJ(prevJobId);
       const newDeptObj=gD(deptId), newJobObj=gJ(jobId);
       if(prevDeptObj && prevJobObj){
         await sb.from('jobhistory').insert({
-          empno:e.empNo, jobcode:prevJobObj?prevJobObj.code:'',
+          empno:originalEmpNo, jobcode:prevJobObj?prevJobObj.code:'',
           deptcode:prevDeptObj?prevDeptObj.code:'',
           effdate:prevEffDate, salary:prevSalary
         }).catch(err=>console.warn('History insert error (prev):',err.message));
       }
       if(newDeptObj && newJobObj){
         await sb.from('jobhistory').insert({
-          empno:e.empNo, jobcode:newJobObj?newJobObj.code:'',
+          empno:empNo, jobcode:newJobObj?newJobObj.code:'',
           deptcode:newDeptObj?newDeptObj.code:'',
           effdate:todayDate, salary:salary
         }).catch(err=>console.warn('History insert error (new):',err.message));
@@ -995,16 +998,14 @@ async function saveEmp(){
     e.latestEffDate = new Date().toISOString().split('T')[0];
 
     // ── Persist to Supabase employee table ──
-    const newDept=gD(deptId), newJob=gJ(jobId);
     const updatePayload={
-      lastname:lastName, firstname:firstName, gender:gender,
+      empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
       hiredate:hireDate, sepdate:sepDate||null,
       username:username, email:email, phone:phone
     };
-    // Try update by empno
     const {error:updateErr} = await sb.from('employee')
       .update(updatePayload)
-      .eq('empno', empNo);
+      .eq('empno', originalEmpNo);
     if(updateErr) console.warn('Employee update error:', updateErr.message);
 
     logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated');
