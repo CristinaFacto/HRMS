@@ -232,7 +232,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
         Super Admin role: You can <strong>view, edit, delete, and permanently delete</strong> employees.
       </div>
       <div class="ph">
-        <!-- ▼ CHANGE 1: subtitle updated to reflect eff date sorting -->
         <div class="ph-left"><h2>Employee Records</h2><p>Manage employee profiles. Sorted by latest effective date.</p></div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="openAddEmp()">
@@ -256,7 +255,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
           <option value="blocked">Blocked</option>
           <option value="inactive">Inactive</option>
         </select>
-        <!-- ▼ CHANGE 6: emp-sort dropdown REMOVED — employees now auto-sort by eff date -->
       </div>
       <div class="tw">
         <table>
@@ -264,7 +262,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
             <th class="cc"><input type="checkbox" id="chk-emp-all" onchange="toggleAll('emp',this)"/></th>
             <th>Emp No</th><th>Last Name</th><th>First Name</th><th>Gender</th>
             <th>Hire Date</th><th>Sep Date</th><th>Current Job</th><th>Dept</th>
-            <!-- ▼ CHANGE 1: added Eff Date column to show the date employees are sorted by -->
             <th>Salary</th><th>Eff Date</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="emp-tbody"></tbody>
@@ -277,7 +274,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <div class="ph">
         <div class="ph-left"><h2>Job History</h2><p>All employment history records.</p></div>
         <div class="btn-group">
-          <!-- ▼ CHANGE 5: "Add Entry" button REMOVED from job history section -->
           <button class="btn btn-audit" onclick="viewSectionAudit('JobHistory','Job History Audit Log')">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Audit Log
           </button>
@@ -285,16 +281,15 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
       <div class="filter-row">
         <input type="text" id="hist-q" placeholder="Search..." oninput="renderHist()"/>
-        <!-- ▼ CHANGE 6: sort by Eff Date instead of employee name -->
+        <!-- FIX: Default is newest first (eff-desc) -->
         <select id="hist-sort" onchange="renderHist()">
-          <option value="eff-asc">Sort: Eff Date A → Z (Oldest First)</option>
-          <option value="eff-desc">Sort: Eff Date Z → A (Newest First)</option>
+          <option value="eff-desc">Sort: Eff Date — Newest First</option>
+          <option value="eff-asc">Sort: Eff Date — Oldest First</option>
         </select>
       </div>
       <div class="tw">
         <table>
           <thead><tr>
-            <!-- ▼ CHANGE 4: checkboxes column REMOVED from job history -->
             <th>ID</th><th>Employee</th><th>Job Code</th><th>Job Desc</th>
             <th>Dept Code</th><th>Dept Name</th><th>Eff Date</th><th>Salary</th><th>Status</th><th>Actions</th>
           </tr></thead>
@@ -505,9 +500,10 @@ tbody td{padding:8px 12px;vertical-align:middle}
         <div class="fr"><label>Job Position</label><select id="fe-job"></select></div>
       </div>
       <div class="f2">
+        <div class="fr"><label>Effective Date</label><input type="date" id="fe-effdate"/></div>
         <div class="fr"><label>Email</label><input type="email" id="fe-email" placeholder="email@company.com"/></div>
-        <div class="fr"><label>Phone</label><input id="fe-phone" placeholder="+63 9XX XXX XXXX"/></div>
       </div>
+      <div class="fr"><label>Phone</label><input id="fe-phone" placeholder="+63 9XX XXX XXXX"/></div>
     </div>
     <div class="mf">
       <button class="btn btn-outline" onclick="cm('mo-emp')">Cancel</button>
@@ -725,10 +721,9 @@ let nE=1, nH=1, nD=1, nJ=1, nU=1;
 let editId={emp:null,hist:null,dept:null,job:null,user:null};
 let pendingFn=null, currentDelTab='Employee';
 
-/* ════════════════════════════════════
-   LOAD DATA
-   ▼ CHANGE 1 & 3: latestEffDate stored per employee for sorting + persistence
-════════════════════════════════════ */
+/* ══════════════════════════════════════
+   LOAD ALL DATA
+══════════════════════════════════════ */
 async function loadAllData(){
   try{
     const [empRes,deptRes,jobRes,histRes,userRes]=await Promise.all([
@@ -769,7 +764,6 @@ async function loadAllData(){
     });
     employees=(empRes.data||[]).map((e,idx)=>{
       const empNo=String(e.empno||e.emp_no||'');
-      // ▼ CHANGE 1: pick most-recent job history entry by effDate for current assignment
       const hist=rawHistory
         .filter(h=>h.empNo===empNo)
         .sort((a,b)=>(b.effDate||'').localeCompare(a.effDate||''))[0];
@@ -787,11 +781,10 @@ async function loadAllData(){
         deptId:hist?hist.deptId:1,
         jobId:hist?hist.jobId:1,
         salary:hist?hist.salary:0,
-        // ▼ CHANGE 1: store latestEffDate for dashboard sorting
         latestEffDate:hist?hist.effDate:'',
         deleted:e.deleted||false,
         blocked:e.blocked||false,
-        _dbEmpNo:empNo   // keep original empno for Supabase updates
+        _dbEmpNo:empNo
       };
     });
     jobHistory=rawHistory.map(h=>{
@@ -914,10 +907,7 @@ function popDeptFilter(){
   departments.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;if(String(d.id)===v)o.selected=true;s.appendChild(o);});
 }
 
-/* ════════════════════════════════════
-   ▼ CHANGE 1: renderEmp — sorted by latestEffDate descending (newest first)
-   No sort dropdown needed; ordering is always by eff date
-════════════════════════════════════ */
+/* ── Employees: sorted by latestEffDate descending ── */
 function renderEmp(){
   popDeptFilter();
   const q=document.getElementById('emp-q').value.toLowerCase();
@@ -932,7 +922,6 @@ function renderEmp(){
     if(fd&&String(e.deptId)!==fd)return false;
     return (e.empNo+' '+e.lastName+' '+e.firstName+' '+jd(e.jobId)+' '+dn(e.deptId)).toLowerCase().includes(q);
   }).sort((a,b)=>{
-    // ▼ CHANGE 1: sort by latestEffDate descending; tie-break by last name
     const da=a.latestEffDate||'';
     const db=b.latestEffDate||'';
     if(db>da)return 1;
@@ -952,7 +941,6 @@ function renderEmp(){
       '<td>'+jd(e.jobId)+'</td>'+
       '<td><span class="badge b-dept">'+dc(e.deptId)+'</span></td>'+
       '<td>'+fmtSal(e.salary)+'</td>'+
-      // ▼ CHANGE 1: display the eff date column
       '<td>'+(e.latestEffDate||'--')+'</td>'+
       '<td class="ns">'+badge+'</td>'+
       '<td class="ns" style="white-space:nowrap">'+
@@ -989,32 +977,48 @@ function popFormSelects(){
   se.innerHTML='<option value="">-- Select --</option>';
   employees.filter(e=>!e.deleted&&!e.blocked).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.empNo+' - '+e.lastName+', '+e.firstName;se.appendChild(o);});
 }
+
 function openAddEmp(){
-  editId.emp=null;document.getElementById('mo-emp-title').textContent='Add Employee';
+  editId.emp=null;
+  document.getElementById('mo-emp-title').textContent='Add Employee';
   ['fe-empno','fe-user','fe-ln','fe-fn','fe-email','fe-phone','fe-sal'].forEach(f=>document.getElementById(f).value='');
   document.getElementById('fe-hire').value=todayISO();
-  document.getElementById('fe-sep').value='';document.getElementById('fe-gender').value='';
+  document.getElementById('fe-effdate').value=todayISO();
+  document.getElementById('fe-sep').value='';
+  document.getElementById('fe-gender').value='';
   popFormSelects();om('mo-emp');
 }
+
 function openEditEmp(id){
   const e=gE(id);if(!e)return;editId.emp=id;
   document.getElementById('mo-emp-title').textContent='Edit Employee';
-  document.getElementById('fe-empno').value=e.empNo;document.getElementById('fe-user').value=e.username;
-  document.getElementById('fe-ln').value=e.lastName;document.getElementById('fe-fn').value=e.firstName;
-  document.getElementById('fe-gender').value=e.gender||'';document.getElementById('fe-hire').value=e.hireDate;
-  document.getElementById('fe-sep').value=e.sepDate||'';document.getElementById('fe-sal').value=e.salary||'';
-  document.getElementById('fe-email').value=e.email||'';document.getElementById('fe-phone').value=e.phone||'';
+  document.getElementById('fe-empno').value=e.empNo;
+  document.getElementById('fe-user').value=e.username;
+  document.getElementById('fe-ln').value=e.lastName;
+  document.getElementById('fe-fn').value=e.firstName;
+  document.getElementById('fe-gender').value=e.gender||'';
+  document.getElementById('fe-hire').value=e.hireDate;
+  document.getElementById('fe-sep').value=e.sepDate||'';
+  document.getElementById('fe-sal').value=e.salary||'';
+  document.getElementById('fe-email').value=e.email||'';
+  document.getElementById('fe-phone').value=e.phone||'';
+  // Pre-fill eff date with the employee's latest eff date, defaulting to today
+  document.getElementById('fe-effdate').value=e.latestEffDate||todayISO();
   popFormSelects();
-  setTimeout(function(){document.getElementById('fe-dept').value=e.deptId;document.getElementById('fe-job').value=e.jobId;},10);
+  setTimeout(function(){
+    document.getElementById('fe-dept').value=e.deptId;
+    document.getElementById('fe-job').value=e.jobId;
+  },10);
   om('mo-emp');
 }
 
-/* ════════════════════════════════════
-   ▼ CHANGE 2 & 3: saveEmp
-   - Saves previous job/dept/salary snapshot to jobhistory (Supabase + local)
-   - Saves new data to jobhistory
-   - Persists all employee field changes to Supabase employee table
-════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   saveEmp — FIX:
+   1. Always writes a new jobhistory row when dept/job/salary changes
+   2. Persists new jobhistory row to Supabase
+   3. Updates employee table in Supabase
+   4. Reloads data so job history page reflects changes immediately
+══════════════════════════════════════════════════════════════ */
 async function saveEmp(){
   const empNo=document.getElementById('fe-empno').value.trim();
   if(!/^\d{5}$/.test(empNo)){alert('Emp No must be exactly 5 numerical digits.');return;}
@@ -1029,153 +1033,167 @@ async function saveEmp(){
   const jobId=+document.getElementById('fe-job').value;
   const email=document.getElementById('fe-email').value.trim();
   const phone=document.getElementById('fe-phone').value.trim();
-  if(!lastName||!firstName||!deptId||!jobId){alert('Fill required fields.');return;}
+  // Read the effective date the user specified (defaults to today)
+  const effDate=document.getElementById('fe-effdate').value||todayISO();
+
+  if(!lastName||!firstName||!deptId||!jobId){alert('Fill required fields (Last Name, First Name, Department, Job Position).');return;}
 
   cm('mo-emp');
-  const meta={by:CURRENT_USER,at:now(),action:editId.emp?'EDIT':'ADD',note:editId.emp?'Profile updated':'New employee added'};
+  const metaAt=now();
 
-  try {
+  try{
     if(editId.emp){
+      // ── EDIT MODE ──
       const e=gE(editId.emp);
-      const originalEmpNo = e.empNo;
+      const originalEmpNo=e.empNo;
 
-      // ── Capture PREVIOUS values before overwriting ──
-      const prevDeptId=e.deptId, prevJobId=e.jobId, prevSalary=e.salary;
-      const latestHistory = jobHistory.filter(h=>h.empId===e.id&&!h.deleted).sort((a,b)=>b.effDate.localeCompare(a.effDate))[0];
-      const prevEffDate = latestHistory ? latestHistory.effDate : hireDate;
-      const prevDeptChanged = prevDeptId !== deptId;
-      const prevJobChanged  = prevJobId  !== jobId;
-      const prevSalChanged  = prevSalary !== salary;
+      const prevDeptId=e.deptId;
+      const prevJobId=e.jobId;
+      const prevSalary=e.salary;
+      const changed=prevDeptId!==deptId||prevJobId!==jobId||prevSalary!==salary;
 
-      // If dept, job, or salary changed → add old values to job history
-      if(prevDeptChanged || prevJobChanged || prevSalChanged){
-        const histEntry = {
-          id:nH++, empId:e.id, jobId:prevJobId, deptId:prevDeptId,
-          effDate:prevEffDate, salary:prevSalary, deleted:false,
-          meta:{by:CURRENT_USER,at:now(),action:'SNAPSHOT',note:'Auto-saved before edit'}
+      if(changed){
+        // Insert a new job history row for the new assignment
+        const deptObj=gD(deptId), jobObj=gJ(jobId);
+
+        // Local record
+        const newHistLocal={
+          id:nH++, empId:e.id, jobId, deptId,
+          effDate, salary, deleted:false,
+          meta:{by:CURRENT_USER,at:metaAt,action:'ADD',note:'Auto-saved via employee edit'}
         };
-        jobHistory.push(histEntry);
+        jobHistory.push(newHistLocal);
 
-        // Also save new history entry with today's date
-        const todayDate = new Date().toISOString().split('T')[0];
-        const newHistEntry = {
-          id:nH++, empId:e.id, jobId:jobId, deptId:deptId,
-          effDate:todayDate, salary:salary, deleted:false,
-          meta:{by:CURRENT_USER,at:now(),action:'ADD',note:'Updated via employee edit'}
-        };
-        jobHistory.push(newHistEntry);
-        e.latestEffDate = todayDate;
-
-        // Save both history entries to Supabase
-        const prevDeptObj=gD(prevDeptId), prevJobObj=gJ(prevJobId);
-        const newDeptObj=gD(deptId), newJobObj=gJ(jobId);
-        if(prevDeptObj && prevJobObj){
-          await sb.from('jobhistory').insert({
-            empno:originalEmpNo, jobcode:prevJobObj?prevJobObj.code:'',
-            deptcode:prevDeptObj?prevDeptObj.code:'',
-            effdate:prevEffDate, salary:prevSalary
-          }).catch(err=>console.warn('History insert error (prev):',err.message));
-        }
-        if(newDeptObj && newJobObj){
-          await sb.from('jobhistory').insert({
-            empno:empNo, jobcode:newJobObj?newJobObj.code:'',
-            deptcode:newDeptObj?newDeptObj.code:'',
-            effdate:todayDate, salary:salary
-          }).catch(err=>console.warn('History insert error (new):',err.message));
+        // Persist new history row to Supabase
+        if(deptObj&&jobObj){
+          const {error:histErr}=await sb.from('jobhistory').insert({
+            empno:empNo,
+            jobcode:jobObj.code,
+            deptcode:deptObj.code,
+            effdate:effDate,
+            salary:salary
+          });
+          if(histErr) console.warn('jobhistory insert error:',histErr.message);
+          else console.log('New jobhistory row saved for empNo',empNo,'effDate',effDate);
         }
 
-        // Log to audit
-        logAudit('EDIT','JobHistory',e.empNo+' ('+e.lastName+', '+e.firstName+')',
-          'Previous snapshot saved: Job='+jd(prevJobId)+', Dept='+dn(prevDeptId)+', Salary='+prevSalary);
+        // Audit
+        logAudit('EDIT','JobHistory',
+          e.empNo+' ('+e.lastName+', '+e.firstName+')',
+          'New history: Job='+jd(jobId)+', Dept='+dn(deptId)+', Salary='+salary+', EffDate='+effDate
+        );
+
+        // Update employee's displayed current state
+        e.latestEffDate=effDate;
       }
 
-      // ── Update local state ──
-      Object.assign(e,{empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,meta});
-      e.latestEffDate = new Date().toISOString().split('T')[0];
-
-      // If the employee number changed, update jobhistory rows to keep history linked
-      if(empNo !== originalEmpNo){
-        await sb.from('jobhistory').update({empno:empNo}).eq('empno', originalEmpNo)
+      // If empNo changed, update jobhistory rows in Supabase
+      if(empNo!==originalEmpNo){
+        await sb.from('jobhistory').update({empno:empNo}).eq('empno',originalEmpNo)
           .catch(err=>console.warn('JobHistory empno update error:',err.message));
       }
 
-      // ── Persist to Supabase employee table ──
-      const updatePayload={
-        empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
-        hiredate:hireDate, sepdate:sepDate||null,
-        username:username, email:email, phone:phone
-      };
-      const {error:updateErr} = await sb.from('employee')
-        .update(updatePayload)
-        .eq('empno', originalEmpNo);
-      if(updateErr) console.warn('Employee update error:', updateErr.message);
+      // Update employee table in Supabase
+      const {error:updateErr}=await sb.from('employee').update({
+        empno:empNo,
+        lastname:lastName,
+        firstname:firstName,
+        gender:gender,
+        hiredate:hireDate,
+        sepdate:sepDate||null,
+        username:username,
+        email:email,
+        phone:phone
+      }).eq('empno',originalEmpNo);
+      if(updateErr) console.warn('Employee update error:',updateErr.message);
+
+      // Update local employee state
+      Object.assign(e,{
+        empNo,username,lastName,firstName,gender,hireDate,
+        sepDate,salary,deptId,jobId,email,phone,
+        latestEffDate:changed?effDate:e.latestEffDate,
+        meta:{by:CURRENT_USER,at:metaAt,action:'EDIT',note:'Profile updated'}
+      });
 
       logAudit('EDIT','Employee',empNo+' ('+lastName+', '+firstName+')','Profile updated');
-    } else {
-      // ── New employee ──
-      const newEmp={id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,salary,deptId,jobId,email,phone,deleted:false,blocked:false,meta,latestEffDate:hireDate};
+
+    }else{
+      // ── ADD MODE ──
+      const newEmp={
+        id:nE++,empNo,username,lastName,firstName,gender,hireDate,sepDate,
+        salary,deptId,jobId,email,phone,deleted:false,blocked:false,
+        latestEffDate:effDate||hireDate,
+        meta:{by:CURRENT_USER,at:metaAt,action:'ADD',note:'New employee added'}
+      };
       employees.push(newEmp);
 
-      // Save initial job history entry
-      const todayDate=new Date().toISOString().split('T')[0];
-      jobHistory.push({id:nH++,empId:newEmp.id,jobId,deptId,effDate:hireDate||todayDate,salary,deleted:false,meta});
-
-      // Persist to Supabase
-      const deptObj=gD(deptId), jobObj=gJ(jobId);
-      const {error:insErr} = await sb.from('employee').insert({
-        empno:empNo, lastname:lastName, firstname:firstName, gender:gender,
-        hiredate:hireDate, sepdate:sepDate||null, username:username, email:email, phone:phone
+      // Local history entry
+      jobHistory.push({
+        id:nH++,empId:newEmp.id,jobId,deptId,
+        effDate:effDate||hireDate,salary,deleted:false,
+        meta:{by:CURRENT_USER,at:metaAt,action:'ADD',note:'Initial assignment'}
       });
-      if(insErr) console.warn('Employee insert error:', insErr.message);
 
-      if(deptObj && jobObj){
-        await sb.from('jobhistory').insert({
-          empno:empNo, jobcode:jobObj.code, deptcode:deptObj.code,
-          effdate:hireDate||todayDate, salary:salary
-        }).catch(err=>console.warn('History insert error:',err.message));
+      const deptObj=gD(deptId),jobObj=gJ(jobId);
+
+      // Persist employee to Supabase
+      const {error:insErr}=await sb.from('employee').insert({
+        empno:empNo,lastname:lastName,firstname:firstName,gender:gender,
+        hiredate:hireDate,sepdate:sepDate||null,username:username,email:email,phone:phone
+      });
+      if(insErr) console.warn('Employee insert error:',insErr.message);
+
+      // Persist initial job history row
+      if(deptObj&&jobObj){
+        const {error:histErr}=await sb.from('jobhistory').insert({
+          empno:empNo,
+          jobcode:jobObj.code,
+          deptcode:deptObj.code,
+          effdate:effDate||hireDate,
+          salary:salary
+        });
+        if(histErr) console.warn('Initial jobhistory insert error:',histErr.message);
       }
 
       logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added');
     }
+
+    // Reload from Supabase so job history table is always fresh
     await loadAllData();
-    renderHist();
-    showToast('Employee saved successfully','success');
-    return;
-  } catch(err) {
-    console.error('saveEmp error:', err);
+    showToast('Employee saved successfully.','success');
+
+  }catch(err){
+    console.error('saveEmp error:',err);
     showToast('Failed to save employee: '+(err.message||err),'error');
-    return;
   }
 }
 
-/* ════════════════════════════════════
-   ▼ CHANGE 4, 5, 6: renderHist
-   - No checkboxes
-   - No Add Entry button (removed from HTML above)
-   - Sorted by effDate (A→Z default = oldest first)
-════════════════════════════════════ */
+/* ══════════════════════════════════════
+   JOB HISTORY — sorted newest first by default
+   Toggle: newest first / oldest first
+══════════════════════════════════════ */
 function renderHist(){
   const q=document.getElementById('hist-q').value.toLowerCase();
-  const sortDir=document.getElementById('hist-sort').value;
+  const sortDir=document.getElementById('hist-sort').value; // 'eff-desc' | 'eff-asc'
 
   let data=jobHistory.filter(h=>{
     if(h.deleted)return false;
     return (en(h.empId)+' '+jc(h.jobId)+' '+jd(h.jobId)+' '+dc(h.deptId)+' '+dn(h.deptId)).toLowerCase().includes(q);
   }).sort((a,b)=>{
-    // ▼ CHANGE 6: sort by effDate; blank dates pushed to bottom
     const da=a.effDate||'';
     const db=b.effDate||'';
+    // Push blank dates to bottom
     if(!da&&!db)return 0;
     if(!da)return 1;
     if(!db)return -1;
     const cmp=da.localeCompare(db);
-    return sortDir==='eff-desc'?-cmp:cmp; // eff-asc = oldest first (A→Z)
+    // eff-desc = newest first (default), eff-asc = oldest first
+    return sortDir==='eff-asc'?cmp:-cmp;
   });
 
   const tb=document.getElementById('hist-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="10" class="tbl-empty">No records.</td></tr>';return;}
 
-  // ▼ CHANGE 4: NO checkbox column in row output
   tb.innerHTML=data.map(h=>
     '<tr class="'+(h.deleted?'del-row':'')+'">'+
     '<td>JH-'+String(h.id).padStart(3,'0')+'</td>'+
@@ -1205,6 +1223,7 @@ function openEditHist(id){
   document.getElementById('fh-sal').value=h.salary||'';
   om('mo-hist');
 }
+
 function saveHist(){
   const empId=+document.getElementById('fh-emp').value,
         jobId=+document.getElementById('fh-job').value,
@@ -1217,7 +1236,7 @@ function saveHist(){
   if(h){
     Object.assign(h,{empId,jobId,deptId,effDate,salary,meta});
     logAudit('EDIT','JobHistory','JH-'+String(editId.hist).padStart(3,'0'),'History updated');
-    // Refresh latestEffDate on the employee
+    // Refresh employee's latestEffDate if this is the newest entry
     const emp=gE(empId);
     if(emp){
       const allHist=jobHistory.filter(x=>x.empId===empId&&!x.deleted)
@@ -1515,7 +1534,7 @@ function viewEmpAudit(id){
 function viewProf(id){
   const e=gE(id);if(!e)return;
   logAudit('VIEW','Employee',e.empNo+' ('+e.lastName+', '+e.firstName+')','Profile viewed');
-  // ▼ Profile job history also sorted by effDate newest first
+  // Profile history: newest first
   const hist=jobHistory.filter(h=>h.empId===id).sort((a,b)=>(b.effDate||'').localeCompare(a.effDate||''));
   const rows=hist.length?hist.map(h=>
     '<tr><td>'+jc(h.jobId)+'</td><td>'+jd(h.jobId)+'</td>'+
