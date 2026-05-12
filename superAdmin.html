@@ -815,6 +815,7 @@ async function loadAllData(){
       }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
     renderEmp();renderStats();
+    if(document.getElementById('page-job-history')?.classList.contains('active')) renderHist();
     updatePendingBadges();
   }catch(err){
     showToast('Error loading data: '+err.message,'error',5000);
@@ -1160,6 +1161,7 @@ async function saveEmp(){
 
     // Reload from Supabase so job history table is always fresh
     await loadAllData();
+    renderHist();
     showToast('Employee saved successfully.','success');
 
   }catch(err){
