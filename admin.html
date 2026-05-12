@@ -489,8 +489,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
       </div>
     </div>
     <div class="mf">
-      <button class="btn btn-outline" onclick="cm('mo-emp')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEmp()">Save Employee</button>
+      <button type="button" class="btn btn-outline" onclick="cm('mo-emp')">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="saveEmp()">Save Employee</button>
     </div>
   </div>
 </div>
@@ -937,9 +937,11 @@ async function saveEmp(){
   const phone=document.getElementById('fe-phone').value.trim();
   if(!lastName||!firstName||!deptId||!jobId){alert('Fill required fields.');return;}
 
+  cm('mo-emp');
   const meta={by:CURRENT_USER,at:now(),action:editId.emp?'EDIT':'ADD',note:editId.emp?'Profile updated':'New employee added'};
 
-  if(editId.emp){
+  try {
+    if(editId.emp){
     const e=gE(editId.emp);
     const originalEmpNo = e.empNo;
 
@@ -1035,7 +1037,14 @@ async function saveEmp(){
 
     logAudit('ADD','Employee',empNo+' ('+lastName+', '+firstName+')','New employee added');
   }
-  cm('mo-emp');renderEmp();renderStats();
+  renderEmp();renderStats();renderHist();
+  showToast('Employee saved successfully','success');
+  return;
+  } catch(err) {
+    console.error('saveEmp error:', err);
+    showToast('Failed to save employee: '+(err.message||err),'error');
+    return;
+  }
 }
 
 // ── JOB HISTORY: sorted by eff date, no checkboxes, no add button ──
