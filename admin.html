@@ -428,7 +428,6 @@ tbody td{padding:8px 12px;vertical-align:middle}
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
             <option value="rejected">Rejected</option>
-            <option value="blocked">Blocked</option>
           </select>
         </div>
         <div class="tw"><table>
@@ -558,8 +557,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <p style="font-size:11px;color:var(--muted)" id="reject-for"></p>
     </div>
     <div class="mf">
-      <button type="button" class="btn btn-outline" onclick="cm('mo-reject')">Cancel</button>
-      <button type="button" class="btn btn-danger" onclick="confirmReject()">Reject</button>
+      <button class="btn btn-outline" onclick="cm('mo-reject')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReject()">Reject</button>
     </div>
   </div>
 </div>
@@ -727,7 +726,7 @@ async function loadAllData(){
         id:idx+1,username:u.username||u.email||'',firstName:u.first_name||'',lastName:u.last_name||'',
         fullName:u.full_name||((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||'',
         email:u.email||'',empNo:u.emp_id||'',requestedRole:u.requested_role||u.role||'user',
-        status:(u.status==='pending')?'pending':(u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='blocked')?'blocked':(u.status==='approved'||u.status==='active')?'approved':'pending',
+        status:(u.status==='pending')?'pending':(u.status==='inactive')?'pending':(u.status==='rejected')?'rejected':(u.status==='approved'||u.status==='active')?'approved':'pending',
         submittedAt:u.created_at||'',reviewedBy:u.approved_by||null,reviewedAt:u.updated_at||null,note:'',empId:null,supabaseId:u.id,
       }));
     nE=employees.length+1;nH=jobHistory.length+1;nD=departments.length+1;nJ=jobs.length+1;nU=sysUsers.length+1;
@@ -1275,42 +1274,8 @@ async function approveReg(id){
     renderPending();renderUsers();renderUserStats();renderAllReg();updatePendingBadges();
   },'Approve','btn-success');
 }
-function openRejectModal(id){
-  const r=registrations.find(x=>x.id===id);
-  if(!r)return;
-  pendingRejectId=id;
-  document.getElementById('reject-note').value='';
-  document.getElementById('reject-for').textContent='Rejecting: '+(r.fullName||((r.firstName||'')+' '+(r.lastName||'')).trim()||r.email||r.username||'Unknown');
-  om('mo-reject');
-}
-async function confirmReject(){
-  const r=registrations.find(x=>x.id===pendingRejectId);
-  if(!r){ alert('No registration selected to reject.'); return; }
-  const note=document.getElementById('reject-note').value.trim()||'No reason provided.';
-  const payload={status:'blocked',approved_by:CURRENT_USER,approved_at:new Date().toISOString()};
-  let query=null;
-  if(r.supabaseId){
-    query = sb.from('profiles').update(payload).eq('id',r.supabaseId);
-  } else if(r.email){
-    query = sb.from('profiles').update(payload).eq('email',r.email);
-  } else if(r.username){
-    query = sb.from('profiles').update(payload).eq('username',r.username);
-  }
-  if(!query){ alert('Unable to locate the user record to reject.'); return; }
-  const {error} = await query;
-  if(error){ alert('Error rejecting user: '+error.message); return; }
-  r.status='blocked';
-  r.reviewedBy=CURRENT_USER;
-  r.reviewedAt=now();
-  r.note=note;
-  logAudit('BLOCK','User',r.username||r.email||'Unknown','Registration blocked: '+note);
-  pendingRejectId=null;
-  cm('mo-reject');
-  renderPending();
-  renderUserStats();
-  renderAllReg();
-  updatePendingBadges();
-}
+function openRejectModal(id){const r=registrations.find(x=>x.id===id);if(!r)return;pendingRejectId=id;document.getElementById('reject-note').value='';document.getElementById('reject-for').textContent='Rejecting: '+r.firstName+' '+r.lastName+' ('+(r.email||r.username)+')';om('mo-reject');}
+async function confirmReject(){const r=registrations.find(x=>x.id===pendingRejectId);if(!r)return;const note=document.getElementById('reject-note').value.trim()||'No reason provided.';const match = r.supabaseId ? await sb.from('profiles').update({status:'rejected',approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('id',r.supabaseId) : await sb.from('profiles').update({status:'rejected',approved_by:CURRENT_USER,approved_at:new Date().toISOString()}).eq('email',r.email||r.username); if(match.error){alert('Error rejecting user: '+match.error.message);return;} r.status='rejected';r.reviewedBy=CURRENT_USER;r.reviewedAt=now();r.note=note;logAudit('BLOCK','User',r.username,'Registration rejected: '+note);cm('mo-reject');renderPending();renderUserStats();renderAllReg();updatePendingBadges();}
 function renderAllReg(){
   const q=document.getElementById('allreg-q').value.toLowerCase();
   const fs=document.getElementById('allreg-fs').value;
@@ -1318,13 +1283,12 @@ function renderAllReg(){
     if(fs==='approved'&&r.status!=='approved')return false;
     if(fs==='pending'&&r.status!=='pending')return false;
     if(fs==='rejected'&&r.status!=='rejected')return false;
-    if(fs==='blocked'&&r.status!=='blocked')return false;
     return ((r.email||r.username)+' '+r.fullName+' '+r.firstName+' '+r.lastName+' '+(r.empNo||'')+' '+r.status).toLowerCase().includes(q);
   }).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
   const tb=document.getElementById('allreg-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="6" class="tbl-empty">No registrations found.</td></tr>';return;}
   tb.innerHTML=data.map(r=>{
-    const sb2=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':r.status==='blocked'?'<span class="badge b-blk">Blocked</span>':'<span class="badge b-pending">Pending</span>';
+    const sb2=r.status==='approved'?'<span class="badge b-approved">Approved</span>':r.status==='rejected'?'<span class="badge b-rejected">Rejected</span>':'<span class="badge b-pending">Pending</span>';
     return '<tr class="'+(r.status==='pending'?'pending-row':'')+'">'+
       '<td><strong>'+(r.email||r.username)+'</strong></td><td>'+(r.fullName||((r.firstName||'')+' '+(r.lastName||'')).trim()||'--')+'</td>'+
       '<td><span class="badge '+(r.requestedRole==='admin'?'b-admin':'b-user')+'">'+r.requestedRole.toUpperCase()+'</span></td>'+
